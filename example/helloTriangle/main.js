@@ -42,7 +42,7 @@ let sizeFactor = 0.0
 
 async function init() {
 
-    const device = await scr.StartDash()
+    await scr.StartDash()
     const canvas = document.getElementById('GPUFrame')
     const screen = scr.Screen.create({ canvas })
 

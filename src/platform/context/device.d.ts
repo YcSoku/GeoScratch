@@ -5,4 +5,4 @@ export default device;
 
 export class Device {};
 // export default function getDevice(): GPUDevice;
-export async function StartDash(): void;
+export async function StartDash(): GPUDevice;
