@@ -20,9 +20,9 @@ struct DynamicUniform {
 fn vMain(input: VertexInput) -> VertexOutput {
 
     let pos = array<vec2f, 3>(
-        vec2f(-1.0, -1.0),
-        vec2f(0.0, 1.0),
-        vec2f(1.0, -1.0),
+        vec2f(-0.5, -0.5),
+        vec2f(0.0, 0.5),
+        vec2f(0.5, -0.5),
     );
     
     var output: VertexOutput;
@@ -33,18 +33,16 @@ fn vMain(input: VertexInput) -> VertexOutput {
 @fragment
 fn fMain(input: VertexOutput) -> @location(0) vec4f {
 
-    return vec4f(0.0, 0.5, 0.5, 1.0);
+    return vec4f(128., 218., 197., 255.) / 255.;
 }
 `
 
-let frameCount = 1.0
-let sizeFactor = 0.0
+let frameCount = 1.
+let sizeFactor = 0.
 
 async function init() {
 
-    await scr.StartDash()
-    const canvas = document.getElementById('GPUFrame')
-    const screen = scr.Screen.create({ canvas })
+    const screen = scr.Screen.create({ canvas: document.getElementById('GPUFrame') })
 
     // Vertex buffer
     // const buffer_vertices = scr.VertexBuffer.create({
@@ -59,10 +57,7 @@ async function init() {
                 name: 'dynamicUniform',
                 dynamic: true,
                 map: {
-                    size: {
-                        type: 'vec2f',
-                        value: () => [sizeFactor, sizeFactor],
-                    }
+                    size: {type: 'vec2f', value: () => [sizeFactor, sizeFactor]}
                 }
             },
         ]
@@ -82,33 +77,30 @@ async function init() {
     // Triangle Pass
     const tPass = scr.RenderPass.create({
         name: 'Render Pass (Triangle)',
-        colorAttachments: [ { colorResource: screen, clearValue: [0.4, 0.4, 0.4, 1.0] } ]
+        colorAttachments: [{colorResource: screen, clearValue: [0., 0., 0., 1.]}]
     }).add(tPipeline, tBinding)
 
     // Stage
     scr.director.addStage({
         name: 'HelloTriangle',
-        items: [ tPass ],
+        items: [tPass],
     })
 }
 
-function render() {
+function tick() {
 
     frameCount ++
-    sizeFactor = Math.sin(frameCount * 0.03)
-
+    sizeFactor = Math.cos(frameCount * 0.025)
     scr.director.tick()
 
-    requestAnimationFrame(() => {
-        render()
-    })
+    requestAnimationFrame(() => tick())
 }
 
 async function show() {
 
+    await scr.StartDash()
     await init()
-
-    render()
+    tick()
 }
 
 show()
