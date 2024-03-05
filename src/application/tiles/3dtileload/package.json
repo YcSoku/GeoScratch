@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@jdultra/threedtiles": "^9.2.0",
+    "cesium": "^1.98.1",
+    "three": "^0.160.0",
+    "xmlhttprequest": "^1.8.0"
+  }
+}
