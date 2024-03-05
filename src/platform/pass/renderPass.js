@@ -1,7 +1,7 @@
-import { UUID } from "../../core/utils/uuid";
-import { Binding } from "../binding/binding";
-import { RenderPipeline } from "../pipeline/renderPipeline";
-import { Texture } from "../texture/texture";
+import { UUID } from "../../core/utils/uuid.js"
+import { Binding } from "../binding/binding.js"
+import { RenderPipeline } from "../pipeline/renderPipeline.js"
+import { Texture } from "../texture/texture.js"
 
 /**
  * @typedef {Object} RenderPassDescription
@@ -37,6 +37,7 @@ export class RenderPass {
 
         this.dirty = true
         this.initialized = false
+        this.completed = false
     }
 
     addColorAttachments() {
@@ -139,6 +140,21 @@ export class RenderPass {
         this.initialize = true
     }
 
+    isComplete() {
+
+        if (this.completed) return true
+
+        this.completed = true
+
+        this.colorDescription.forEach(description => {
+            !description.colorResource.texture && (this.completed = false)
+        })
+
+        this.depthStencilDescription && !this.depthStencilDescription.depthStencilResource.texture && (this.completed = false)
+
+        return this.completed
+    }
+
     update() {
 
         this.initialize()
@@ -173,10 +189,11 @@ export class RenderPass {
     }
 
     /**
-     * 
      * @param {GPUCommandEncoder} encoder 
      */
     execute(encoder) {
+
+        if (!this.isComplete()) return
 
         this.dirty && this.update()
 

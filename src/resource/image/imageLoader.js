@@ -1,4 +1,4 @@
-import { Texture } from "../../platform/texture/texture"
+import { Texture } from "../../platform/texture/texture.js"
 
 /**
  * @typedef {Object} ImageLoaderDescription

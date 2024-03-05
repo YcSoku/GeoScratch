@@ -1,16 +1,14 @@
-import { makeStructuredView } from './webgpu-utils.module.js';
-import { UniformBuffer } from '../buffer/uniformBuffer.js';
-import { StorageBuffer } from '../buffer/storageBuffer.js';
-import { Texture } from '../texture/texture.js';
-import { ArrayRef } from '../data/arrayRef.js';
-import { VertexBuffer } from '../buffer/vertexBuffer.js';
-import { IndirectBuffer } from '../buffer/indirectBuffer.js';
-import { Shader } from '../shader/shader.js';
-import { IndexBuffer } from '../buffer/indexBuffer.js';
+import { UniformBuffer } from '../buffer/uniformBuffer.js'
+import { StorageBuffer } from '../buffer/storageBuffer.js'
+import { Texture } from '../texture/texture.js'
+import { VertexBuffer } from '../buffer/vertexBuffer.js'
+import { IndirectBuffer } from '../buffer/indirectBuffer.js'
+import { IndexBuffer } from '../buffer/indexBuffer.js'
+import { UUID } from '../../core/utils/uuid.js'
+import { BlockRef } from '../data/blockRef.js'
+import { Sampler } from '../sampler/sampler.js'
+import director from '../director/director.js'
 import getDevice from '../context/device.js'
-import { UUID } from '../../core/utils/uuid.js';
-import { BlockRef } from '../data/blockRef.js';
-import director from '../director/director.js';
 
 /**
  * @typedef {Object} VertexBindingDescription
@@ -72,14 +70,10 @@ import director from '../director/director.js';
  */
 
 /**
- * @typedef {Object} SamplerDescription
- * @property {string} name
- * @property {Array<GPUAddressMode>} addressModeUVW
- * @property {Array<GPUFilterMode>} filterMinMag
+ * @typedef {Object} SamplerBindingDescription
+ * @property {Sampler} sampler
  * @property {number} [visibility]
- * @property {number} [mipmap]
  * @property {GPUSamplerBindingType} [bindingType]
- * @property {number} [maxAnisotropy]
  */
 
 /**
@@ -107,6 +101,13 @@ import director from '../director/director.js';
  */
 
 /**
+ * @typedef {Object} SamplerBinding
+ * @property {Sampler} sampler
+ * @property {number} visibility
+ * @property {GPUSamplerBindingType} bindingType
+ */
+
+/**
  * @typedef {Object} TextureBinding
  * @property {Texture} [texture]
  * @property {GPUTextureSampleType} sampleType
@@ -119,18 +120,11 @@ import director from '../director/director.js';
  */
 
 /**
- * @typedef {Object} SamplerBinding
- * @property {GPUSampler} sampler
- * @property {number} visibility
- * @property {GPUSamplerBindingType} bindingType
- */
-
-/**
  * @typedef {Object} BindingsDescription
  * @property {string} [name]
  * @property {Function} [range]
  * @property {IndexBindingDescription} [index]
- * @property {Array<SamplerDescription>} [samplers]
+ * @property {Array<SamplerBindingDescription>} [samplers]
  * @property {Array<UniformBindingDescription>} [uniforms]
  * @property {Array<SharedUniformBindingDescription>} [sharedUniforms]
  * @property {IndirectBindingDescription} [indirect]
@@ -292,8 +286,6 @@ class Binding {
                     blocks: blocks
                 }).use()
         
-                this.updateUniformBlock()
-        
                 this.uniformBufferReady = true
     }
 
@@ -342,7 +334,9 @@ class Binding {
 
         this.textureBindings.push({
             texture: bindingDesc.texture.use(),
-            callbackIndex: bindingDesc.texture.registerCallback(() => { this.createTextureBindGroup() }),
+            callbackIndex: bindingDesc.texture.registerCallback(() => { 
+                director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'texture', order: this.textureOrder})
+            }),
 
             asStorage: asStorage,
             visibility: visibility,
@@ -357,95 +351,26 @@ class Binding {
 
     /**
      * @param {number} index 
-     * @param {SamplerDescription} samplerDesc 
+     * @param {SamplerBindingDescription} bindingDesc 
      */
-    addSampler(index, samplerDesc) {
-
-        const device = getDevice()
+    addSampler(index, bindingDesc) {
 
         this.samplerBindings[index] = {
-            sampler: device.createSampler({
-                label: `Sampler (${samplerDesc.name})`,
-                maxAnisotropy: samplerDesc.maxAnisotropy,
-
-                minFilter: samplerDesc.filterMinMag.length > 0 ? samplerDesc.filterMinMag[0] : 'linear',
-                magFilter: samplerDesc.filterMinMag.length > 1 ? samplerDesc.filterMinMag[1] : 'linear',
-                addressModeU: samplerDesc.addressModeUVW.length > 0 ? samplerDesc.addressModeUVW[0] : 'repeat',
-                addressModeV: samplerDesc.addressModeUVW.length > 1 ? samplerDesc.addressModeUVW[1] : 'repeat',
-                addressModeW: samplerDesc.addressModeUVW.length > 2 ? samplerDesc.addressModeUVW[2] : 'repeat',
-
-                ...(samplerDesc.mipmap && { mipmapFilter: samplerDesc.mipmap }),
-                
-            }),
-            bindingType: samplerDesc.bindingType || 'filtering',
-            visibility: samplerDesc.visibility || GPUShaderStage.FRAGMENT,
-        };
-    }
-
-    // /**
-    //  * @param {Shader} shader 
-    //  */
-    // afterShaderComplete(shader) {
-        
-    //     if (!this.uniforms.length || this.uniformBufferReady) return
-
-    //     let blocks = []
-    //     for (const uniform of this.uniforms) {
-
-    //         uniform.ref.view = makeStructuredView(shader.defs.uniforms[uniform.ref.name])
-
-    //         blocks.push(uniform.ref)
-    //     }
-
-    //     /**
-    //      * Create the uniform buffer
-    //      * @type {UniformBuffer}
-    //      * Notation: a binding has only one uniform buffer
-    //      */
-    //     this.uniformBuffer = UniformBuffer.create({
-    //         name: `Uniform buffer (${this.name})`,
-    //         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
-    //         blocks: blocks
-    //     }).use()
-
-    //     this.updateUniformBlock()
-
-    //     this.uniformBufferReady = true
-    // }
-
-    updateUniformBlock() {
-
-        if (!this.uniforms.length) return
-
-        this.uniformBuffer.update()
-    }
-
-    updateStorageBuffer() {
-
-        for (const storageBinding of this.storageBindings) {
-            storageBinding.buffer.update()
+            sampler: bindingDesc.sampler.use(),
+            bindingType: bindingDesc.bindingType || 'filtering',
+            visibility: bindingDesc.visibility || GPUShaderStage.FRAGMENT,
         }
     }
 
-    updateVertexBuffer() {
-
-        for (const vertexBinding of this.vertexBindings) {
-            vertexBinding.buffer.update()
-        }
-    }
-
-    updateTexture() {
-
-        for (const textureBinding of this.textureBindings) {
-            textureBinding.texture.update()
-        }
-    }
-
-    createUniformBindGroupLayout() {
+    /**
+     * @deprecated
+     * @param {GPUDevice} device 
+     */
+    createUniformBindGroupLayout(device) {
 
         if (!this.uniforms.length && !this.sharedUniforms.length) return
 
-        const device = getDevice()
+        // const device = getDevice()
 
         /**
          * @type {Array<GPUBindGroupLayoutEntry>}
@@ -466,11 +391,15 @@ class Binding {
         })
     }
 
-    createUniformBindGroup() {
+    /**
+     * @deprecated
+     * @param {GPUDevice} device 
+     */
+    createUniformBindGroup(device) {
 
         if (!this.uniforms.length && !this.sharedUniforms.length) return
         
-        const device = getDevice()
+        // const device = getDevice()
         
         /**
          * @type {Array<GPUBindGroupEntry>}
@@ -502,11 +431,15 @@ class Binding {
         })
     }
 
-    createStorageBindGroupLayout() {
+    /**
+     * @deprecated
+     * @param {GPUDevice} device 
+     */
+    createStorageBindGroupLayout(device) {
 
         if (!this.storageBindings.length) return
         
-        const device = getDevice()
+        // const device = getDevice()
 
         /**
          * @type {Array<GPUBindGroupLayoutEntry>}
@@ -526,11 +459,15 @@ class Binding {
         })
     }
 
-    createStorageBindGroup() {
+    /**
+     * @deprecated
+     * @param {GPUDevice} device 
+     */
+    createStorageBindGroup(device) {
 
         if (!this.storageBindings.length) return
         
-        const device = getDevice()
+        // const device = getDevice()
 
         /**
          * @type {Array<GPUBindGroupEntry>}
@@ -574,11 +511,15 @@ class Binding {
         })
     }
 
-    createTextureBindGroupLayout() {
+    /**
+     * @deprecated
+     * @param {GPUDevice} device 
+     */
+    createTextureBindGroupLayout(device) {
 
         if (!this.samplerBindings.length && !this.textureBindings.length) return
         
-        const device = getDevice()
+        // const device = getDevice()
 
         /**
          * @type {Array<GPUBindGroupLayoutEntry>}
@@ -607,11 +548,15 @@ class Binding {
         })
     }
 
-    createTextureBindGroup() {
+    /**
+     * @deprecated
+     * @param {GPUDevice} device 
+     */
+    createTextureBindGroup(device) {
 
         if (!this.samplerBindings.length && !this.textureBindings.length) return
         
-        const device = getDevice()
+        // const device = getDevice()
         
         /**
          * @type {Array<GPUBindGroupEntry>}
@@ -621,7 +566,7 @@ class Binding {
             entries[index] = {
                 binding: index,
                 ...(binding.sampler && {
-                    resource: binding.sampler
+                    resource: binding.sampler.sampler
                 }),
                 ...(binding.texture && {
                     resource: binding.texture.view()
@@ -629,7 +574,7 @@ class Binding {
             }
         })
 
-        !this.layouts[this.textureOrder] && this.createTextureBindGroupLayout()
+        !this.layouts[this.textureOrder] && this.createTextureBindGroupLayout(device)
         this.groups[this.textureOrder] = device.createBindGroup({
             label: `Texture binding group (${this.name})`,
             layout: this.layouts[this.textureOrder],
@@ -637,19 +582,196 @@ class Binding {
         })
     }
 
-    crteateBindGroupLayouts() {
+    /**
+     * @param {string} type 
+     * @returns {GPUBindGroupLayoutDescriptor}
+     */
+    exportLayoutDescriptor(type) {
+
+        switch (type) {
+            case 'uniform': {
+                /**
+                 * @type {Array<GPUBindGroupLayoutEntry>}
+                 */
+                const entries = new Array(this.uniforms.length + this.sharedUniforms.length)
+                let index = 0
+                this.uniforms.concat(this.sharedUniforms).forEach(block => {
+                    entries[index] = {
+                        binding: index++,
+                        visibility: block.visibility,
+                        buffer: { type: 'uniform' }
+                    }
+                })
+
+                return {
+                    label: `Uniform binding group layout (${this.name})`,
+                    entries: entries
+                }
+            }
+            case 'storage': {
+                /**
+                 * @type {Array<GPUBindGroupLayoutEntry>}
+                 */
+                const entries = new Array(this.storageBindings.length)
+                this.storageBindings.forEach((storageBinding, index) => {
+                    entries[index] = {
+                        binding: index,
+                        buffer: {type: storageBinding.type}, 
+                        visibility: storageBinding.visibility
+                    }
+                })
+                return {
+                    label: `Storage binding group layout (${this.name})`,
+                    entries: entries
+                }
+            }
+            case 'texture': {
+
+                /**
+                 * @type {Array<GPUBindGroupLayoutEntry>}
+                 */
+                const entries = new Array(this.samplerBindings.length + this.textureBindings.length)
+                this.samplerBindings.concat(this.textureBindings).forEach((binding, index) => {
+                    
+                    entries[index] = {
+                        binding: index,
+                        visibility: binding.visibility,
+                        ...(binding.sampler && {
+                            sampler: {type: binding.bindingType}
+                        }),
+                        ...(binding.texture && (!binding.asStorage) && {
+                            texture: {sampleType: binding.sampleType, viewDimension: binding.viewDimension, multisampled: binding.multisampled}
+                        }),
+                        ...(binding.texture && binding.asStorage && {
+                            storageTexture: {access: binding.accessibility, format: binding.texture.format}
+                        })
+                    }
+                })
+                return {
+                    label: `Texture binding group layout (${this.name})`,
+                    entries: entries
+                }
+            }
+        }
+    }
+
+    /**
+     * @param {string} type 
+     * @returns {GPUBindGroupDescriptor}
+     */
+    exportDescriptor(type) {
+
+        switch (type) {
+            case 'uniform': {
+                /**
+                 * @type {Array<GPUBindGroupEntry>}
+                 */
+                const entries = new Array(this.uniforms.length + this.sharedUniforms.length)
+                let index = 0
+                this.uniforms.forEach(block => {
+                    const area = this.uniformBuffer.areaMap[block.ref.name]
+                    entries[index] = {
+                        binding: index++,
+                        resource: {
+                            buffer: this.uniformBuffer.buffer, 
+                            offset: area.start,
+                            size: area.length
+                        }
+                    }
+                })
+                this.sharedUniforms.forEach(sharedUniform => {
+                    entries[index] = {
+                        binding: index++,
+                        resource: { buffer: sharedUniform.buffer.buffer }
+                    }
+                })
         
-        this.createVertexBufferLayout()
-        this.createUniformBindGroupLayout()
-        this.createStorageBindGroupLayout()
-        this.createTextureBindGroupLayout()
+                return {
+                    label: `Uniform binding group (${this.name})`,
+                    layout: this.layouts[this.uniformOrder],
+                    entries: entries
+                }
+            }
+            case 'storage': {
+                /**
+                 * @type {Array<GPUBindGroupEntry>}
+                 */
+                const entries = new Array(this.storageBindings.length)
+                this.storageBindings.forEach((storageBinding, index) => {
+                    entries[index] = {
+                        binding: index,
+                        resource: {buffer: storageBinding.buffer.buffer}
+                    }
+                })
+        
+                return {
+                    label: `Storage binding group (${this.name})`,
+                    layout: this.layouts[this.storageOrder],
+                    entries: entries
+                }
+            }
+            case 'texture': {
+                /**
+                 * @type {Array<GPUBindGroupEntry>}
+                 */
+                const entries= new Array(this.samplerBindings.length + this.textureBindings.length)
+                this.samplerBindings.concat(this.textureBindings).forEach((binding, index) => {
+                    entries[index] = {
+                        binding: index,
+                        ...(binding.sampler && {
+                            resource: binding.sampler.sampler
+                        }),
+                        ...(binding.texture && {
+                            resource: binding.texture.view()
+                        })
+                    }
+                })
+
+                // !this.layouts[this.textureOrder] && this.createTextureBindGroupLayout(device)
+                return {
+                    label: `Texture binding group (${this.name})`,
+                    layout: this.layouts[this.textureOrder],
+                    entries: entries
+                }
+            }
+        }
+    }
+
+    /**
+     * @deprecated
+     * @param {GPUDevice} device 
+     */
+    crteateBindGroupLayouts(device) {
+
+        if (this.uniforms.length || this.sharedUniforms.length)
+            director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'uniform', order: this.uniformOrder})
+
+        if (this.storageBindings.length)
+            director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'storage', order: this.storageOrder})
+
+        if (this.samplerBindings.length || this.textureBindings.length)
+            director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'texture', order: this.textureOrder})
     }
 
     createBindGroups() {
 
-        this.createUniformBindGroup()
-        this.createStorageBindGroup()
-        this.createTextureBindGroup()
+        this.createVertexBufferLayout()
+
+        if (this.uniforms.length || this.sharedUniforms.length){
+            director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'uniform', order: this.uniformOrder})
+            director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'uniform', order: this.uniformOrder})
+        }
+
+        if (this.storageBindings.length) {
+            director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'storage', order: this.storageOrder})
+            director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'storage', order: this.storageOrder})
+        }
+
+        if (this.samplerBindings.length || this.textureBindings.length) {
+
+            director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'texture', order: this.textureOrder})
+            director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'texture', order: this.textureOrder})
+        }
     }
 
     tryMakeComplete() {
@@ -658,19 +780,13 @@ class Binding {
         if (this.released) return false
 
         for (const textureBinding of this.textureBindings) {
-            if (!textureBinding.texture.texture) {
-                return false
-            }
+            if (!textureBinding.texture.texture) return false
         }
 
-        // this.uniforms.length && this.afterShaderComplete(shader)
-
-        this.crteateBindGroupLayouts()
-        
         this.createBindGroups()
 
         this.isComplete = true
-        return true
+        return false
     }
     
     update() {
@@ -806,9 +922,9 @@ class Binding {
         this.textureBindings = []
     
         this.samplerBindings.forEach(binding => {
+            binding.sampler = binding.sampler.release()
             binding.bindingType = null
             binding.visibility = null
-            binding.sampler = null
         })
         this.samplerBindings = []
     

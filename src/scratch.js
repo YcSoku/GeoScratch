@@ -1,3 +1,7 @@
+import getDevice from './platform/context/device.js'
+export { getDevice }
+export { Device, StartDash, device } from './platform/context/device.js'
+
 export { Buffer } from './platform/buffer/buffer.js'
 export { VertexBuffer } from './platform/buffer/vertexBuffer.js'
 export { StorageBuffer } from './platform/buffer/storageBuffer.js'
@@ -6,16 +10,13 @@ export { IndexBuffer } from './platform/buffer/indexBuffer.js'
 export { IndirectBuffer } from './platform/buffer/indirectBuffer.js'
 export { MapBuffer } from './platform/buffer/mapBuffer.js'
 
-export { Screen } from './platform/screen/screen.js'
-
-import getDevice from './platform/context/device.js'
-export { getDevice }
-export { Device, StartDash, device } from './platform/context/device.js'
 
 export { ArrayRef, aRef } from './platform/data/arrayRef.js'
 export { BlockRef, bRef } from './platform/data/blockRef.js'
 
+export { Sampler } from './platform/sampler/sampler.js'
 export { Texture } from './platform/texture/texture.js'
+export { Screen } from './platform/texture/screen.js'
 export { Shader } from './platform/shader/shader.js'
 
 export { Binding } from './platform/binding/binding.js'

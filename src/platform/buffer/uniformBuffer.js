@@ -42,6 +42,7 @@ class UniformBuffer extends Buffer {
         description.blocks.forEach((block) => {
             this.addBlock(block)
         })
+        this.dynamicBlocks.length && (this.updatePerFrame = true)
         this.isInitialized = false
     }
 

@@ -25,6 +25,8 @@ export class RenderPipeline {
     
     setBinding(binding: Binding): void;
 
+    exportLayoutDescriptor(binding: Binding): GPUPipelineLayoutDescriptor
+
     tryMakeComplete(renderPass: RenderPass, binding: Binding): boolean;
 
     triggerFiniteTimes(times: number): RenderPipeline;

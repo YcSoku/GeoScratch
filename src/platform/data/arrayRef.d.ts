@@ -11,7 +11,7 @@ export class ArrayRef {
     get value(): ArrayBufferLike;
     set value(data: ArrayBufferLike);
 
-    elements(index: number, data?: number): ArrayBufferLike | void;
+    element(index: number, data?: number): ArrayBufferLike | void;
 
     use(): ArrayRef;
 

@@ -14,7 +14,12 @@ export class Shader {
     constructor(description: ShaderDescription);
     static create(description: ShaderDescription): Shader;
 
-    update(): void;
+    /**
+     * @deprecated
+     * @param device 
+     */
+    update(device: GPUDevice): void;
 
     isComplete(): boolean;
+    exportDescriptor(): GPUShaderModuleDescriptor;
 }

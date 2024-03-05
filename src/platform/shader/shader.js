@@ -1,6 +1,7 @@
 import { UUID } from "../../core/utils/uuid.js";
 import getDevice from "../context/device.js";
 import { makeShaderDataDefinitions } from "../../core/utils/webgpu-utils.module.js";
+import director from "../director/director.js";
 /**
  * @typedef {Object} ShaderDescription
  * @property {string} name
@@ -18,13 +19,13 @@ class Shader {
         this.uuid = UUID()
 
         this.name = description.name
-        this.code = description.codeFunc
         this.shaderModule = undefined
-        this.dirty = true
+        this.code = description.codeFunc
+        this.code() && director.dispatchEvent({type: 'createShader', emitter: this})
+        // this.dirty = true
     }
 
     /**
-     * 
      * @param {ShaderDescription} description 
      */
     static create(description) {
@@ -32,10 +33,23 @@ class Shader {
         return new Shader(description)
     }
 
-    update() {
-        if (!this.dirty) return
+    exportDescriptor() {
+
+        return {
+
+            label: this.name,
+            code: this.code()
+        }
+    }
+
+    /**
+     * @deprecated
+     * @param {GPUDevice} device 
+     */
+    update(device) {
+        // if (!this.dirty) return
         
-        const device = getDevice()
+        // const device = getDevice()
 
         const code = this.code()
         if (code) {
@@ -45,15 +59,13 @@ class Shader {
             })
             this.defs = makeShaderDataDefinitions(code)
 
-            this.dirty = false
+            // this.dirty = false
         }
     }
 
     isComplete() {
 
         if (this.shaderModule) return true
-
-        this.update()
         return false
     }
 }

@@ -11,9 +11,12 @@ export class Buffer {
     name: string;
 
     buffer: GPUBuffer;
+    updatePerFrame: boolean;
 
     areaMap: {[mapName: string]: {start: number, length: number, arrayRef: ArrayRef, dataOffset?: number, size?: number}};
  
+    exportDescriptor(): GPUBufferDescriptor;
+
     registerStrutureMap(dataRef: DataRef, dataOffset?: number, size?: number, alignment = 1): void;
 
     updateSubArea(name: string): void;
@@ -21,6 +24,8 @@ export class Buffer {
     makeDirty(name: string): void;
 
     update(): void;
+
+    needUpdate(): void;
 
     isComplete(): boolean;
 

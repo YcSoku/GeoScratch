@@ -1,5 +1,5 @@
-import getDevice from "../context/device.js"
-import { Texture } from "../texture/texture.js"
+import director from "../director/director.js"
+import { Texture } from "./texture.js"
 
 /**
  * Information about the canvas and its GPU context.
@@ -10,12 +10,21 @@ import { Texture } from "../texture/texture.js"
  * @property {GPUCanvasAlphaMode} [alphaMode]
  */
 
-class Screen {
+class Screen extends Texture {
     
     /**
      * @param {ScreenDescription} description 
      */
     constructor(description) {
+
+        super({
+            name: 'Texture (Canvas)',
+            format: navigator.gpu.getPreferredCanvasFormat(),
+            resource: {
+                canvasTexture: () => undefined,
+                dataType: 'canvasTexture'
+            },
+        })
 
         this.canvas = description.canvas
 
@@ -23,30 +32,19 @@ class Screen {
 
         this.alphaMode = description.alphaMode ? description.alphaMode : "premultiplied"
 
-        this.context = description.canvas.getContext("webgpu")
         this.presentationFormat = navigator.gpu.getPreferredCanvasFormat()
-        this.context.configure({
-            device: getDevice(),
-            format: this.presentationFormat,
-            alphaMode: this.alphaMode
-        })
+        
         /**
          * @type {Array<{texture: Texture, multiplier: number[]}>}
          */
         this.screenDependentTextures = []
 
         this.screenDependentElements = []
-        
-        this.renderTarget = Texture.create({
-            name: 'Texture (Canvas)',
-            format: this.presentationFormat,
-            resource: {
-                canvasTexture: () => this.context.getCurrentTexture(),
-                dataType: 'canvasTexture'
-            }
-        })
 
-        this.onWindowResize()
+        this.needUpdate()
+        this.updatePerFrame = true
+        // director.addToUpdateList(this)
+
         window.addEventListener('resize', () => this.onWindowResize())
     }
 
@@ -60,7 +58,28 @@ class Screen {
 
     getCurrentCanvasTexture() {
 
-        return this.renderTarget
+        // return this.renderTarget
+        return this.texture
+    }
+
+    exportDescriptor() {
+
+        return {
+            format: this.presentationFormat,
+            alphaMode: this.alphaMode
+        }
+    }
+
+    update() {
+
+        if (this.context === undefined) {
+
+            director.dispatchEvent({type: 'createContext', emitter: this})
+            this.resource.canvasTexture = () => this.context.getCurrentTexture()
+            this.onWindowResize()
+        }
+
+        super.update()
     }
 
     /**
@@ -103,12 +122,10 @@ class Screen {
     }
 
     onWindowResize() {
-        
-        const device = getDevice()
 
         let width, height
-        width = Math.max(1, Math.min(device.limits.maxTextureDimension2D, this.canvas.clientWidth)) * window.devicePixelRatio
-        height = Math.max(1, Math.min(device.limits.maxTextureDimension2D, this.canvas.clientHeight)) * window.devicePixelRatio
+        width = Math.max(1, Math.min(director.limits.maxTextureDimension2D, this.canvas.clientWidth)) * window.devicePixelRatio
+        height = Math.max(1, Math.min(director.limits.maxTextureDimension2D, this.canvas.clientHeight)) * window.devicePixelRatio
 
         this.canvas.width = width
         this.canvas.height = height
@@ -117,7 +134,8 @@ class Screen {
         }
 
         this.screenDependentTextures.forEach(textureContent => {
-            textureContent.texture.reset({
+
+            textureContent.texture.texture && textureContent.texture.reset({
                 resource: { size: () => [ width * textureContent.multiplier[0], height * textureContent.multiplier[1] ] }
             })
         })
@@ -130,7 +148,7 @@ class Screen {
 
     swap() {
 
-        this.renderTarget.reset()
+        this.reset()
     }
 }
 

@@ -1,5 +1,5 @@
-import { UUID } from "../../core/utils/uuid"
-import { makeShaderDataDefinitions, makeStructuredView } from "../../core/utils/webgpu-utils.module"
+import { UUID } from "../../core/utils/uuid.js"
+import { makeShaderDataDefinitions, makeStructuredView } from "../../core/utils/webgpu-utils.module.js"
 
 /**
  * @typedef {'f32' | 'i32' | 'u32' | 'vec2f' | 'vec2i' | 'vec2u' | 'vec3f' | 'vec3i' | 'vec3u' | 'vec4f' | 'vec4i' | 'vec4u' | 'mat2x2f' | 'mat2x2i' | 'mat2x2u' | 'mat3x3f' | 'mat3x3i' | 'mat3x3u' | 'mat4x4f' | 'mat4x4i' | 'mat4x4u'} BlockValueType

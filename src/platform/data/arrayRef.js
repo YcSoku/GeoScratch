@@ -1,4 +1,4 @@
-import { UUID } from "../../core/utils/uuid"
+import { UUID } from "../../core/utils/uuid.js"
 
 function createTypedArray(constructor, length) {
     switch (constructor) {
@@ -122,11 +122,11 @@ class ArrayRef {
      * @param {number} index 
      * @param {number} [data] 
      */
-    elements(index, data) {
+    element(index, data) {
         
         if (data !== undefined) this.setIndexed(index, data)
             
-        return this.getIndexed(index)
+        else return this.getIndexed(index)
     }
 
 

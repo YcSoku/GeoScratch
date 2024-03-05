@@ -1,4 +1,3 @@
-import { Buffer } from './../buffer/buffer';
 import { IndexBuffer } from "../buffer/indexBuffer";
 import { IndirectBuffer } from "../buffer/indirectBuffer";
 import { VertexBuffer } from "../buffer/vertexBuffer";
@@ -7,6 +6,7 @@ import { Texture } from "../texture/texture";
 import { UniformBuffer } from '../buffer/uniformBuffer';
 import { StorageBuffer } from '../buffer/storageBuffer';
 import { BlockValueType } from '../data/blockRef';
+import { Sampler } from "../sampler/sampler";
 
 export interface UniformBindingDescription {
     name: string,
@@ -18,7 +18,7 @@ export interface UniformBindingDescription {
 export interface SharedUniformBindingDescription {
     buffer: UniformBuffer,
     visibility?: number,
-}
+};
 
 export interface StorageBindingDescription {
     buffer: StorageBuffer | VertexBuffer | IndexBuffer | IndirectBuffer,
@@ -35,12 +35,9 @@ export interface IndirectBindingDescription {
 };
 
 export interface SamplerDescription {
-    name: string,
-    addressModeUVW: Array<GPUAddressMode>,
-    filterMinMag: Array<GPUFilterMode>,
+    sampler: Sampler
     visibility?: number,
     bindingType?: GPUSamplerBindingType,
-    maxAnisotropy?: number,
 };
 
 export interface VertexBindingDescription {
@@ -79,6 +76,8 @@ export class Binding {
     constructor();
 
     static create(description: BindingsDescription): Binding;
+
+    exportLayoutDescriptor(type: 'uniform' | 'storage' | 'texture'): GPUBindGroupLayoutDescriptor;
 
     update(): void;
 

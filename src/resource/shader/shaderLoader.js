@@ -1,4 +1,5 @@
-import { Shader } from '../../platform/shader/shader'
+import director from '../../platform/director/director.js'
+import { Shader } from '../../platform/shader/shader.js'
 
 class ShaderLoader {
 
@@ -30,7 +31,7 @@ class ShaderLoader {
 
             // ImageBitmap resource is stored by weakRef
             // Must update texture at once to ref this imageBitmap
-            shader.update()
+            director.dispatchEvent({type: 'createShader', emitter: shader})
         })
     
         textLoaderWorker.addEventListener('error', (error) => {

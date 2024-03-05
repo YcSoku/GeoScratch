@@ -6,7 +6,6 @@ export { IndexBuffer } from './platform/buffer/indexBuffer'
 export { IndirectBuffer } from './platform/buffer/indirectBuffer';
 export { MapBuffer } from './platform/buffer/mapBuffer'
 
-export { Screen } from './platform/screen/screen'
 
 import getDevice from './platform/context/device'
 export { getDevice }
@@ -15,7 +14,9 @@ export { Device, StartDash, device } from './platform/context/device'
 export { ArrayRef, aRef } from './platform/data/arrayRef'
 export { BlockRefDescription, BlockRef, bRef } from './platform/data/blockRef'
 
+export { Sampler } from './platform/sampler/sampler'
 export { Texture } from './platform/texture/texture'
+export { Screen } from './platform/texture/screen'
 export { Shader } from './platform/shader/shader'
 
 export {
