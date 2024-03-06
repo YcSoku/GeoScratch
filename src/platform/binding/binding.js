@@ -246,7 +246,10 @@ class Binding {
 
         this.refCount = 0
 
+        // this.crteateBindGroupLayouts()
+
         director.addBinding(this)
+
     }
 
     /**
@@ -737,11 +740,7 @@ class Binding {
         }
     }
 
-    /**
-     * @deprecated
-     * @param {GPUDevice} device 
-     */
-    crteateBindGroupLayouts(device) {
+    crteateBindGroupLayouts() {
 
         if (this.uniforms.length || this.sharedUniforms.length)
             director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'uniform', order: this.uniformOrder})

@@ -1,10 +1,12 @@
+import { Shader } from "../../scratch.js";
+
 /**
  * Description for the ImageLoader class.
  */
-class ShaderLoader {
-    load(name: string, url: string): Texture;
+declare class ShaderLoader {
+    load(name: string, url: string): Shader;
 }
 
-const shaderLoader: ShaderLoader;
+declare const shaderLoader: ShaderLoader;
 export default shaderLoader;
 export { ShaderLoader };

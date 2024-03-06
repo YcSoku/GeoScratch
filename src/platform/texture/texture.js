@@ -404,13 +404,21 @@ class Texture {
 
     get width() {
 
-        if (!this.texture) return 0
+        if (!this.texture) {
+
+            if (this.resource.size) return this.resource.size()[0]
+            else return 0
+        }
         return this.texture.width
     }
 
     get height() {
 
-        if (!this.texture) return 0
+        if (!this.texture) {
+
+            if (this.resource.size) return this.resource.size()[1]
+            else return 0
+        }
         return this.texture.height
     }
 
@@ -443,10 +451,12 @@ class Texture {
             this.dirtyType = this.resource.dataType
         }
 
+        if (!this.texture) return
+
         this.update()
 
         // May Be Dangerous!
-        this.onChangeHandlers.forEach(handler => handler && handler())
+        this.texture && this.onChangeHandlers.forEach(handler => handler && handler())
     }
 
     registerCallback(callback) {

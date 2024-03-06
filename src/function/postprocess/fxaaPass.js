@@ -28,7 +28,7 @@ export class FXAAPass {
             name: 'Texture (FXAA)',
             format: 'rgba16float', 
             computable: true,
-            resource: {size: () => [description.inputColorAttachment.texture.width, description.inputColorAttachment.texture.height]}
+            resource: { size: () => [ description.inputColorAttachment.width, description.inputColorAttachment.height ] }
         })
 
         this.blockSizeX = 16
@@ -36,19 +36,13 @@ export class FXAAPass {
         // FXAA binding
         this.fxaaBinding = Binding.create({
             name: 'FXAA',
-            range: () => [Math.ceil(this.fxaaTexture.texture.width / this.blockSizeX), Math.ceil(this.fxaaTexture.texture.height / this.blockSizeY)],
+            range: () => [ Math.ceil(this.fxaaTexture.width / this.blockSizeX), Math.ceil(this.fxaaTexture.height / this.blockSizeY) ],
             uniforms: [
                 {
                     name: 'staticUniform',
                     map: {
-                        threshold: {
-                            type: 'f32',
-                            value: () => this.threshold,
-                        },
-                        searchStep: {
-                            type: 'i32',
-                            value: () => this.searchStep,
-                        },
+                        threshold: { type: 'f32', value: () => this.threshold },
+                        searchStep: { type: 'i32', value: () => this.searchStep },
                     }
                 }
             ],
@@ -98,14 +92,7 @@ export class FXAAPass {
     }
 
     onWindowResize() {
-
-        const width = this.inputColorAttachment.texture.width
-        const height = this.inputColorAttachment.texture.height
-
-        this.fxaaTexture.reset({
-            resource: {
-                size: () => [width, height]
-            }
-        })
+        
+        this.fxaaTexture.reset()
     }
 }

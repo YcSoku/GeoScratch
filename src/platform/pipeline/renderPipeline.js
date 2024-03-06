@@ -25,7 +25,7 @@ class RenderPipeline {
 
         this.uuid = UUID()
         this.shader = description.shader.module
-        this.name = description.name || 'Drawable builder'
+        this.name = description.name || 'Render Pipeline'
         this.vsEntryPoint = description.shader.vsEntryPoint || 'vMain'
         this.fsEntryPoint = description.shader.fsEntryPoint || 'fMain'
 

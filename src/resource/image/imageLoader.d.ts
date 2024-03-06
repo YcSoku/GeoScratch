@@ -3,7 +3,7 @@ import { Texture, TextureDescription } from "../../platform/texture/texture";
 /**
  * Description for the ImageLoader class.
  */
-class ImageLoader {
+declare class ImageLoader {
 
     /**
      * Index of the worker.
@@ -17,10 +17,9 @@ class ImageLoader {
 
     /**
      * Load an image with the specified description.
-     * @param {ImageLoaderDescription} desc - The image loader description.
      * @returns {Texture} - The created texture.
      */
-    load(name: string, url: string, mipMapped?: boolean, targetFormat = 'rgba8unorm'): Texture;
+    load(name: string, url: string, mipMapped?: boolean, targetFormat?: GPUTextureFormat): Texture;
 }
 
 /**
@@ -38,6 +37,7 @@ interface ImageLoaderDescription {
     url: string;
 }
 
-const imageLoader: ImageLoader;
+declare const imageLoader: ImageLoader;
+
 export default imageLoader;
 export { ImageLoader, ImageLoaderDescription };

@@ -7,7 +7,10 @@
     "example": "example"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
   },
   "repository": {
     "type": "git",
@@ -23,6 +26,11 @@
   },
   "homepage": "https://github.com/YcSoku/GeoScratch#readme",
   "dependencies": {
-    "@webgpu/types": "^0.1.40"
+    "@types/gl-matrix": "^3.2.0",
+    "@webgpu/types": "^0.1.40",
+    "gl-matrix": "^3.4.3"
+  },
+  "devDependencies": {
+    "vite": "^5.1.5"
   }
 }

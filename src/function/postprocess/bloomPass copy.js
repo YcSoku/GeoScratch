@@ -67,26 +67,34 @@ export class BloomPass {
         this.blurYTextures = new Array(this.blurCount)
 
         for (let i = 0; i < this.blurCount; i++) {
+            let scaleFactor = Math.pow(2, i + 1)
+            let width = Math.floor(description.inputColorAttachment.width / scaleFactor)
+            let height = Math.floor(description.inputColorAttachment.height / scaleFactor)
+
 
             this.dHighlightTextures[i] = Texture.create({
                 name: `Texture (Highlight ${i})`,
                 format: 'rgba16float',
                 computable: true,
-                resource: { size: () => [ description.inputColorAttachment.width / Math.pow(2, i + 1), description.inputColorAttachment.height / Math.pow(2, i + 1) ] }
+                resource: {size: () => [ width, height ]}
             })
+
+            scaleFactor = Math.pow(2, i)
+            width = Math.floor(description.inputColorAttachment.width / scaleFactor)
+            height = Math.floor(description.inputColorAttachment.height / scaleFactor)
 
             this.blurXTextures[i] = Texture.create({
                 name: `Texture (blurX ${i})`,
                 format: 'rgba16float', 
                 computable: true,
-                resource: { size: () => [ description.inputColorAttachment.width / Math.pow(2, i), description.inputColorAttachment.height / Math.pow(2, i) ] }
+                resource: { size: () => [ width, height ] }
             });
 
             this.blurYTextures[i] = Texture.create({
                 name: `Texture (blurY ${i})`,
                 format: 'rgba16float', 
                 computable: true,
-                resource: { size: () => [ description.inputColorAttachment.width / Math.pow(2, i), description.inputColorAttachment.height / Math.pow(2, i) ] }
+                resource: { size: () => [ width, height ] }
             });
         }
 
@@ -296,6 +304,8 @@ export class BloomPass {
             this.computePass.add(this.blurUpY, this.blurUpYBindings[i])
         }
         this.computePass.add(this.output, this.outputBinding)
+
+        console.log(this.blurXTextures, this.blurYTextures, this.dHighlightTextures, this.outputTexture, this.highlightTexture)
     }
 
     /**
@@ -322,12 +332,22 @@ export class BloomPass {
 
     onWindowResize() {
 
-        this.highlightTexture.reset()
-        
-        this.outputTexture.reset()
+        const width = this.inputColorAttachment.width
+        const height = this.inputColorAttachment.height
 
-        this.blurXTextures
-        .concat(this.blurYTextures)
-        .concat(this.dHighlightTextures).forEach(texture => texture.reset())
+        this.highlightTexture.reset({ resource: { size: () => [ width, height] } })
+
+        this.outputTexture.reset({ resource: { size: () => [ width, height] } })
+
+        for (let i = 0; i < this.blurCount; i++) {
+
+            let w = width
+            let h = height
+
+            if (i) {
+                w /= 2.0 * i;
+                h /= 2.0 * i;
+            }
+        }
     }
 }

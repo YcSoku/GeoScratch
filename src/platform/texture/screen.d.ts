@@ -40,5 +40,8 @@ export class Screen {
 
     addScreenDependentElement(element: any): Screen;
 
+    get width(): number;
+    get height(): number;
+
     swap(): void;
 }

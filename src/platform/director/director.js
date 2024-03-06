@@ -41,13 +41,19 @@ export class Director extends EventDispatcher {
         /**
          * @type {GPUSupportedLimits}
          */
-        this.limits = undefined
+        this._limits = undefined
+    }
+
+    get limits() {
+    
+        if (this._limits === undefined) this.tryGetDevice()
+        return this._limits
     }
 
     tryGetDevice() {
 
         this.device === undefined && (this.device = getDevice())
-        this.limits = this.device.limits
+        this._limits = this.device.limits
     }
 
     makeNewStage(name) {
@@ -457,7 +463,7 @@ director.addEventListeners('createRenderPipelineAsync', ({_, emitter, binding}) 
         emitter.pipelineCreating = false
     })
     .catch(error => {
-        console.error(`Error::Rendering Pipeline (${this.name}) Creation FAILED!`, error);
+        console.error(`Error::Rendering Pipeline (${emitter.name}) Creation FAILED!`, error);
     })
 })
 

@@ -27,10 +27,12 @@ class Screen extends Texture {
         })
 
         this.canvas = description.canvas
+        this.canvas.width = Math.max(1, Math.min(director.limits.maxTextureDimension2D, this.canvas.clientWidth)) * window.devicePixelRatio
+        this.canvas.height = Math.max(1, Math.min(director.limits.maxTextureDimension2D, this.canvas.clientHeight)) * window.devicePixelRatio
 
         this.sampleCount = description.sampleCount ? description.sampleCount : 1
 
-        this.alphaMode = description.alphaMode ? description.alphaMode : "premultiplied"
+        this.alphaMode = description.alphaMode
 
         this.presentationFormat = navigator.gpu.getPreferredCanvasFormat()
         
@@ -144,6 +146,16 @@ class Screen extends Texture {
             
             element.onWindowResize & element.onWindowResize()
         })
+    }
+
+    get width() {
+
+        return this.canvas.width
+    }
+
+    get height() {
+
+        return this.canvas.height
     }
 
     swap() {
