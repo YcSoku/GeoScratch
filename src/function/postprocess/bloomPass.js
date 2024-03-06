@@ -242,7 +242,7 @@ export class BloomPass {
          */
         this.highlight = ComputePipeline.create({
             name: 'Computable builder (Highlight extraction)',
-            shader: shaderLoader.load('Shader (Hightlight)', '/shaders/highlight.compute.wgsl'),
+            shader: { module: shaderLoader.load('Shader (Hightlight)', '/shaders/highlight.compute.wgsl') },
             constants: { blockSize: 16 },
         })
 
@@ -251,7 +251,7 @@ export class BloomPass {
          */
         this.downSample = ComputePipeline.create({
             name: 'Computable builder (Highlight downsample)',
-            shader: shaderLoader.load('Shader (Down Sampling)', '/shaders/downsample.compute.wgsl'),
+            shader: { module: shaderLoader.load('Shader (Down Sampling)', '/shaders/downsample.compute.wgsl') },
             constants: { blockSize: 16 },
         })
 
@@ -260,7 +260,7 @@ export class BloomPass {
          */
         this.blurUpX = ComputePipeline.create({
             name: 'Computable builder (Blur up X)',
-            shader: shaderLoader.load('Shader (Blur Up X)', '/shaders/gaussianBlurX.compute.wgsl'),
+            shader: { module: shaderLoader.load('Shader (Blur Up X)', '/shaders/gaussianBlurX.compute.wgsl') },
             constants: { blockSize: 16 },
         })
 
@@ -269,7 +269,7 @@ export class BloomPass {
          */
         this.blurUpY = ComputePipeline.create({
             name: 'Computable builder (Blur up Y)',
-            shader: shaderLoader.load('Shader (Blur Up Y)', '/shaders/gaussianBlurY.compute.wgsl'),
+            shader: { module: shaderLoader.load('Shader (Blur Up Y)', '/shaders/gaussianBlurY.compute.wgsl') },
             constants: { blockSize: 16 },
         })
 
@@ -278,7 +278,7 @@ export class BloomPass {
          */
         this.output = ComputePipeline.create({
             name: 'Computable builder (Output)',
-            shader: shaderLoader.load('Shader (Texture Add)', '/shaders/bloomOutput.compute.wgsl'),
+            shader: { module: shaderLoader.load('Shader (Texture Add)', '/shaders/bloomOutput.compute.wgsl') },
             constants: { blockSize: 16 },
         })
 

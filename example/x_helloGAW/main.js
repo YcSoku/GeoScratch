@@ -8,22 +8,24 @@ import * as scr from '../../src/scratch.js'
 let screen
 
 // Scene parameters
+let timeStep = 0.
 let up = vec3.fromValues(0., 1., 0.)
 let target = vec3.fromValues(0., 0., 0.)
 let cameraPos = vec3.fromValues(0., 0., 1200.)
-let lightPos = vec3.fromValues(-600., 0., 0.)
-lightPos = vec3.transformMat4(lightPos, lightPos, mat4.fromZRotation(mat4.create(), -23. * scr.DEG2RAD))
+let lightPos = vec3.transformMat4(vec3.create(), vec3.fromValues(-600., 0., 0.), mat4.fromZRotation(mat4.create(), -23. * scr.DEG2RAD))
 
-let timeStep = 0.
+// Earth
 let diam = 800.
 let radius = diam / 2.
 let rLink = radius - 100.
+
+// Linking Nodes
 let nodeInLink = 5
 let numConnected = 0
 let maxParticleCount = 100
 let minDistance = rLink * 1.2
 let particleCount = maxParticleCount
-let maxConnection = maxParticleCount - 1
+let maxConnections = maxParticleCount - 1
 
 // Global matrix
 let viewMatrix = mat4.create()
@@ -39,11 +41,12 @@ let linkIndirect
 
 function init() {
 
-    // Screen Texture
+    // Screen texture
     screen = scr.Screen.create({ canvas: document.getElementById('GPUFrame') })
     const sceneTexture = screen.createScreenDependentTexture('Texture (Scene)')
     const depthTexture = screen.createScreenDependentTexture('Texture (Depth)', 'depth24plus')
 
+    // Blooming effect pass
     const bloomPass = scr.BloomPass.create({
         threshold: 0.0,
         strength: 0.4,
@@ -51,6 +54,7 @@ function init() {
         inputColorAttachment: sceneTexture
     })
 
+    // FXAA effect pass
     const fxaaPass = scr.FXAAPass.create({
         threshold: 0.0312,
         searchStep: 10,
@@ -81,7 +85,58 @@ function init() {
         resource: { arrayRef: scr.aRef(new Float32Array(uvs)) }
     })
 
-    // Texturfe-related source
+    // Particle resource
+    const pPositions = new Float32Array(maxParticleCount * 3)
+    const pVelocities = new Float32Array(maxParticleCount * 3)
+    const palette = [ 250. / 255., 250. / 255., 210. / 250., 1.0 ]
+    const pColors = new Float32Array(maxParticleCount * 4).map((_, index) => palette[index % 4])
+
+    for (let i = 0; i < maxParticleCount; i++) {
+        let v = vec3.create()
+        vec3.scale(v, vec3.normalize(v, vec3.fromValues(Math.random() * 2. - 1., Math.random() * 2. - 1., Math.random() * 2. - 1.)), rLink)
+      
+        pPositions[i * 3 + 0] = v[0]
+        pPositions[i * 3 + 1] = v[1]
+        pPositions[i * 3 + 2] = v[2]
+        pVelocities[i * 3 + 0] = scr.randomNonZeroBetweenMinusOneAndOne(0.3)
+        pVelocities[i * 3 + 1] = scr.randomNonZeroBetweenMinusOneAndOne(0.3)
+        pVelocities[i * 3 + 2] = scr.randomNonZeroBetweenMinusOneAndOne(0.3)
+    }
+    const storageBuffer_particle_velocity = scr.StorageBuffer.create({
+        name: 'Storage Buffer (Particle velocity)',
+        resource: { arrayRef: scr.aRef(pVelocities) }
+    })
+    const vertexBuffer_particle_position = scr.VertexBuffer.create({
+        name: 'Vertex Buffer (Particle position)',
+        randomAccessible: true,
+        resource: { arrayRef: scr.aRef(pPositions), structure: [ { components: 3 } ] }
+    })
+    const vertexBuffer_particle_color = scr.VertexBuffer.create({
+        name: 'Vertex Buffer (Particle color)',
+        resource: { arrayRef: scr.aRef(pColors), structure: [ {components: 4} ] }
+    })
+
+    // Links resource
+    const linkIndices = scr.aRef(new Uint32Array(maxParticleCount * maxParticleCount * 2).fill(0))
+    for (let i = 0; i < maxParticleCount; ++i) {
+        for (let j = i + 1; j < maxConnections; ++j) {
+            linkIndices.element(numConnected++, i)
+            linkIndices.element(numConnected++, j)
+        }
+    }
+    const storageBuffer_link_index = scr.StorageBuffer.create({
+        name: 'Storage Buffer (Link)',
+        resource: { arrayRef: linkIndices }
+    })
+
+    linkIndirect = scr.aRef(new Uint32Array([nodeInLink, 0, 0, 0]))
+    const indirectBuffer_link = scr.IndirectBuffer.create({
+        name: 'Storage Buffer (Indirect)',
+        randomAccessible: true,
+        resource: { arrayRef: linkIndirect }
+    })
+
+    // Texture-related resource
     const lSampler = scr.Sampler.create({
         name: 'Sampler (Linear)',
         bindingType: 'filtering',
@@ -100,44 +155,44 @@ function init() {
     // Land and water
     const landWater = scr.Binding.create({
         name: 'Binding (Land and Water)',
-        range: () => [ indices.length ],
+        range: _ => [ indices.length ],
         uniforms: [
             {
                 name: 'dynamicUniform',
                 dynamic: true,
                 map: {
-                    projection: { type: 'mat4x4f', value: () => projectionMatrix },
-                    view: { type: 'mat4x4f', value: () => viewMatrix },
-                    model: { type: 'mat4x4f', value: () => modelMatrix },
-                    normal: { type: 'mat4x4f', value: () => normalMatrix },
-                    deleta: { type: 'f32', value: () => timeStep },
+                    projection: { type: 'mat4x4f', value: _ => projectionMatrix },
+                    view: { type: 'mat4x4f', value: _ => viewMatrix },
+                    model: { type: 'mat4x4f', value: _ => modelMatrix },
+                    normal: { type: 'mat4x4f', value: _ => normalMatrix },
+                    deleta: { type: 'f32', value: _ => timeStep },
                 }
             },
             {
                 name: 'staticUniform',
                 map: {
-                    radius: { type: 'f32', value: () => radius },
-                    alphaTest: { type: 'f32', value: () => 0.3 },
-                    opacity: { type: 'f32', value: () => 1. },
+                    radius: { type: 'f32', value: _ => radius },
+                    alphaTest: { type: 'f32', value: _ => 0.3 },
+                    opacity: { type: 'f32', value: _ => 1. },
                 }
             },
             {
                 name: 'light',
                 map: {
-                    position: { type: 'vec3f', value: () => lightPos },
-                    color: { type: 'vec3f', value: () => [ 1., 1., 1. ] },
-                    intensity: { type: 'f32', value: () => 6.0 },
-                    viewPos: { type: 'vec3f', value: () => cameraPos },
+                    position: { type: 'vec3f', value: _ => lightPos },
+                    color: { type: 'vec3f', value: _ => [ 1., 1., 1. ] },
+                    intensity: { type: 'f32', value: _ => 6.0 },
+                    viewPos: { type: 'vec3f', value: _ => cameraPos },
                 }
             },
             {
                 name: 'material',
                 map: {
-                    ambient: { type: 'vec3f', value: () => [ 0.4, 0.4, 0.4 ] },
-                    diffuse: { type: 'vec3f', value: () => [ 1., 1., 1. ] },
-                    specular: { type: 'vec3f', value: () => [ 1., 1., 1. ] },
-                    shininess: { type: 'f32', value: () => 16. },
-                    emissive: { type: 'f32', value: () => 1. },
+                    ambient: { type: 'vec3f', value: _ => [ 0.4, 0.4, 0.4 ] },
+                    diffuse: { type: 'vec3f', value: _ => [ 1., 1., 1. ] },
+                    specular: { type: 'vec3f', value: _ => [ 1., 1., 1. ] },
+                    shininess: { type: 'f32', value: _ => 16. },
+                    emissive: { type: 'f32', value: _ => 1. },
                 }
             }
         ],
@@ -159,44 +214,45 @@ function init() {
 
     // Cloud
     const cloud = scr.Binding.create({
-        range: () => [ indices.length ],
+        name: 'Binding (Cloud)',
+        range: _ => [ indices.length ],
         uniforms: [
             {
                 name: 'dynamicUniform',
                 dynamic: true,
                 map: {
-                    projection: { type: 'mat4x4f', value: () => projectionMatrix },
-                    view: { type: 'mat4x4f', value: () => viewMatrix },
-                    model: { type: 'mat4x4f', value: () => modelMatrix },
-                    normal: { type: 'mat4x4f', value: () => normalMatrix },
-                    delta: { type: 'f32', value: () => timeStep },
+                    projection: { type: 'mat4x4f', value: _ => projectionMatrix },
+                    view: { type: 'mat4x4f', value: _ => viewMatrix },
+                    model: { type: 'mat4x4f', value: _ => modelMatrix },
+                    normal: { type: 'mat4x4f', value: _ => normalMatrix },
+                    delta: { type: 'f32', value: _ => timeStep },
                 }
             },
             {
                 name: 'staticUniform',
                 map: {
-                    radius: { type: 'f32', value: () => radius },
-                    alphaTest: { type: 'f32', value: () => 0.3 },
-                    opacity: { type: 'f32', value: () => 0.6 }
+                    radius: { type: 'f32', value: _ => radius },
+                    alphaTest: { type: 'f32', value: _ => 0.3 },
+                    opacity: { type: 'f32', value: _ => 0.6 }
                 }
             },
             {
                 name: 'light',
                 map: {
-                    position: { type: 'vec3f', value: () => lightPos },
-                    color: { type: 'vec3f', value: () => [ 1., 1., 1. ] },
-                    intensity: { type: 'f32', value: () => 6. },
-                    viewPos: { type: 'vec3f', value: () => cameraPos },
+                    position: { type: 'vec3f', value: _ => lightPos },
+                    color: { type: 'vec3f', value: _ => [ 1., 1., 1. ] },
+                    intensity: { type: 'f32', value: _ => 6. },
+                    viewPos: { type: 'vec3f', value: _ => cameraPos },
                 }
             },
             {
                 name: 'material',
                 map: {
-                    ambient: { type: 'vec3f', value: () => [ 0.8, 0.8, 0.8 ] },
-                    diffuse: { type: 'vec3f', value: () => [ 1., 1., 1. ] },
-                    specular: { type: 'vec3f', value: () => [ 1., 1., 1. ] },
-                    shininess: { type: 'f32', value: () => 16.0 },
-                    emissive: { type: 'f32', value: () => 1. },
+                    ambient: { type: 'vec3f', value: _ => [ 0.8, 0.8, 0.8 ] },
+                    diffuse: { type: 'vec3f', value: _ => [ 1., 1., 1. ] },
+                    specular: { type: 'vec3f', value: _ => [ 1., 1., 1. ] },
+                    shininess: { type: 'f32', value: _ => 16.0 },
+                    emissive: { type: 'f32', value: _ => 1. },
                 }
             }
         ],
@@ -214,39 +270,161 @@ function init() {
         vertices: [ { buffer: vertexBuffer_sphere_index } ],
     })
 
+    // Particles
+    const particles = scr.Binding.create({
+        range: _ => [ 4, particleCount ],
+        uniforms: [
+            {
+                name: 'dynamicUniform',
+                dynamic: true,
+                map: {
+                    projection: { type: 'mat4x4f', value: _ => projectionMatrix },
+                    view: { type: 'mat4x4f', value: _ => viewMatrix },
+                    viewPort: { type: 'mat4x4f', value: _ => [ screen.width, screen.height ] },
+                },
+            },
+            {
+                name: 'staticUniform',
+                map: {
+                    size: { type: 'f32', value: _ => 5.0 },
+                },
+            },
+        ],
+        vertices: [
+            { buffer: vertexBuffer_particle_position, isInstanced: true },
+            { buffer: vertexBuffer_particle_color, isInstanced: true }
+        ],
+    })
+
+    // Links
+    const links = scr.Binding.create({
+        uniforms: [
+            {
+                name: 'dynamicUniform',
+                dynamic: true,
+                map: {
+                    projection: { type: 'mat4x4f', value: _ => projectionMatrix },
+                    view: { type: 'mat4x4f', value: _ => viewMatrix },
+                },
+            },
+            {
+                name: 'staticUniform',
+                map: {
+                    minDistance: { type: 'f32', value: _ => minDistance },
+                    cardinalColor: { type: 'vec3f', value: _ => [ 175. / 255., 65. / 255., 5. / 255. ] },
+                    evenColor: { type: 'vec3f', value: _ => [ 80. / 255., 190. / 255., 1. ] },
+                    rLink: { type: 'f32', value: _ => rLink },
+                    maxNodeIndex: { type: 'f32', value: _ => nodeInLink - 1. },
+                }
+            }
+        ],
+        indirect: { buffer: indirectBuffer_link },
+        storages: [
+            { buffer: vertexBuffer_particle_position },
+            { buffer: storageBuffer_link_index },
+        ],
+    });
+
+    // Particle simulator
+    const particleSimulatior = scr.Binding.create({
+        range: _ => [ 1, 1 ],
+        uniforms: [
+            {
+                name: 'staticUniform',
+                map: {
+                    rLink: { type: 'f32', value: _ => rLink },
+                    groupSize: { type: 'vec2u', value: _ => [ 1.0, 1.0 ] },
+                    angle: { type: 'f32', value: _ => 0.01 },
+                }
+            }
+        ],
+        storages: [
+            { buffer: storageBuffer_particle_velocity },
+            { buffer: vertexBuffer_particle_position, writable: true },
+        ]
+    })
+
+    // Link indexer
+    const storageBuffer_connection_nums = scr.StorageBuffer.create({
+        name: 'Storage Buffer (Connection num)',
+        resource: { arrayRef: scr.aRef(new Uint32Array(maxParticleCount).fill(0)) }
+    })
+    const linkIndexer = scr.Binding.create({
+        range: _ => [ 1, 1 ],
+        uniforms: [
+            {
+                name: 'staticUniform',
+                map: {
+                    minDistance: { type: 'f32', value: _ => minDistance },
+                    maxConnection: { type: 'f32', value: _ => maxConnections },
+                    groupSize: {type: 'vec2u', value: _ => [ 1.0, 1.0 ] },
+                }
+            }
+        ],
+        storages: [
+            { buffer: vertexBuffer_particle_position },
+            { buffer: storageBuffer_link_index, writable: true },
+            { buffer: storageBuffer_connection_nums, writable: true },
+            { buffer: indirectBuffer_link, writable: true }
+        ]
+    })
+
     // Output
     const output = scr.Binding.create({
-        range: () => [ 4 ],
+        name: 'Binding (Output)',
+        range: _ => [ 4 ],
         samplers: [ { sampler: lSampler } ],
         uniforms: [
             {
                 name: 'staticUniform',
                 map: {
-                    gamma: { type: 'f32', value: () => 1.0 },
+                    gamma: { type: 'f32', value: _ => 1.0 },
                 }
             }
         ],
         textures: [ { texture: fxaaPass.getOutputAttachment() } ],
-        // textures: [ { texture: sceneTexture } ],
     })
 
     // Pipeline
     const landPipeline = scr.RenderPipeline.create({
-        shader: { module: scr.shaderLoader.load('Shader (gawEarth land)', '/shaders/land.wgsl') },
+        shader: { module: scr.shaderLoader.load('Shader (GawEarth land)', '/shaders/land.wgsl') },
         colorTargetStates: [ { blend: scr.NormalBlending } ],
-        depthTest: true
+        depthTest: true,
     })
 
     const waterPipeline = scr.RenderPipeline.create({
         shader: { module: scr.shaderLoader.load('Shader (GawEarth water)', '/shaders/water.wgsl') },
         colorTargetStates: [ { blend: scr.NormalBlending } ],
-        depthTest: true
+        depthTest: true,
     })
 
     const cloudPipeline = scr.RenderPipeline.create({
         shader: { module: scr.shaderLoader.load('Shader (GawEarth cloud)', '/shaders/cloud.wgsl') },
         colorTargetStates: [ { blend: scr.AdditiveBlending } ],
-        depthTest: true
+        depthTest: true,
+    })
+
+    const particlePipeline = scr.RenderPipeline.create({
+        shader: { module: scr.shaderLoader.load('Shader (Earth core particel)', '/shaders/point.wgsl') },
+        colorTargetStates: [ { blend: scr.NormalBlending} ],
+        primitive: { topology: 'triangle-strip' },
+        depthTest: false,
+    })
+
+    const linkPipeline = scr.RenderPipeline.create({
+        shader: { module: scr.shaderLoader.load('Shader (Earth core link)', '/shaders/link.wgsl') },
+        primitive: { topology: 'line-strip' },
+        depthTest: false,
+    })
+
+    const simulationPipeline = scr.ComputePipeline.create({
+        shader: { module: scr.shaderLoader.load('Shader (Particle simulation)', '/shaders/particle.compute.wgsl') },
+        constants: { blockSize: 10 },
+    })
+
+    const indexingPipeline = scr.ComputePipeline.create({
+        shader: { module: scr.shaderLoader.load('Shader (Link indexing)', '/shaders/link.compute.wgsl') },
+        constants: { blockSize: 10 },
     })
 
     const outputPipeline = scr.RenderPipeline.create({
@@ -255,14 +433,18 @@ function init() {
     })
 
     // Pass
+    const computePass_scene = scr.ComputePass.create({
+        name: 'Compute Pass (GAW Compute)',
+    }).add(simulationPipeline, particleSimulatior).add(indexingPipeline, linkIndexer)
+
     const renderPass_scene = scr.RenderPass.create({
-        name: 'Pass (GAW Scene)',
+        name: 'Render Pass (GAW Scene)',
         colorAttachments: [ { colorResource: sceneTexture } ],
         depthStencilAttachment: { depthStencilResource: depthTexture },
-    }).add(landPipeline, landWater).add(waterPipeline, landWater).add(cloudPipeline, cloud)
+    }).add(landPipeline, landWater).add(linkPipeline, links).add(particlePipeline, particles).add(waterPipeline, landWater).add(cloudPipeline, cloud)
 
     const renderPass_output = scr.RenderPass.create({
-        name: 'Pass (GAW Output)',
+        name: 'Render Pass (GAW Output)',
         colorAttachments: [ { colorResource: screen } ],
     }).add(outputPipeline, output)
 
@@ -270,7 +452,7 @@ function init() {
     scr.director.addStage({
         name: 'HelloGeoAnythingWeb',
         items: [ 
-            renderPass_scene,
+            computePass_scene, renderPass_scene,
             bloomPass, fxaaPass,
             renderPass_output,
          ],
@@ -280,17 +462,16 @@ function init() {
 function animate() {
 
     timeStep -= 0.001
-    projectionMatrix = mat4.perspective(projectionMatrix, 45.0, screen.width / screen.height, 1., 4000.)
-    viewMatrix = mat4.lookAt(mat4.create(), cameraPos, target, up)
-    modelMatrix = mat4.fromXRotation(modelMatrix, 32.0 * scr.DEG2RAD)
-    normalMatrix = mat4.invert(normalMatrix, modelMatrix)
-    normalMatrix = mat4.transpose(normalMatrix, normalMatrix)
+    mat4.perspective(projectionMatrix, 45.0, screen.width / screen.height, 1., 4000.)
+    mat4.lookAt(viewMatrix, cameraPos, target, up)
+    mat4.fromXRotation(modelMatrix, 32.0 * scr.DEG2RAD)
+    normalMatrix = mat4.transpose(normalMatrix, mat4.invert(normalMatrix, modelMatrix))
+
+    linkIndirect.element(1, 0)
 
     scr.director.tick()
-    
-    setTimeout(() => {
-        requestAnimationFrame( animate )
-    }, 1000.0 / 60.0 );
+
+    setTimeout(_ => requestAnimationFrame( animate ), 1000.0 / 45.0 );
 }
 
 function main() {

@@ -57,7 +57,7 @@ export class FXAAPass {
          */
         this.fxaaPipeline = ComputePipeline.create({
             name: 'Compute Pipeline (FXAA)',
-            shader: shaderLoader.load('Shader (FXAA)', '/shaders/fxaa.compute.wgsl'),
+            shader: { module: shaderLoader.load('Shader (FXAA)', '/shaders/fxaa.compute.wgsl') },
             constants: { blockSize: 16 },
         })
 

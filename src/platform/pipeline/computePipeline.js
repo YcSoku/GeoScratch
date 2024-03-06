@@ -7,7 +7,7 @@ import { Shader } from "../shader/shader.js"
 /**
  * @typedef {Object} ComputePipelineDescription
  * @property {string} [name]
- * @property {Shader} shader
+ * @property {{module: Shader, csEntryPoint?: string}} shader
  * @property {{[constantName: string]: number}} constants
  */
 
@@ -21,7 +21,8 @@ class ComputePipeline {
         this.uuid = UUID()
 
         this.name = description.name ? description.name : 'Computable builder'
-        this.shader = description.shader
+        this.shader = description.shader.module
+        this.csEntryPoint = description.shader.csEntryPoint || 'cMain'
 
         this.constants = description.constants
         
@@ -74,7 +75,7 @@ class ComputePipeline {
             layout: this.pipelineLayout,
             compute: {
                 module: this.shader.shaderModule,
-                entryPoint: "cMain",
+                entryPoint: this.csEntryPoint,
                 constants: this.constants
             }
         })
