@@ -287,8 +287,9 @@ function animate() {
     normalMatrix = mat4.transpose(normalMatrix, normalMatrix)
 
     scr.director.tick()
+    
     setTimeout(() => {
-        requestAnimationFrame( animate );
+        requestAnimationFrame( animate )
     }, 1000.0 / 60.0 );
 }
 
