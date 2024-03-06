@@ -1,0 +1,28 @@
+{
+  "name": "geoscratch",
+  "version": "0.0.1",
+  "description": "Tiny 3D library for geovisualization, powered by WebGPU",
+  "main": "index.html",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YcSoku/GeoScratch.git"
+  },
+  "keywords": [
+    "WebGPU"
+  ],
+  "author": "YcSoku",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/YcSoku/GeoScratch/issues"
+  },
+  "homepage": "https://github.com/YcSoku/GeoScratch#readme",
+  "dependencies": {
+    "@webgpu/types": "^0.1.40"
+  }
+}

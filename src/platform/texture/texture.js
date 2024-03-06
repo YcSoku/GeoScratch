@@ -144,6 +144,7 @@ const numMipLevels = (...sizes) => {
  * @property {boolean} [flipY]
  * @property {boolean} [mipMapped]
  * @property {boolean} [computable]
+ * @property {number} [sampleCount]
  * @property {GPUTextureFormat} [format]
  * @property {TextureResourceDescription} [resource]
  */
@@ -171,14 +172,15 @@ class Texture {
          * @type {'clean' | 'imageBitmap' | 'buffer' | 'data' | 'size' | 'canvasTexture'}
          */
         this.dirtyType = this.resource.dataType
+        this.sampleCount = description.sampleCount
 
         /**
          * @type {{[dirtyType: string]: Function}}
          */
         this.executeUpdate = {
             'clean': () => {},
-            'imageBitmap': () => this.updateByImageBitmap(),
             'size': () => this.updateBySize(),
+            'imageBitmap': () => this.updateByImageBitmap(),
             'canvasTexture': () => this.updateByCanvasTexture(),
         }
 
