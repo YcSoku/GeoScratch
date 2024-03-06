@@ -37,16 +37,6 @@ let projectionMatrix = mat4.create()
  */
 let linkIndirect
 
-let frameCount = 0.
-const vertices = [ 
-//  X,      Y,      R,      G,      B
-    -0.5,   -0.5,   1.0,    0.0,    0.0,
-    0.0,    0.5,    0.0,    1.0,    0.0,
-    0.5,    -0.5,   0.0,    0.0,    1.0,
-]
-const vertexRef = scr.aRef(new Float32Array(vertices))
-const instanceSizeRef = scr.aRef(new Float32Array([ 1.0 ])) // The ref of an array to control the size of each triangle instance
-
 function init() {
 
     // Screen Texture
@@ -167,6 +157,63 @@ function init() {
         vertices: [ { buffer: vertexBuffer_sphere_index } ],
     })
 
+    // Cloud
+    const cloud = scr.Binding.create({
+        range: () => [ indices.length ],
+        uniforms: [
+            {
+                name: 'dynamicUniform',
+                dynamic: true,
+                map: {
+                    projection: { type: 'mat4x4f', value: () => projectionMatrix },
+                    view: { type: 'mat4x4f', value: () => viewMatrix },
+                    model: { type: 'mat4x4f', value: () => modelMatrix },
+                    normal: { type: 'mat4x4f', value: () => normalMatrix },
+                    delta: { type: 'f32', value: () => timeStep },
+                }
+            },
+            {
+                name: 'staticUniform',
+                map: {
+                    radius: { type: 'f32', value: () => radius },
+                    alphaTest: { type: 'f32', value: () => 0.3 },
+                    opacity: { type: 'f32', value: () => 0.6 }
+                }
+            },
+            {
+                name: 'light',
+                map: {
+                    position: { type: 'vec3f', value: () => lightPos },
+                    color: { type: 'vec3f', value: () => [ 1., 1., 1. ] },
+                    intensity: { type: 'f32', value: () => 6. },
+                    viewPos: { type: 'vec3f', value: () => cameraPos },
+                }
+            },
+            {
+                name: 'material',
+                map: {
+                    ambient: { type: 'vec3f', value: () => [ 0.8, 0.8, 0.8 ] },
+                    diffuse: { type: 'vec3f', value: () => [ 1., 1., 1. ] },
+                    specular: { type: 'vec3f', value: () => [ 1., 1., 1. ] },
+                    shininess: { type: 'f32', value: () => 16.0 },
+                    emissive: { type: 'f32', value: () => 1. },
+                }
+            }
+        ],
+        samplers: [ { sampler: lSampler } ],
+        textures: [ 
+            { texture: cdTexture },
+            { texture: cnTexture },
+            { texture: cmTexture },
+        ],
+        storages: [
+            { buffer: storageBuffer_sphere_position },
+            { buffer: storageBuffer_sphere_uv },
+            { buffer: storageBuffer_sphere_normal },
+        ],
+        vertices: [ { buffer: vertexBuffer_sphere_index } ],
+    })
+
     // Output
     const output = scr.Binding.create({
         range: () => [ 4 ],
@@ -196,6 +243,12 @@ function init() {
         depthTest: true
     })
 
+    const cloudPipeline = scr.RenderPipeline.create({
+        shader: { module: scr.shaderLoader.load('Shader (GawEarth cloud)', '/shaders/cloud.wgsl') },
+        colorTargetStates: [ { blend: scr.AdditiveBlending } ],
+        depthTest: true
+    })
+
     const outputPipeline = scr.RenderPipeline.create({
         shader: { module: scr.shaderLoader.load('Shader (Last)', '/shaders/last.wgsl') },
         primitive: { topology: 'triangle-strip' },
@@ -206,7 +259,7 @@ function init() {
         name: 'Pass (GAW Scene)',
         colorAttachments: [ { colorResource: sceneTexture } ],
         depthStencilAttachment: { depthStencilResource: depthTexture },
-    }).add(landPipeline, landWater).add(waterPipeline, landWater)
+    }).add(landPipeline, landWater).add(waterPipeline, landWater).add(cloudPipeline, cloud)
 
     const renderPass_output = scr.RenderPass.create({
         name: 'Pass (GAW Output)',
@@ -234,7 +287,9 @@ function animate() {
     normalMatrix = mat4.transpose(normalMatrix, normalMatrix)
 
     scr.director.tick()
-    requestAnimationFrame(() => animate())
+    setTimeout(() => {
+        requestAnimationFrame( animate );
+    }, 1000.0 / 60.0 );
 }
 
 function main() {
