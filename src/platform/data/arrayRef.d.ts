@@ -3,6 +3,7 @@ export class ArrayRef {
     constructor(name: string, data: ArrayBufferLike);
 
     name: string;
+    length: number;
 
     registerCallback(callback: (name: string) => void): number;
 

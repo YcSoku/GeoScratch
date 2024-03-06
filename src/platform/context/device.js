@@ -71,6 +71,8 @@ let device = {
 
 async function StartDash() {
 
+    if (device.device) return device.device
+
     if (!navigator.gpu) {
         fail("ERROR:: this browser does not support WebGPU")
         return
@@ -104,7 +106,7 @@ async function StartDash() {
     
     console.log(instance)
     device.setDevice(instance)
-    return instance
+    return device.device
 }
 
 export default function getDevice() {

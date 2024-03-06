@@ -4,7 +4,7 @@ import { Buffer } from "./buffer";
 export interface VertexResourceDescription {
     arrayRef: ArrayRef, // must provide TypedArray
     dataOffset?: number, // in bytes
-    size?: number, // element lenght of the TypedArray
+    size?: number, // element lengh of the TypedArray
     structure: Array<{components: number}>,
 }
 

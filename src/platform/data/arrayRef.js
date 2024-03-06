@@ -42,6 +42,7 @@ class ArrayRef {
         this.uuid = UUID()
 
         this.name = name
+        this.length = data.length
         this._data = ensureByteLengthMultipleOfFour(data)
         this.onChanges = []
 
