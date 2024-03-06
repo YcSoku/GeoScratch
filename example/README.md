@@ -1,2 +1,4 @@
-# GeoScratch
-A tiny 3D graphics library for common 3D scene-, map- and globe-  rendering for geographical or cartographical research, powered by WebGPU.
+# GeoScratch-Example
+Several examples using GeoScratch.
+The dependencies are navigated by relative path.
+You can view this examples by Live Server.
