@@ -71,5 +71,4 @@ fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
     
     return vec4f(gammaCorrect(toneMapACES(color.rgb * brightness), staticUniform.gamma), color.a);
     // return vec4f(toneMapACES(color.rgb), color.a);
-    // return color;
 }
