@@ -1,8 +1,9 @@
 {
   "name": "geoscratch",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Tiny 3D library for geovisualization, powered by WebGPU",
-  "main": "index.html",
+  "main": "/src/scratch.js",
+  "types": "/src/scratch.d.ts",
   "directories": {
     "example": "example"
   },
@@ -17,7 +18,9 @@
     "url": "git+https://github.com/YcSoku/GeoScratch.git"
   },
   "keywords": [
-    "WebGPU"
+    "WebGPU",
+    "3D Library",
+    "Geovisualization"
   ],
   "author": "YcSoku",
   "license": "ISC",
