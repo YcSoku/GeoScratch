@@ -2,8 +2,8 @@
   "name": "geoscratch",
   "version": "0.0.2",
   "description": "Tiny 3D library for geovisualization, powered by WebGPU",
-  "main": "/src/scratch.js",
-  "types": "/src/scratch.d.ts",
+  "main": "src/scratch.js",
+  "types": "src/scratch.d.ts",
   "directories": {
     "example": "example"
   },
