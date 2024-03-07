@@ -1,7 +1,10 @@
 # GeoScratch
 
-`GeoScratch` is a compact 3D graphics library for geographical and cartographical applications, harnessing the power of [WebGPU](https://www.w3.org/TR/webgpu/) for rendering scenes, maps, and globes.
-As a **LOWER-Level** encapsulation of WebGPU, `Scratch` does not try to make its working logic based on 2D/3D structures, such as scene graph, map layer or globe primitive, instead, focusing on GPU resources (resource bindings, pipelines, passes, etc.). In this way, `Scratch` can give full play to the flexibility of pure WebGPU (classic rednering and other parallel computaion tasks), but at the same time avoid the complex inter-resource dependencies of this modern Web Graphics API. Specific rendering structures will be implemented in the geo-application layer of this libray, and the graphics library with the geo-applications is the so-called `GeoScratch`.
+`GeoScratch` is a compact 3D graphics library for geographical and cartographical applications, harnessing the power of [WebGPU](https://www.w3.org/TR/webgpu/) for rendering scenes, maps, and globes.  
+
+As a **lower-level** encapsulation of WebGPU, `Scratch` does not try to make its working logic based on 2D/3D structures, such as scene graph, map layer or globe primitive, instead, focusing on GPU resources (resource bindings, pipelines, passes, etc.). In this way, `Scratch` can give full play to the flexibility of pure WebGPU (classic rednering and other parallel computaion tasks), but at the same time avoid the complex inter-resource dependencies of this modern Web Graphics API. 
+
+Specific rendering structures will be implemented in the **geo-application** layer of this libray, and the graphics library with the geo-applications is the so-called `GeoScratch`.
 
 ![Image text](https://github.com/YcSoku/GeoScratch/blob/main/DayDream.png)
 
