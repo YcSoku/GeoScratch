@@ -4,8 +4,8 @@
 
 ![Image text](https://github.com/YcSoku/GeoScratch/blob/main/DayDayDream.png)
 
-## Building
-`GeoScratch` is built by [Vite](https://vitejs.dev/). Trying examples provided in this project
+## Build Examples
+Examples of `GeoScratch` is built by [Vite](https://vitejs.dev/). Trying examples provided in this project
 requires an installation of [Node.js](https://nodejs.org/en/).
 
 - Install dependencies: `npm install`.
