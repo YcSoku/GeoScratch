@@ -9,6 +9,7 @@ struct VertexOutput {
 
 struct StaticUniformBlock {
     gamma: f32,
+    density: f32,
 }
 
 // Uniform bindings
@@ -62,7 +63,13 @@ fn gammaCorrect(color: vec3f, gamma: f32) -> vec3f {
 fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
 
     let color = textureSample(sceneTexture, lsampler, fsInput.texcoords);
-    return vec4f(gammaCorrect(toneMapACES(color.rgb), staticUniform.gamma), color.a);
+
+    let dim = vec2f(textureDimensions(sceneTexture, 0).xy);
+    let frequency = dim / staticUniform.density;
+    let stripe = sin(fsInput.texcoords.y * frequency.y * 3.14159265 * 2.0) * cos(fsInput.texcoords.x * frequency.x * 3.14159265 * 2.0);
+    let brightness = 0.5 + 0.5 * stripe;
+    
+    return vec4f(gammaCorrect(toneMapACES(color.rgb * brightness), staticUniform.gamma), color.a);
     // return vec4f(toneMapACES(color.rgb), color.a);
     // return color;
 }
