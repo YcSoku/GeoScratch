@@ -1,5 +1,7 @@
 import * as scr from '../../src/scratch.js'
 
+scr.StartDash().then(_ => main(document.getElementById('GPUFrame')))
+
 const shaderCode = `
 struct VertexInput {
     @builtin(vertex_index) vertexIndex: u32,
@@ -39,10 +41,10 @@ const vertices = [
 const vertexRef = scr.aRef(new Float32Array(vertices))
 const instanceSizeRef = scr.aRef(new Float32Array([ 1.0 ])) // The ref of an array to control the size of each triangle instance
 
-async function init() {
+function init(canvas) {
 
     // Screen Texture
-    const screen = scr.Screen.create({ canvas: document.getElementById('GPUFrame') })
+    const screen = scr.Screen.create({ canvas })
 
     // Triangle Vertex Buffer
     const tBuffer_vertex = scr.VertexBuffer.create({
@@ -102,10 +104,8 @@ function animate() {
     requestAnimationFrame(() => animate())
 }
 
-async function main() {
+async function main(canvas) {
 
-    await init()
+    init(canvas)
     animate()
 }
-
-scr.StartDash().then(_ => main())

@@ -412,14 +412,14 @@ const main = function (canvas) {
         const sceneTexture = screen.createScreenDependentTexture('Texture (Scene)')
         const depthTexture = screen.createScreenDependentTexture('Texture (Depth)', 'depth24plus')
 
-        // Pass: Blooming effect
+        // Pass: Blooming postprocess
         const bloomPass = scr.BloomPass.create({
             threshold: 0.0,
             strength: 0.4,
             blurCount: 5,
             inputColorAttachment: sceneTexture
         })
-        // Pass：FXAA effect
+        // Pass：FXAA postprocess
         const fxaaPass = scr.FXAAPass.create({
             threshold: 0.0312,
             searchStep: 10,
