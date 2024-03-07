@@ -1,76 +1,65 @@
 import * as scr from '../../src/scratch.js'
 
-scr.StartDash().then(_ => main(document.getElementById('GPUFrame')))
+scr.StartDash().then(() => main(document.getElementById('GPUFrame')))
 
-const shaderCode = `
-struct VertexInput {
-    @builtin(vertex_index) vertexIndex: u32,
-}
+const main = function (canvas) {
+    
+    const screen = scr.Screen.create({ canvas })
 
-struct VertexOutput {
-    @builtin(position) position: vec4f,
-}
-
-@vertex
-fn vMain(input: VertexInput) -> VertexOutput {
-
-    let pos = array<vec2f, 3>(
+    const shaderCode = `
+    const pos = array<vec2f, 3>(
         vec2f(-0.5, -0.5),
         vec2f(0.0, 0.5),
         vec2f(0.5, -0.5),
     );
+
+    @vertex
+    fn vMain(@builtin(vertex_index) vertexIndex: u32) -> @builtin(position) vec4f {
     
-    var output: VertexOutput;
-    output.position = vec4f(pos[input.vertexIndex], 0.0, 1.0);
-    return output;
-}
+        return vec4f(pos[vertexIndex], 0.0, 1.0);
+    }
+    
+    @fragment
+    fn fMain() -> @location(0) vec4f {
+    
+        return vec4f(128., 218., 197., 255.) / 255.;
+    }
+    `
+    
+    function init() {
+    
+        // Triangle Binding
+        const tBinding = scr.Binding.create({ 
+            range: () => [ 3 ] // Draw 3 points of a triangle (1 instance as default)
+        })
+    
+        // Triangle Pipeline
+        const tPipeline = scr.RenderPipeline.create({
+            shader: {
+                module: scr.Shader.create({
+                    codeFunc: () => shaderCode,
+                })
+            },
+        })
+    
+        // Triangle Pass
+        const tPass = scr.RenderPass.create({
+            colorAttachments: [ { colorResource: screen } ]
+        }).add(tPipeline, tBinding)
+    
+        // Stage
+        scr.director.addStage({
+            name: 'HelloTriangle',
+            items: [ tPass ],
+        })
+    }
+    
+    function animate() {
+    
+        scr.director.tick()
+        requestAnimationFrame(() => animate())
+    }
 
-@fragment
-fn fMain(input: VertexOutput) -> @location(0) vec4f {
-
-    return vec4f(128., 218., 197., 255.) / 255.;
-}
-`
-
-function init(canvas) {
-
-    // Screen Texture
-    const screen = scr.Screen.create({ canvas })
-
-    // Triangle Binding
-    const tBinding = scr.Binding.create({ 
-        range: () => [ 3 ] // Draw 3 points of a triangle (1 instance as default)
-    })
-
-    // Triangle Pipeline
-    const tPipeline = scr.RenderPipeline.create({
-        shader: {
-            module: scr.Shader.create({
-                codeFunc: () => shaderCode,
-            })
-        },
-    })
-
-    // Triangle Pass
-    const tPass = scr.RenderPass.create({
-        colorAttachments: [ { colorResource: screen } ]
-    }).add(tPipeline, tBinding)
-
-    // Stage
-    scr.director.addStage({
-        name: 'HelloTriangle',
-        items: [ tPass ],
-    })
-}
-
-function animate() {
-
-    scr.director.tick()
-    requestAnimationFrame(() => animate())
-}
-
-function main(canvas) {
-
-    init(canvas)
+    init()
     animate()
 }
