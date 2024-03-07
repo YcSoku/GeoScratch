@@ -15,6 +15,7 @@ Examples of `GeoScratch` is built by [Vite](https://vitejs.dev/). Trying example
 requires an installation of [Node.js](https://nodejs.org/en/).
 
 - Install dependencies: `npm install`.
+- Run examples: `npm run dev`.
 
 ## Usage
 The code below shows the way using GeoScratch to render a hard-coded triangle.
