@@ -9,7 +9,8 @@
 
 # Node #
 ########
-.npmrc
+# .npmrc
+
 
 # Packages #
 ############
