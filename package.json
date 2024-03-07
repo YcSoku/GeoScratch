@@ -1,5 +1,5 @@
 {
-  "name": "YcSoku/GeoScratch",
+  "name": "@ycsoku/geoscratch",
   "version": "0.0.11",
   "description": "Tiny 3D library for geovisualization, powered by WebGPU",
   "main": "src/scratch.js",
