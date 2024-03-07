@@ -1,7 +1,7 @@
 import { vec3, mat4 } from 'gl-matrix'
 import * as scr from '../../src/scratch.js'
 
-// Screen
+// Screen canvas
 /**
  * @type { scr.Screen }
  */
@@ -12,7 +12,8 @@ let timeStep = 0.
 let up = vec3.fromValues(0., 1., 0.)
 let target = vec3.fromValues(0., 0., 0.)
 let cameraPos = vec3.fromValues(0., 0., 1200.)
-let lightPos = vec3.transformMat4(vec3.create(), vec3.fromValues(-600., 0., 0.), mat4.fromZRotation(mat4.create(), -23. * scr.DEG2RAD))
+let lightPos = vec3.fromValues(-600., 0., 0.)
+vec3.transformMat4(lightPos, lightPos, mat4.fromZRotation(mat4.create(), -23. * scr.DEG2RAD))
 
 // Earth
 let diam = 800.
@@ -39,110 +40,38 @@ let projectionMatrix = mat4.create()
  */
 let linkIndirect
 
-function init() {
+// Global sampler
+/**
+ * @type { scr.Sampler }
+ */
+const lSampler = scr.Sampler.create({
+    name: 'Sampler (Linear)',
+    filterMinMag: ['linear', 'linear'],
+    addressModeUVW: ['repeat', 'repeat'],
+})
 
-    // Screen texture
-    screen = scr.Screen.create({ canvas: document.getElementById('GPUFrame') })
-    const sceneTexture = screen.createScreenDependentTexture('Texture (Scene)')
-    const depthTexture = screen.createScreenDependentTexture('Texture (Depth)', 'depth24plus')
+function initEarth() {
 
-    // Blooming effect pass
-    const bloomPass = scr.BloomPass.create({
-        threshold: 0.0,
-        strength: 0.4,
-        blurCount: 5,
-        inputColorAttachment: sceneTexture
-    })
-
-    // FXAA effect pass
-    const fxaaPass = scr.FXAAPass.create({
-        threshold: 0.0312,
-        searchStep: 10,
-        inputColorAttachment: bloomPass.getOutputAttachment()
-    })
-    screen.addScreenDependentElement(bloomPass).addScreenDependentElement(fxaaPass)
-
-    // Earth sphere resource
+    // Buffer-related resource
     const { indices, vertices, normals, uvs } = scr.sphere(radius, 64, 32)
-
     const vertexBuffer_sphere_index = scr.VertexBuffer.create({
         name: 'Vertex Buffer (Sphere index)',
         resource: { arrayRef: scr.aRef(new Uint32Array(indices)), structure: [ { components: 1 } ] }
     })
-
     const storageBuffer_sphere_position = scr.StorageBuffer.create({
         name: 'Storage Buffer (Sphere position)',
         resource: { arrayRef: scr.aRef(new Float32Array(vertices)) }
     })
-
     const storageBuffer_sphere_normal = scr.StorageBuffer.create({
         name: 'Storage Buffer (Sphere normal)',
         resource: { arrayRef: scr.aRef(new Float32Array(normals)) }
     })
-
     const storageBuffer_sphere_uv = scr.StorageBuffer.create({
         name: 'Storage Buffer (Sphere uv)' ,
         resource: { arrayRef: scr.aRef(new Float32Array(uvs)) }
     })
 
-    // Particle resource
-    const pPositions = new Float32Array(maxParticleCount * 3)
-    const pVelocities = new Float32Array(maxParticleCount * 3)
-    const palette = [ 250. / 255., 250. / 255., 210. / 250., 1.0 ]
-    const pColors = new Float32Array(maxParticleCount * 4).map((_, index) => palette[index % 4])
-
-    for (let i = 0; i < maxParticleCount; i++) {
-        let v = vec3.create()
-        vec3.scale(v, vec3.normalize(v, vec3.fromValues(Math.random() * 2. - 1., Math.random() * 2. - 1., Math.random() * 2. - 1.)), rLink)
-      
-        pPositions[i * 3 + 0] = v[0]
-        pPositions[i * 3 + 1] = v[1]
-        pPositions[i * 3 + 2] = v[2]
-        pVelocities[i * 3 + 0] = scr.randomNonZeroBetweenMinusOneAndOne(0.3)
-        pVelocities[i * 3 + 1] = scr.randomNonZeroBetweenMinusOneAndOne(0.3)
-        pVelocities[i * 3 + 2] = scr.randomNonZeroBetweenMinusOneAndOne(0.3)
-    }
-    const storageBuffer_particle_velocity = scr.StorageBuffer.create({
-        name: 'Storage Buffer (Particle velocity)',
-        resource: { arrayRef: scr.aRef(pVelocities) }
-    })
-    const vertexBuffer_particle_position = scr.VertexBuffer.create({
-        name: 'Vertex Buffer (Particle position)',
-        randomAccessible: true,
-        resource: { arrayRef: scr.aRef(pPositions), structure: [ { components: 3 } ] }
-    })
-    const vertexBuffer_particle_color = scr.VertexBuffer.create({
-        name: 'Vertex Buffer (Particle color)',
-        resource: { arrayRef: scr.aRef(pColors), structure: [ {components: 4} ] }
-    })
-
-    // Links resource
-    const linkIndices = scr.aRef(new Uint32Array(maxParticleCount * maxParticleCount * 2).fill(0))
-    for (let i = 0; i < maxParticleCount; ++i) {
-        for (let j = i + 1; j < maxConnections; ++j) {
-            linkIndices.element(numConnected++, i)
-            linkIndices.element(numConnected++, j)
-        }
-    }
-    const storageBuffer_link_index = scr.StorageBuffer.create({
-        name: 'Storage Buffer (Link)',
-        resource: { arrayRef: linkIndices }
-    })
-
-    linkIndirect = scr.aRef(new Uint32Array([nodeInLink, 0, 0, 0]))
-    const indirectBuffer_link = scr.IndirectBuffer.create({
-        name: 'Storage Buffer (Indirect)',
-        randomAccessible: true,
-        resource: { arrayRef: linkIndirect }
-    })
-
     // Texture-related resource
-    const lSampler = scr.Sampler.create({
-        name: 'Sampler (Linear)',
-        bindingType: 'filtering',
-        filterMinMag: ['linear', 'linear'],
-        addressModeUVW: ['repeat', 'repeat'],
-    })
     const ldTexture = scr.imageLoader.load('Land day', '/images/Earth/earth.jpg' )
     const cdTexture = scr.imageLoader.load('Cloud day', '/images/Earth/cloud.jpg')
     const lmTexture = scr.imageLoader.load('Land mask', '/images/Earth/mask-land.jpg')
@@ -152,7 +81,7 @@ function init() {
     const lsTexture = scr.imageLoader.load('Land specular', '/images/Earth/earth-specular.jpg')
     const leTexture = scr.imageLoader.load('Land emission', '/images/Earth/earth-selfillumination.jpg')
 
-    // Land and water
+    // Binding: Land and water
     const landWater = scr.Binding.create({
         name: 'Binding (Land and Water)',
         range: _ => [ indices.length ],
@@ -211,8 +140,7 @@ function init() {
         ],
         vertices: [ { buffer: vertexBuffer_sphere_index } ],
     })
-
-    // Cloud
+    // Binding: Cloud
     const cloud = scr.Binding.create({
         name: 'Binding (Cloud)',
         range: _ => [ indices.length ],
@@ -270,7 +198,86 @@ function init() {
         vertices: [ { buffer: vertexBuffer_sphere_index } ],
     })
 
-    // Particles
+    // Pipeline: Land
+    const landPipeline = scr.RenderPipeline.create({
+        shader: { module: scr.shaderLoader.load('Shader (GawEarth land)', '/shaders/land.wgsl') },
+        colorTargetStates: [ { blend: scr.NormalBlending } ],
+    })
+    // Pipeline: Water
+    const waterPipeline = scr.RenderPipeline.create({
+        shader: { module: scr.shaderLoader.load('Shader (GawEarth water)', '/shaders/water.wgsl') },
+        colorTargetStates: [ { blend: scr.NormalBlending } ],
+    })
+    // Pipeline: Cloud
+    const cloudPipeline = scr.RenderPipeline.create({
+        shader: { module: scr.shaderLoader.load('Shader (GawEarth cloud)', '/shaders/cloud.wgsl') },
+        colorTargetStates: [ { blend: scr.AdditiveBlending } ],
+    })
+
+    return {
+        land: [landPipeline, landWater], water: [waterPipeline, landWater], cloud: [cloudPipeline, cloud]
+    }
+}
+
+function initLinks() {
+
+    // Buffer-related resource of particles
+    const pPositions = new Float32Array(maxParticleCount * 3)
+    const pVelocities = new Float32Array(maxParticleCount * 3)
+    const palette = [ 250. / 255., 250. / 255., 210. / 250., 1.0 ]
+    const pColors = new Float32Array(maxParticleCount * 4).map((_, index) => palette[index % 4])
+
+    for (let i = 0; i < maxParticleCount; i++) {
+        let v = vec3.create()
+        vec3.scale(v, vec3.normalize(v, vec3.fromValues(Math.random() * 2. - 1., Math.random() * 2. - 1., Math.random() * 2. - 1.)), rLink)
+      
+        pPositions[i * 3 + 0] = v[0]
+        pPositions[i * 3 + 1] = v[1]
+        pPositions[i * 3 + 2] = v[2]
+        pVelocities[i * 3 + 0] = scr.randomNonZeroBetweenMinusOneAndOne(0.3)
+        pVelocities[i * 3 + 1] = scr.randomNonZeroBetweenMinusOneAndOne(0.3)
+        pVelocities[i * 3 + 2] = scr.randomNonZeroBetweenMinusOneAndOne(0.3)
+    }
+    const storageBuffer_particle_velocity = scr.StorageBuffer.create({
+        name: 'Storage Buffer (Particle velocity)',
+        resource: { arrayRef: scr.aRef(pVelocities) }
+    })
+    const vertexBuffer_particle_position = scr.VertexBuffer.create({
+        name: 'Vertex Buffer (Particle position)',
+        randomAccessible: true,
+        resource: { arrayRef: scr.aRef(pPositions), structure: [ { components: 3 } ] }
+    })
+    const vertexBuffer_particle_color = scr.VertexBuffer.create({
+        name: 'Vertex Buffer (Particle color)',
+        resource: { arrayRef: scr.aRef(pColors), structure: [ {components: 4} ] }
+    })
+
+    // Buffer-related resource of links
+    const linkIndices = scr.aRef(new Uint32Array(maxParticleCount * maxParticleCount * 2).fill(0))
+    for (let i = 0; i < maxParticleCount; ++i) {
+        for (let j = i + 1; j < maxConnections; ++j) {
+            linkIndices.element(numConnected++, i)
+            linkIndices.element(numConnected++, j)
+        }
+    }
+    const storageBuffer_link_index = scr.StorageBuffer.create({
+        name: 'Storage Buffer (Link)',
+        resource: { arrayRef: linkIndices }
+    })
+    
+    const storageBuffer_connection_nums = scr.StorageBuffer.create({
+        name: 'Storage Buffer (Connection num)',
+        resource: { arrayRef: scr.aRef(new Uint32Array(maxParticleCount).fill(0)) }
+    })
+
+    linkIndirect = scr.aRef(new Uint32Array([nodeInLink, 0, 0, 0]))
+    const indirectBuffer_link = scr.IndirectBuffer.create({
+        name: 'Storage Buffer (Indirect)',
+        randomAccessible: true,
+        resource: { arrayRef: linkIndirect }
+    })
+
+    // Binding: Particles
     const particles = scr.Binding.create({
         range: _ => [ 4, particleCount ],
         uniforms: [
@@ -296,7 +303,26 @@ function init() {
         ],
     })
 
-    // Links
+    // Binding: Particle simulator
+    const particleSimulator = scr.Binding.create({
+        range: _ => [ 1, 1 ],
+        uniforms: [
+            {
+                name: 'staticUniform',
+                map: {
+                    rLink: { type: 'f32', value: _ => rLink },
+                    groupSize: { type: 'vec2u', value: _ => [ 1.0, 1.0 ] },
+                    angle: { type: 'f32', value: _ => 0.01 },
+                }
+            }
+        ],
+        storages: [
+            { buffer: storageBuffer_particle_velocity },
+            { buffer: vertexBuffer_particle_position, writable: true },
+        ]
+    })
+
+    // Binding: Links
     const links = scr.Binding.create({
         uniforms: [
             {
@@ -323,32 +349,9 @@ function init() {
             { buffer: vertexBuffer_particle_position },
             { buffer: storageBuffer_link_index },
         ],
-    });
-
-    // Particle simulator
-    const particleSimulatior = scr.Binding.create({
-        range: _ => [ 1, 1 ],
-        uniforms: [
-            {
-                name: 'staticUniform',
-                map: {
-                    rLink: { type: 'f32', value: _ => rLink },
-                    groupSize: { type: 'vec2u', value: _ => [ 1.0, 1.0 ] },
-                    angle: { type: 'f32', value: _ => 0.01 },
-                }
-            }
-        ],
-        storages: [
-            { buffer: storageBuffer_particle_velocity },
-            { buffer: vertexBuffer_particle_position, writable: true },
-        ]
     })
 
-    // Link indexer
-    const storageBuffer_connection_nums = scr.StorageBuffer.create({
-        name: 'Storage Buffer (Connection num)',
-        resource: { arrayRef: scr.aRef(new Uint32Array(maxParticleCount).fill(0)) }
-    })
+    // Binding: Link indexer
     const linkIndexer = scr.Binding.create({
         range: _ => [ 1, 1 ],
         uniforms: [
@@ -369,7 +372,40 @@ function init() {
         ]
     })
 
-    // Output
+    // Pipeline: Particle
+    const particlePipeline = scr.RenderPipeline.create({
+        shader: { module: scr.shaderLoader.load('Shader (Earth core particel)', '/shaders/point.wgsl') },
+        colorTargetStates: [ { blend: scr.NormalBlending} ],
+        primitive: { topology: 'triangle-strip' },
+        depthTest: false,
+    })
+    // Pipeline: Link
+    const linkPipeline = scr.RenderPipeline.create({
+        shader: { module: scr.shaderLoader.load('Shader (Earth core link)', '/shaders/link.wgsl') },
+        primitive: { topology: 'line-strip' },
+        depthTest: false,
+    })
+    // Pipeline: Simulation
+    const simulationPipeline = scr.ComputePipeline.create({
+        shader: { module: scr.shaderLoader.load('Shader (Particle simulation)', '/shaders/particle.compute.wgsl') },
+        constants: { blockSize: 10 },
+    })
+    // Pipeline: Indexing
+    const indexingPipeline = scr.ComputePipeline.create({
+        shader: { module: scr.shaderLoader.load('Shader (Link indexing)', '/shaders/link.compute.wgsl') },
+        constants: { blockSize: 10 },
+    })
+
+
+    return {
+        particles: [ particlePipeline, particles ], links: [ linkPipeline, links ],
+        simulator: [ simulationPipeline, particleSimulator ], indexer: [ indexingPipeline, linkIndexer ]
+    }
+}
+
+function initOutput(preprocess) {
+    
+    // Binding: Output
     const output = scr.Binding.create({
         name: 'Binding (Output)',
         range: _ => [ 4 ],
@@ -382,92 +418,99 @@ function init() {
                 }
             }
         ],
-        textures: [ { texture: fxaaPass.getOutputAttachment() } ],
+        textures: [ { texture: preprocess } ],
     })
 
-    // Pipeline
-    const landPipeline = scr.RenderPipeline.create({
-        shader: { module: scr.shaderLoader.load('Shader (GawEarth land)', '/shaders/land.wgsl') },
-        colorTargetStates: [ { blend: scr.NormalBlending } ],
-        depthTest: true,
-    })
-
-    const waterPipeline = scr.RenderPipeline.create({
-        shader: { module: scr.shaderLoader.load('Shader (GawEarth water)', '/shaders/water.wgsl') },
-        colorTargetStates: [ { blend: scr.NormalBlending } ],
-        depthTest: true,
-    })
-
-    const cloudPipeline = scr.RenderPipeline.create({
-        shader: { module: scr.shaderLoader.load('Shader (GawEarth cloud)', '/shaders/cloud.wgsl') },
-        colorTargetStates: [ { blend: scr.AdditiveBlending } ],
-        depthTest: true,
-    })
-
-    const particlePipeline = scr.RenderPipeline.create({
-        shader: { module: scr.shaderLoader.load('Shader (Earth core particel)', '/shaders/point.wgsl') },
-        colorTargetStates: [ { blend: scr.NormalBlending} ],
-        primitive: { topology: 'triangle-strip' },
-        depthTest: false,
-    })
-
-    const linkPipeline = scr.RenderPipeline.create({
-        shader: { module: scr.shaderLoader.load('Shader (Earth core link)', '/shaders/link.wgsl') },
-        primitive: { topology: 'line-strip' },
-        depthTest: false,
-    })
-
-    const simulationPipeline = scr.ComputePipeline.create({
-        shader: { module: scr.shaderLoader.load('Shader (Particle simulation)', '/shaders/particle.compute.wgsl') },
-        constants: { blockSize: 10 },
-    })
-
-    const indexingPipeline = scr.ComputePipeline.create({
-        shader: { module: scr.shaderLoader.load('Shader (Link indexing)', '/shaders/link.compute.wgsl') },
-        constants: { blockSize: 10 },
-    })
-
+    // Pipeline: Output
     const outputPipeline = scr.RenderPipeline.create({
         shader: { module: scr.shaderLoader.load('Shader (Last)', '/shaders/last.wgsl') },
         primitive: { topology: 'triangle-strip' },
     })
 
-    // Pass
+    return [ outputPipeline, output ]
+}
+
+function initPass() {
+
+    // Texture-related resource
+    screen = scr.Screen.create({ canvas: document.getElementById('GPUFrame') })
+    const sceneTexture = screen.createScreenDependentTexture('Texture (Scene)')
+    const depthTexture = screen.createScreenDependentTexture('Texture (Depth)', 'depth24plus')
+
+    // Pass: Blooming effect
+    const bloomPass = scr.BloomPass.create({
+        threshold: 0.0,
+        strength: 0.4,
+        blurCount: 5,
+        inputColorAttachment: sceneTexture
+    })
+    // Pass：FXAA effect
+    const fxaaPass = scr.FXAAPass.create({
+        threshold: 0.0312,
+        searchStep: 10,
+        inputColorAttachment: bloomPass.getOutputAttachment()
+    })
+    screen.addScreenDependentElement(bloomPass).addScreenDependentElement(fxaaPass)
+    // Pass: Scene computation
     const computePass_scene = scr.ComputePass.create({
         name: 'Compute Pass (GAW Compute)',
-    }).add(simulationPipeline, particleSimulatior).add(indexingPipeline, linkIndexer)
-
+    })
+    // Pass: Scene rendering
     const renderPass_scene = scr.RenderPass.create({
         name: 'Render Pass (GAW Scene)',
         colorAttachments: [ { colorResource: sceneTexture } ],
         depthStencilAttachment: { depthStencilResource: depthTexture },
-    }).add(landPipeline, landWater).add(linkPipeline, links).add(particlePipeline, particles).add(waterPipeline, landWater).add(cloudPipeline, cloud)
-
+    })
+    // Pass: Output rendering
     const renderPass_output = scr.RenderPass.create({
         name: 'Render Pass (GAW Output)',
         colorAttachments: [ { colorResource: screen } ],
-    }).add(outputPipeline, output)
+    })
+
+    return {
+        bloomPass, fxaaPass,
+        renderPass_scene, renderPass_output, computePass_scene
+    }
+}
+
+function init() {
+
+    // Pass
+    const {
+        bloomPass, fxaaPass,
+        renderPass_scene, renderPass_output, computePass_scene
+    } = initPass()
+
+    // Earth
+    const { land, water, cloud } = initEarth()
+
+    // Particle and link
+    const { particles, links, simulator, indexer } = initLinks()
+
+    // Output
+    const output = initOutput(fxaaPass.getOutputAttachment())
 
     // Stage
     scr.director.addStage({
         name: 'HelloGeoAnythingWeb',
-        items: [ 
-            computePass_scene, renderPass_scene,
-            bloomPass, fxaaPass,
-            renderPass_output,
+        items: [
+            /* 1st pass */  computePass_scene.add(...simulator).add(...indexer), 
+            /* 2nd pass */  renderPass_scene.add(...land).add(...links).add(...particles).add(...water).add(...cloud),
+            /* 3rd pass */  bloomPass,
+            /* 4th pass */  fxaaPass,
+            /* 5th pass */  renderPass_output.add(...output),
          ],
     })
 }
 
 function animate() {
 
-    timeStep -= 0.001
-    mat4.perspective(projectionMatrix, 45.0, screen.width / screen.height, 1., 4000.)
-    mat4.lookAt(viewMatrix, cameraPos, target, up)
-    mat4.fromXRotation(modelMatrix, 32.0 * scr.DEG2RAD)
-    normalMatrix = mat4.transpose(normalMatrix, mat4.invert(normalMatrix, modelMatrix))
-
-    linkIndirect.element(1, 0)
+    /* Accumulation */      timeStep -= 0.001
+    /* Link buffer */       linkIndirect.element(1, 0)
+    /* View matrix */       mat4.lookAt(viewMatrix, cameraPos, target, up)
+    /* Model matrix */      mat4.fromXRotation(modelMatrix, 32.0 * scr.DEG2RAD)
+    /* Normal matrix */     mat4.transpose(normalMatrix, mat4.invert(normalMatrix, modelMatrix))
+    /* Projection matrix */ mat4.perspective(projectionMatrix, 45.0, screen.width / screen.height, 1., 4000.)
 
     scr.director.tick()
 

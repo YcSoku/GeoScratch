@@ -62,7 +62,8 @@ export class Sampler {
          */
         this._sampler = undefined
 
-        director.dispatchEvent({type: 'createSampler', emitter: this})
+        // director.dispatchEvent({type: 'createSampler', emitter: this})
+        this.needUpdate()
     }
 
     /**
@@ -109,17 +110,7 @@ export class Sampler {
      */
     update() {
 
-        this.device = getDevice()
-        this._sampler = this.device.createSampler({
-            label: this.name,
-            minFilter: this.minFilter,
-            magFilter: this.magFilter,
-            addressModeU: this.addressModeU,
-            addressModeV: this.addressModeV,
-            addressModeW: this.addressModeW,
-            mipmapFilter: this.mipmapFilter,
-            maxAnisotropy: this.maxAnisotropy,
-        })
+        director.dispatchEvent({type: 'createSampler', emitter: this})
     }
 
     use() {
@@ -127,6 +118,11 @@ export class Sampler {
         // if (this.refCount === 0) this.update()
         this.refCount++
         return this
+    }
+
+    needUpdate() {
+
+        director.addToUpdateList(this)
     }
 
     release() {

@@ -1,10 +1,9 @@
-import { UUID } from '../../core/utils/uuid.js';
-import { Binding } from '../binding/binding.js';
-import { NoBlending } from '../blending/blending.js';
-// import getDevice from '../context/device.js'
-import director from '../director/director.js';
-import { RenderPass } from '../pass/renderPass.js';
-import { Shader } from '../shader/shader.js';
+import { UUID } from '../../core/utils/uuid.js'
+import { Binding } from '../binding/binding.js'
+import { NoBlending } from '../blending/blending.js'
+import director from '../director/director.js'
+import { RenderPass } from '../pass/renderPass.js'
+import { Shader } from '../shader/shader.js'
 
 /**
  * @typedef {Object} RenderPipelineDescription
@@ -47,9 +46,8 @@ class RenderPipeline {
             cullMode: 'none',
             topology: 'triangle-list',
         }
-
-        this.depthTest = true
-        this.depthTest = description.depthTest !== undefined ? this.depthTest : description.depthTest
+        
+        this.depthTest = description.depthTest
 
         this.pipelineLayout = undefined
         this.pipeline = undefined
@@ -146,12 +144,15 @@ class RenderPipeline {
         })
 
         const depthStencilFormat = pass.makeDepthStencilFormat()
-        depthStencilFormat && (this.depthStencilState = {
+        if (depthStencilFormat !== undefined) {
+            this.depthTest === undefined && (this.depthTest = true)
 
-            depthWriteEnabled: this.depthTest,
-            depthCompare: 'less',
-            format: depthStencilFormat
-        })
+            this.depthStencilState = {
+                depthWriteEnabled: this.depthTest,
+                depthCompare: 'less',
+                format: depthStencilFormat
+            }
+        }
     }
 
     /**
