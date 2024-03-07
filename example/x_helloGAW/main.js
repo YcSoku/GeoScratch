@@ -1,4 +1,3 @@
-import { vec3, mat4 } from 'gl-matrix'
 import * as scr from '../../src/scratch.js'
 
 scr.StartDash().then(_ => main(document.getElementById('GPUFrame')))
@@ -13,11 +12,10 @@ const main = function (canvas) {
 
     // Scene parameters
     let timeStep = 0.
-    let up = vec3.fromValues(0., 1., 0.)
-    let target = vec3.fromValues(0., 0., 0.)
-    let cameraPos = vec3.fromValues(0., 0., 1200.)
-    let lightPos = vec3.fromValues(-600., 0., 0.)
-    vec3.transformMat4(lightPos, lightPos, mat4.fromZRotation(mat4.create(), -23. * scr.DEG2RAD))
+    let up = scr.vec3.fromValues(0., 1., 0.)
+    let target = scr.vec3.fromValues(0., 0., 0.)
+    let cameraPos = scr.vec3.fromValues(0., 0., 1200.)
+    let lightPos = scr.vec3.transformMat4(scr.vec3.fromValues(-600., 0., 0.), scr.mat4.rotationZ(scr.utils.degToRad(-23.)))
 
     // Earth
     let diam = 800.
@@ -33,10 +31,10 @@ const main = function (canvas) {
     let maxConnections = maxParticleCount - 1
 
     // Global matrix
-    let viewMatrix = mat4.create()
-    let modelMatrix = mat4.create()
-    let normalMatrix = mat4.create()
-    let projectionMatrix = mat4.create()
+    let viewMatrix = scr.mat4.create()
+    let modelMatrix = scr.mat4.create()
+    let normalMatrix = scr.mat4.create()
+    let projectionMatrix = scr.mat4.create()
 
     // Global arrayRef
     /**
@@ -232,8 +230,7 @@ const main = function (canvas) {
         const pColors = new Float32Array(maxParticleCount * 4).map((_, index) => palette[index % 4])
 
         for (let i = 0; i < maxParticleCount; i++) {
-            let v = vec3.create()
-            vec3.scale(v, vec3.normalize(v, vec3.fromValues(Math.random() * 2. - 1., Math.random() * 2. - 1., Math.random() * 2. - 1.)), rLink)
+            let v = scr.vec3.scale(scr.vec3.normalize(scr.vec3.fromValues(Math.random() * 2. - 1., Math.random() * 2. - 1., Math.random() * 2. - 1.)), rLink)
         
             pPositions[i * 3 + 0] = v[0]
             pPositions[i * 3 + 1] = v[1]
@@ -508,10 +505,10 @@ const main = function (canvas) {
 
         /* Accumulation */      timeStep -= 0.001
         /* Link buffer */       linkIndirect.element(1, 0)
-        /* View matrix */       mat4.lookAt(viewMatrix, cameraPos, target, up)
-        /* Model matrix */      mat4.fromXRotation(modelMatrix, 32.0 * scr.DEG2RAD)
-        /* Normal matrix */     mat4.transpose(normalMatrix, mat4.invert(normalMatrix, modelMatrix))
-        /* Projection matrix */ mat4.perspective(projectionMatrix, 45.0, screen.width / screen.height, 1., 4000.)
+        /* View matrix */       scr.mat4.lookAt(cameraPos, target, up, viewMatrix)
+        /* Model matrix */      scr.mat4.rotationX(scr.utils.degToRad(32.), modelMatrix)
+        /* Normal matrix */     scr.mat4.transpose(scr.mat4.invert(modelMatrix, normalMatrix), normalMatrix)
+        /* Projection matrix */ scr.mat4.perspective(45.0, screen.width / screen.height, 1., 4000., projectionMatrix)
 
         scr.director.tick()
 

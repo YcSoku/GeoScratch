@@ -1,5 +1,5 @@
 import { Buffer } from './buffer';
-import { ArrayRef } from "../data/arrayRef"
+import { ArrayRef } from "../../core/data/arrayRef"
 
 export interface IndirectResourceDescription {
     arrayRef: ArrayRef,

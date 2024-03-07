@@ -5,10 +5,9 @@ import { VertexBuffer } from '../buffer/vertexBuffer.js'
 import { IndirectBuffer } from '../buffer/indirectBuffer.js'
 import { IndexBuffer } from '../buffer/indexBuffer.js'
 import { UUID } from '../../core/utils/uuid.js'
-import { BlockRef } from '../data/blockRef.js'
+import { BlockRef } from '../../core/data/blockRef.js'
 import { Sampler } from '../sampler/sampler.js'
 import director from '../director/director.js'
-import getDevice from '../context/device.js'
 
 /**
  * @typedef {Object} VertexBindingDescription

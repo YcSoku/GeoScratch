@@ -11,8 +11,8 @@ export { IndirectBuffer } from './platform/buffer/indirectBuffer.js'
 export { MapBuffer } from './platform/buffer/mapBuffer.js'
 
 
-export { ArrayRef, aRef } from './platform/data/arrayRef.js'
-export { BlockRef, bRef } from './platform/data/blockRef.js'
+export { ArrayRef, aRef } from './core/data/arrayRef.js'
+export { BlockRef, bRef } from './core/data/blockRef.js'
 
 export { Sampler } from './platform/sampler/sampler.js'
 export { Texture } from './platform/texture/texture.js'
@@ -46,41 +46,13 @@ import shaderLoader from './resource/shader/shaderLoader.js'
 export { shaderLoader }
 
 export { sphere } from './core/geometry/sphere.js'
-
-export { Box2 } from './core/math/Box2.js'
-export { Box3 } from './core/math/Box3.js'
-export { Euler } from './core/math/Euler.js'
-export {
-	DEG2RAD,
-	RAD2DEG,
-	generateUUID,
-	clamp,
-	euclideanModulo,
-	mapLinear,
-	inverseLerp,
-	lerp,
-	damp,
-	pingpong,
-	smoothstep,
-	smootherstep,
-	randInt,
-	randFloat,
-	randFloatSpread,
-	seededRandom,
-	degToRad,
-	radToDeg,
-	isPowerOfTwo,
-	ceilPowerOfTwo,
-	floorPowerOfTwo,
-	setQuaternionFromProperEuler,
-	normalize,
-	denormalize,} from './core/math/MathUtils.js'
-export { Vector2 } from './core/math/Vector2.js'
-export { Vector3 } from './core/math/Vector3.js'
-export { Vector4 } from './core/math/Vector4.js'
-export { Matrix3 } from './core/math/Matrix3.js'
-export { Matrix4 } from './core/math/Matrix4.js'
 export { randomNonZeroBetweenMinusOneAndOne } from './core/math/random.js'
+export {
+	vec2, vec3, vec4, mat3, mat4, utils, quat,
+} from './core/math/wgpu-matrix.module.js'
+// export {
+// 	vec2, vec3, vec4, mat3, mat4, utils, quat,
+// }
 
 export { UUID } from './core/utils/uuid.js'
 

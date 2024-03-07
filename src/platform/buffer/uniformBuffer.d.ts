@@ -1,4 +1,4 @@
-import { BlockRef } from "../data/blockRef";
+import { BlockRef } from "../../core/data/blockRef";
 import { Buffer } from "./buffer";
 
 export interface UniformBufferDescription {

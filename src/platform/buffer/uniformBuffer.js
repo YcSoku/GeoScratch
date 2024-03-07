@@ -1,5 +1,5 @@
 import { Buffer } from "./buffer.js"
-import { BlockRef } from "../data/blockRef.js"
+import { BlockRef } from "../../core/data/blockRef.js"
 
 /**
  * @typedef {Object} UniformBufferDescription

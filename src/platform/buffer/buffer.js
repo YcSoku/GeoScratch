@@ -1,7 +1,6 @@
 import { UUID } from "../../core/utils/uuid.js"
-// import getDevice from "../context/device.js"
-import { ArrayRef } from "../data/arrayRef.js"
-import { BlockRef } from "../data/blockRef.js"
+import { ArrayRef } from "../../core/data/arrayRef.js"
+import { BlockRef } from "../../core/data/blockRef.js"
 import director from "../director/director.js"
 import monitor from "../monitor/monitor.js"
 

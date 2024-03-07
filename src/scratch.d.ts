@@ -11,8 +11,8 @@ import getDevice from './platform/context/device'
 export { getDevice }
 export { Device, StartDash, device } from './platform/context/device'
 
-export { ArrayRef, aRef } from './platform/data/arrayRef'
-export { BlockRefDescription, BlockRef, bRef } from './platform/data/blockRef'
+export { ArrayRef, aRef } from './core/data/arrayRef.js'
+export { BlockRefDescription, BlockRef, bRef } from './core/data/blockRef.js'
 
 export { Sampler } from './platform/sampler/sampler'
 export { Texture } from './platform/texture/texture'
@@ -50,41 +50,11 @@ import shaderLoader from './resource/shader/shaderLoader'
 export { shaderLoader }
 
 export { sphere } from './core/geometry/sphere'
-
-export { Box2 } from './core/math/Box2'
-export { Box3 } from './core/math/Box3'
-export { Euler } from './core/math/Euler'
-export {
-	DEG2RAD,
-	RAD2DEG,
-	generateUUID,
-	clamp,
-	euclideanModulo,
-	mapLinear,
-	inverseLerp,
-	lerp,
-	damp,
-	pingpong,
-	smoothstep,
-	smootherstep,
-	randInt,
-	randFloat,
-	randFloatSpread,
-	seededRandom,
-	degToRad,
-	radToDeg,
-	isPowerOfTwo,
-	ceilPowerOfTwo,
-	floorPowerOfTwo,
-	setQuaternionFromProperEuler,
-	normalize,
-	denormalize, } from './core/math/MathUtils'
-export { Vector2} from './core/math/Vector2'
-export { Vector3 } from './core/math/Vector3'
-export { Vector4 } from './core/math/Vector4'
-export { Matrix3 } from './core/math/Matrix3'
-export { Matrix4 } from './core/math/Matrix4'
 export { randomNonZeroBetweenMinusOneAndOne } from './core/math/random'
+export {vec2, vec3, vec4, mat3, mat4, utils, quat} from './core/math/wgpu-matrix.module.js'
+// export {
+// 	vec2, vec3, vec4, mat3, mat4, utils, quat,
+// }
 
 export { UUID } from './core/utils/uuid'
 

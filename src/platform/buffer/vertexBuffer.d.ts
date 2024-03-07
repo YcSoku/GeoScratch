@@ -1,4 +1,4 @@
-import { ArrayRef } from "../data/arrayRef";
+import { ArrayRef } from "../../core/data/arrayRef";
 import { Buffer } from "./buffer";
 
 export interface VertexResourceDescription {

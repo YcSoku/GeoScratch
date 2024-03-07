@@ -1,4 +1,4 @@
-import { aRef } from "../../platform/data/arrayRef.js"
+import { aRef } from "../../core/data/arrayRef.js"
 import { Binding } from "../../platform/binding/binding.js"
 import { Texture } from "../../platform/texture/texture.js"
 import { ComputePass } from "../../platform/pass/computePass.js"

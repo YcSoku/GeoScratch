@@ -5,7 +5,7 @@ import { Shader } from "../shader/shader";
 import { Texture } from "../texture/texture";
 import { UniformBuffer } from '../buffer/uniformBuffer';
 import { StorageBuffer } from '../buffer/storageBuffer';
-import { BlockValueType } from '../data/blockRef';
+import { BlockValueType } from '../../core/data/blockRef';
 import { Sampler } from "../sampler/sampler";
 
 export interface UniformBindingDescription {

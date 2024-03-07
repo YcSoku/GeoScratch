@@ -1,4 +1,4 @@
-import { DataRef } from '../data/arrayRef';
+import { DataRef } from '../../core/data/arrayRef';
 export type BufferDescription = {
     name: string;
     usage?: number;

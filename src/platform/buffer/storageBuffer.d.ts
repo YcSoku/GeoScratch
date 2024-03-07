@@ -1,4 +1,3 @@
-import { ArrayRef } from "../data/arrayRef";
 import { Buffer, BufferDescription } from "./buffer";
 import { IndexBuffer } from "./indexBuffer";
 
