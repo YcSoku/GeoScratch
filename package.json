@@ -40,6 +40,6 @@
     "vite": "^5.1.5"
   },
   "publishConfig": {
-    "@ycsoku:registry": "https://npm.pkg.github.com"
+    "registry": "https://npm.pkg.github.com"
   }
 }
