@@ -39,16 +39,13 @@ function init(canvas) {
 
     // Triangle Binding
     const tBinding = scr.Binding.create({ 
-        name: 'Binding (Hard-coded triangle)',
         range: () => [ 3 ] // Draw 3 points of a triangle (1 instance as default)
     })
 
     // Triangle Pipeline
     const tPipeline = scr.RenderPipeline.create({
-        name: 'Render Pipeline (Triangle)',
         shader: {
             module: scr.Shader.create({
-                name: 'Shader (Triangle)',
                 codeFunc: () => shaderCode,
             })
         },
@@ -56,8 +53,7 @@ function init(canvas) {
 
     // Triangle Pass
     const tPass = scr.RenderPass.create({
-        name: 'Render Pass (Triangle)',
-        colorAttachments: [ { colorResource: screen, clearValue: [ 0., 0., 0., 1. ] } ]
+        colorAttachments: [ { colorResource: screen } ]
     }).add(tPipeline, tBinding)
 
     // Stage
