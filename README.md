@@ -45,7 +45,7 @@ const main = function (canvas) {
     @fragment
     fn fMain() -> @location(0) vec4f {
     
-        return vec4f(128., 218., 197., 255.) / 255.;
+        return vec4f(128.0, 218.0, 197.0, 255.0) / 255.0;
     }
     `
     
