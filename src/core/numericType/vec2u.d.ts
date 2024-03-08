@@ -1,3 +1,4 @@
+import { Vec2 } from "../math/vec2";
 import { Numeric } from "./numeric"
 
 export class Vec2u extends Numeric {
@@ -9,4 +10,4 @@ export class Vec2u extends Numeric {
 
 export function vec2u(x?: number, y?: number): Vec2u;
 
-export function asVec2u(x?: number, y?: number): { type: string, value: Function };
+export function asVec2u(x?: number, y?: number): { type: string, data: Vec2 };

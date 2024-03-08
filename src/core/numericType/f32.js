@@ -27,5 +27,5 @@ export function f32(a) {
 
 export function asF32(a) {
 
-    return { type: 'f32', value: () => a }
+    return { type: 'f32', data: a !== undefined ? a : 0 }
 }

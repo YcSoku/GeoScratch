@@ -1,15 +1,14 @@
+import { ScratchObject } from "../../core/object/object";
+
 export interface ShaderDescription {
     name: string,
     codeFunc: Function,
 }
 
-export class Shader {
+export class Shader extends ScratchObject {
 
-    name: string;
     code: string;
     shaderModule: GPUShaderModule | undefined;
-    dirty: boolean;
-    defs: any;
 
     constructor(description: ShaderDescription);
     static create(description: ShaderDescription): Shader;

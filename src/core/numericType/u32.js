@@ -27,5 +27,5 @@ export function u32(a) {
 
 export function asU32(a) {
 
-    return { type: 'u32', value: () => a }
+    return { type: 'u32', data: a !== undefined ? a : 0 }
 }

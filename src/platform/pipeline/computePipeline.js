@@ -21,7 +21,7 @@ class ComputePipeline {
         this.uuid = UUID()
 
         this.name = description.name ? description.name : 'Computable builder'
-        this.shader = description.shader.module
+        this.shader = description.shader.module.use()
         this.csEntryPoint = description.shader.csEntryPoint || 'cMain'
 
         this.constants = description.constants

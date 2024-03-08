@@ -1,3 +1,4 @@
+import { Numeric } from "../numericType/numeric.js"
 import { UUID } from "../utils/uuid.js"
 import { makeShaderDataDefinitions, makeStructuredView } from "../utils/webgpu-utils.module.js"
 
@@ -10,7 +11,7 @@ import { makeShaderDataDefinitions, makeStructuredView } from "../utils/webgpu-u
  * @typedef {Object} BlockRefDescription
  * @property {string} name
  * @property {boolean} [dynamic]
- * @property {{[varName: string]: {type: BlockValueType, value: Function}}} map
+ * @property {{[varName: string]: Numeric | { type: string, data: any }}} map
  */
 
 class BlockRef {
@@ -93,7 +94,7 @@ class BlockRef {
 
         const data = {}
         for (const key in this.map) {
-            data[key] = this.map[key].value()
+            data[key] = this.map[key].data
         }
         this._view.set(data)
 

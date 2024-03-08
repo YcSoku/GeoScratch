@@ -4,10 +4,10 @@ import { Texture } from '../texture/texture.js'
 import { VertexBuffer } from '../buffer/vertexBuffer.js'
 import { IndirectBuffer } from '../buffer/indirectBuffer.js'
 import { IndexBuffer } from '../buffer/indexBuffer.js'
-import { UUID } from '../../core/utils/uuid.js'
 import { BlockRef } from '../../core/data/blockRef.js'
 import { Sampler } from '../sampler/sampler.js'
 import director from '../director/director.js'
+import { ScratchObject } from '../../core/object/object.js'
 
 /**
  * @typedef {Object} VertexBindingDescription
@@ -132,14 +132,14 @@ import director from '../director/director.js'
  * @property {Array<TextureBindingDescription>} [textures]
  */
 
-class Binding {
+class Binding extends ScratchObject {
 
     /**
      * @param {BindingsDescription} description 
      */
     constructor(description) {
 
-        this.uuid = UUID()
+        super()
 
         /**
          * @type {[UniformBinding]}
@@ -242,8 +242,6 @@ class Binding {
         this.uniformBufferReady = false
 
         this.released = false
-
-        this.refCount = 0
 
         // this.crteateBindGroupLayouts()
 
@@ -851,18 +849,6 @@ class Binding {
         return this.indexBinding ? this.indexBinding.buffer : undefined
     }
 
-    use() {
-
-        this.refCount++
-        return this
-    }
-
-    release() {
-
-        if (--this.refCount === 0) this.destroy()
-        return null
-    }
-
     destroy() {
 
         this.isComplete = false
@@ -937,7 +923,7 @@ class Binding {
         this.refCount = null
         this.name = null
 
-        return null
+        super.destroy()
     }
 }
 

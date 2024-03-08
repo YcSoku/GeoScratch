@@ -78,5 +78,5 @@ export function asVec3f(x, y, z) {
         v[2] = z
     }
 
-    return { type: 'vec3f', value: () => v }
+    return { type: 'vec3f', data: v }
 }

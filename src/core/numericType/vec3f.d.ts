@@ -1,5 +1,6 @@
+import { Mat4 } from "../math/mat4";
+import { Vec3 } from "../math/vec3";
 import { Numeric } from "./numeric"
-import { Mat4 } from "../math/wgpu-matrix";
 
 export class Vec3f extends Numeric {
      
@@ -15,3 +16,5 @@ export class Vec3f extends Numeric {
 }
 
 export function vec3f(x?: number, y?: number, z?: number): Vec3f;
+
+export function asVec3f(x?: number, y?: number, z?: number): { type: string, data: Vec3 }

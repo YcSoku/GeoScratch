@@ -144,7 +144,7 @@ export class BloomPass {
                 {
                     name: 'staticUniform',
                     map: {
-                        threshold: this.threshold.state,
+                        threshold: this.threshold,
                     }
                 }
             ],
@@ -227,7 +227,7 @@ export class BloomPass {
                 {
                     name: 'staticUniform',
                     map: {
-                        strength: this.strength.state
+                        strength: this.strength
                     }
                 }
             ],

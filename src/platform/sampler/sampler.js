@@ -1,4 +1,4 @@
-import getDevice  from '../context/device.js'
+import { ScratchObject } from '../../core/object/object.js'
 import director from '../director/director.js'
 
 /**
@@ -10,12 +10,14 @@ import director from '../director/director.js'
  * @property {Array<GPUAddressMode>} addressModeUVW
  */
 
-export class Sampler {
+export class Sampler extends ScratchObject {
 
     /**
      * @param {SamplerDescription} description 
      */
     constructor(description) {
+
+        super()
 
         /**
          * @type {string}
@@ -113,22 +115,9 @@ export class Sampler {
         director.dispatchEvent({type: 'createSampler', emitter: this})
     }
 
-    use() {
-
-        // if (this.refCount === 0) this.update()
-        this.refCount++
-        return this
-    }
-
     needUpdate() {
 
         director.addToUpdateList(this)
-    }
-
-    release() {
-
-        if (--this.refCount === 0) this.destroy()
-        return null
     }
 
     destroy() {
@@ -144,6 +133,8 @@ export class Sampler {
         this.refCount = undefined
         this.device = undefined
         this.name = undefined
+
+        super.destroy()
     }
 }
 

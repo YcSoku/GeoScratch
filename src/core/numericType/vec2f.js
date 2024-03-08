@@ -36,5 +36,5 @@ export function asVec2f(x, y) {
         v[1] = y
     }
 
-    return { type: 'vec2f', value: () => v }
+    return { type: 'vec2f', data: v }
 }

@@ -1,132 +1,6 @@
-import { UUID } from '../../core/utils/uuid.js'
-// import getDevice from '../context/device.js'
+import { ScratchObject } from '../../core/object/object.js'
 import director from '../director/director.js'
 import monitor from '../monitor/monitor.js'
-
-const numMipLevels = (...sizes) => {
-    const maxSize = Math.max(...sizes)
-    return 1 + Math.log2(maxSize) | 0
-}
-
-// const generateMips = (() => {
-//     const generator = {
-//         sampler: undefined,
-//         module: undefined,
-//         pipelineByFormat: {},
-//     }
-//     // let sampler
-//     // let module
-//     // const pipelineByFormat = {}
- 
-//     return function generateMips(texture) {
-
-//         director.dispatchEvent({type: 'generateMips', emitter: generator, texture: texture})
-
-//         // const device = getDevice()
-//         // if (!generator.module) {
-//         //     generator.module = device.createShaderModule({
-//         //     label: 'textured quad shaders for mip level generation',
-//         //     code: `
-//         //         struct VSOutput {
-//         //             @builtin(position) position: vec4f,
-//         //             @location(0) texcoord: vec2f,
-//         //         };
-
-//         //         @vertex fn vs(
-//         //             @builtin(vertex_index) vertexIndex : u32
-//         //         ) -> VSOutput {
-//         //             let pos = array(
-
-//         //             vec2f( 0.0,  0.0),  // center
-//         //             vec2f( 1.0,  0.0),  // right, center
-//         //             vec2f( 0.0,  1.0),  // center, top
-
-//         //             // 2st triangle
-//         //             vec2f( 0.0,  1.0),  // center, top
-//         //             vec2f( 1.0,  0.0),  // right, center
-//         //             vec2f( 1.0,  1.0),  // right, top
-//         //             );
-
-//         //             var vsOutput: VSOutput;
-//         //             let xy = pos[vertexIndex];
-//         //             vsOutput.position = vec4f(xy * 2.0 - 1.0, 0.0, 1.0);
-//         //             vsOutput.texcoord = vec2f(xy.x, 1.0 - xy.y);
-//         //             return vsOutput;
-//         //         }
-
-//         //         @group(0) @binding(0) var ourSampler: sampler;
-//         //         @group(0) @binding(1) var ourTexture: texture_2d<f32>;
-
-//         //         @fragment fn fs(fsInput: VSOutput) -> @location(0) vec4f {
-//         //             return textureSample(ourTexture, ourSampler, fsInput.texcoord);
-//         //         }
-//         //         `,
-//         //     });
-
-//         //     generator.sampler = device.createSampler({
-//         //         minFilter: 'linear',
-//         //         addressModeU: 'clamp-to-edge',
-//         //         addressModeV: 'clamp-to-edge',
-//         //     });
-//         // }
-
-//         // if (!generator.pipelineByFormat[texture.format]) {
-//         //     generator.pipelineByFormat[texture.format] = device.createRenderPipeline({
-//         //         label: 'mip level generator pipeline',
-//         //         layout: 'auto',
-//         //         vertex: {
-//         //             module: generator.module,
-//         //             entryPoint: 'vs',
-//         //         },
-//         //         fragment: {
-//         //             module: generator.module,
-//         //             entryPoint: 'fs',
-//         //             targets: [{ format: texture.format }],
-//         //         },
-//         //     });
-//         // }
-//         // const pipeline = generator.pipelineByFormat[texture.format]
-
-//         // const encoder = device.createCommandEncoder({ label: 'mip gen encoder' })
-
-//         // let width = texture.width
-//         // let height = texture.height
-//         // let baseMipLevel = 0
-//         // while (width > 1 || height > 1) {
-//         //     width = Math.max(1, Math.ceil(width / 2) | 0);
-//         //     height = Math.max(1, Math.ceil(height / 2) | 0);
-
-//         //     const bindGroup = device.createBindGroup({
-//         //         layout: pipeline.getBindGroupLayout(0),
-//         //         entries: [
-//         //             { binding: 0, resource: generator.sampler },
-//         //             { binding: 1, resource: texture.createView({baseMipLevel, mipLevelCount: 1}) },
-//         //         ],
-//         //     })
-
-//         //     ++baseMipLevel
-
-//         //     const renderPassDescriptor = {
-//         //         label: 'our basic canvas renderPass',
-//         //         colorAttachments: [
-//         //         {
-//         //             view: texture.createView({baseMipLevel, mipLevelCount: 1}),
-//         //             loadOp: 'clear',
-//         //             storeOp: 'store',
-//         //         },
-//         //         ],
-//         //     }
-
-//         //     const pass = encoder.beginRenderPass(renderPassDescriptor)
-//         //     pass.setPipeline(pipeline)
-//         //     pass.setBindGroup(0, bindGroup)
-//         //     pass.draw(6)
-//         //     pass.end()
-//         // }
-
-//         // device.queue.submit([encoder.finish()])
-//     }
-// })()
 
 /**
  * @typedef {Object} TextureResourceDescription
@@ -149,29 +23,38 @@ const numMipLevels = (...sizes) => {
  * @property {TextureResourceDescription} [resource]
  */
 
-class Texture {
+class Texture extends ScratchObject {
 
     /**
      * @param {TextureDescription} description 
      */
     constructor(description) {
 
-        this.uuid = UUID()
+        super()
         
-        this.refCount = 0
         this.name = description.name ? description.name : 'Texture'
+
         this.resource = description.resource
+
         this.resource.dataType = description.resource.dataType ? description.resource.dataType : 'size'
+
         this.flipY = (description.flipY !== undefined) ? description.flipY : true
+
         this.computable = description.computable ? description.computable : false
+
         this.usage = description.usage ? description.usage : (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC)
+
         if (this.computable) this.usage = GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC
+
         this.format = description.format ? description.format : 'rgba8unorm'
+
         this.mipMapped = description.mipMapped ? description.mipMapped : false
+
         /**
          * @type {'clean' | 'imageBitmap' | 'buffer' | 'data' | 'size' | 'canvasTexture'}
          */
         this.dirtyType = this.resource.dataType
+
         this.sampleCount = description.sampleCount
 
         /**
@@ -192,21 +75,10 @@ class Texture {
         this.byteLength = 0;
 
         this.updatePerFrame = false
+
         this.needUpdate()
 
         this.texture = undefined
-    }
-
-    use() {
-
-        this.refCount++
-        return this
-    }
-
-    release() {
-
-        if (--this.refCount === 0) this.destroy()
-        return null
     }
 
     /**
@@ -231,8 +103,6 @@ class Texture {
 
     updateByImageBitmap() {
 
-        // const device = getDevice()
-
         if (this.texture) {
             monitor.memorySizeInBytes -= this.byteLength
             this.texture.destroy()
@@ -242,73 +112,6 @@ class Texture {
         if (!imageBitmap) return
 
         director.dispatchEvent({type: 'createTextureByImageBitmap', emitter: this, imageBitmap})
-
-        // let rgba8Texture = device.createTexture({
-        //     label: `${this.name}`,
-        //     size: [imageBitmap.width, imageBitmap.height],
-        //     format: 'rgba8unorm',
-        //     usage: this.usage,
-        //     ...(this.mipMapped && {
-        //         mipLevelCount: numMipLevels(imageBitmap.width, imageBitmap.height)
-        //     })
-        // })
-
-        // device.queue.copyExternalImageToTexture(
-        //     {source: imageBitmap, flipY: this.flipY},
-        //     {texture: rgba8Texture},
-        //     {width: imageBitmap.width, height: imageBitmap.height}
-        // )
-
-        // if (this.format === 'rgba8unorm') this.texture = rgba8Texture
-        // else {
-
-        //     const componentNum = {
-        //         'rg32float': 2,
-        //     }
-        
-        //     if (!(this.format in componentNum)) {
-        //         throw new Error(`Unsupported reparsed format: ${this.format}`)
-        //     }
-        //     const targetComponents = componentNum[this.format]
-
-        //     // Reparsing
-        //     const tempEncoder = device.createCommandEncoder()
-        //     const tempBuffer = device.createBuffer({
-        //       label: 'tempBuffer',
-        //       size: rgba8Texture.width * rgba8Texture.height * 4,
-        //       usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC
-        //     })
-        //     tempEncoder.copyTextureToBuffer(
-        //       { texture: rgba8Texture, mipLevel: 0, origin: [0, 0, 0], aspect: 'all' },
-        //       { buffer: tempBuffer, offset: 0, bytesPerRow: rgba8Texture.width * 4, rowsPerImage: rgba8Texture.height },
-        //       [rgba8Texture.width, rgba8Texture.height]
-        //     )
-      
-        //     const parsedTexture = device.createTexture({
-        //       label: this.name,
-        //       format: this.format,
-        //       size: [rgba8Texture.width / targetComponents, imageBitmap.height],
-        //       usage: this.usage,
-        //       ...(this.mipMapped && {
-        //           mipLevelCount: numMipLevels(rgba8Texture.width / targetComponents, imageBitmap.height)
-        //       })
-        //     })
-        //     tempEncoder.copyBufferToTexture(
-        //       { buffer: tempBuffer, offset: 0, bytesPerRow: rgba8Texture.width * 4, rowsPerImage: parsedTexture.height },
-        //       { texture: parsedTexture, mipLevel: 0, origin: [0, 0, 0], aspect: 'all' },
-        //       [parsedTexture.width, parsedTexture.height]
-        //     )
-        //     device.queue.submit([tempEncoder.finish()])
-            
-        //     rgba8Texture.destroy()
-        //     tempBuffer.destroy()
-        //     this.texture = parsedTexture
-        // }
-
-        // if (this.texture.mipLevelCount > 1) {
-        //     // generateMips(this.texture)
-        //     director.dispatchEvent({type: 'generateMips', texture: this.texture})
-        // }
 
         this.dirtyType = 'clean'
         this.getByteLength()
@@ -334,29 +137,12 @@ class Texture {
 
     updateBySize() {
 
-        // const device = getDevice()
-
         if (this.texture) {
             monitor.memorySizeInBytes -= this.byteLength
             this.texture.destroy()
         }
 
         director.dispatchEvent({type: 'createTextureBySize', emitter: this})
-
-        // this.texture = device.createTexture({
-        //     label: `${this.name}`,
-        //     size: this.resource.size(),
-        //     format: this.format,
-        //     usage: this.usage,
-        //     ...(this.mipMapped && {
-        //         mipLevelCount: numMipLevels(...this.resource.size())
-        //     })
-        // })
-
-        // if (this.texture.mipLevelCount > 1) {
-        //     // generateMips(this.texture)
-        //     director.dispatchEvent({type: 'generateMips', texture: this.texture})
-        // }
 
 
         this.getByteLength()
@@ -501,6 +287,8 @@ class Texture {
 
         this.byteLength && (monitor.memorySizeInBytes -= this.byteLength)
         this.byteLength = 0
+
+        super.destroy()
     }
 }
 

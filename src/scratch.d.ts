@@ -1,3 +1,5 @@
+export { ScratchObject } from './core/object/object'
+
 export { Buffer } from './platform/buffer/buffer'
 export { vertexBuffer, VertexBuffer } from './platform/buffer/vertexBuffer'
 export { storageBuffer, StorageBuffer } from './platform/buffer/storageBuffer'

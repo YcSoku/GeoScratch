@@ -27,5 +27,5 @@ export function i32(a) {
 
 export function asI32(a) {
 
-    return { type: 'i32', value: () => a }
+    return { type: 'i32', data: a !== undefined ? a : 0 }
 }

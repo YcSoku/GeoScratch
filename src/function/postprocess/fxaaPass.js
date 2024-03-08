@@ -40,8 +40,8 @@ export class FXAAPass {
                 {
                     name: 'staticUniform',
                     map: {
-                        threshold: this.threshold.state,
-                        searchStep: this.searchStep.state,
+                        threshold: this.threshold,
+                        searchStep: this.searchStep,
                     }
                 }
             ],

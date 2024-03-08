@@ -6,5 +6,7 @@ export class Numeric {
 
     get data(): any;
 
+    get type(): string;
+
     get state(): { type: string, value: Function };
 }

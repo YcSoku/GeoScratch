@@ -6,11 +6,13 @@ export type BufferDescription = {
 };
 
 export class Buffer {
+
     constructor(description: BufferDescription);
 
     name: string;
 
     buffer: GPUBuffer;
+    
     updatePerFrame: boolean;
 
     areaMap: {[mapName: string]: {start: number, length: number, arrayRef: ArrayRef, dataOffset?: number, size?: number}};

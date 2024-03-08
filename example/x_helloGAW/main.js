@@ -5,50 +5,37 @@ scr.StartDash().then(() => main(document.getElementById('GPUFrame')))
 const main = function (canvas) {
 
     // Screen canvas
-    /**
-     * @type { scr.Screen }
-     */
     const screen = scr.screen({ canvas })
 
     // Scene parameters
-    let timeStep = scr.f32(0.)
-    let up = scr.vec3f(0., 1., 0.)
-    let target = scr.vec3f(0., 0., 0.)
-    let cameraPos = scr.vec3f(0., 0., 1200.)
-    let lightPos = scr.vec3f(-600., 0., 0.).transformFromMat4(scr.Mat4f.rotationZ(scr.utils.degToRad(-23.)))
+    const timeCount = scr.f32(0.)
+    const up = scr.vec3f(0., 1., 0.)
+    const target = scr.vec3f(0., 0., 0.)
+    const cameraPos = scr.vec3f(0., 0., 1200.)
+    const lightPos = scr.vec3f(-600., 0., 0.).transformFromMat4(scr.Mat4f.rotationZ(scr.utils.degToRad(-23.)))
 
     // Earth
-    let diam = 800.
-    let radius = scr.f32(diam / 2.)
-    let rLink = scr.f32(radius.data - 100.)
+    const diam = 800.
+    const radius = scr.f32(diam / 2.)
 
-    // Linking Nodes
-    let maxParticleCount = 100
-    let nodeInLink = scr.f32(20)
-    let particleCount = maxParticleCount
-    let minDistance = scr.f32(rLink.data * 2.0)
-    let maxConnections = scr.u32(maxParticleCount / 2)
+    // Linked particles
+    const maxParticleCount = 100
+    const nodeInLink = scr.f32(20)
+    const rLink = scr.f32(radius.data - 100.)
+    const minDistance = scr.f32(rLink.data * 2.0)
+    const maxConnections = scr.u32(maxParticleCount / 2)
 
     // Global matrix
-    let viewMatrix = scr.mat4f()
-    let modelMatrix = scr.mat4f()
-    let normalMatrix = scr.mat4f()
-    let projectionMatrix = scr.mat4f()
+    const viewMatrix = scr.mat4f()
+    const modelMatrix = scr.mat4f()
+    const normalMatrix = scr.mat4f()
+    const projectionMatrix = scr.mat4f()
 
     // Global arrayRef
-    /**
-     * @type {scr.ArrayRef}
-     */
-    let linkIndirect
-    /**
-     * @type {scr.ArrayRef}
-     */
-    let connetionNums
+    const connetionNums = scr.aRef(new Uint32Array(maxParticleCount).fill(0))
+    const linkIndirect = scr.aRef(new Uint32Array([nodeInLink.data, 0, 0, 0]))
 
     // Global sampler
-    /**
-     * @type { scr.Sampler }
-     */
     const lSampler = scr.sampler({
         name: 'Sampler (Linear)',
         filterMinMag: ['linear', 'linear'],
@@ -95,17 +82,17 @@ const main = function (canvas) {
                     name: 'dynamicUniform',
                     dynamic: true,
                     map: {
-                        projection: projectionMatrix.state,
-                        view: viewMatrix.state,
-                        model: modelMatrix.state,
-                        normal: normalMatrix.state,
-                        deleta: timeStep.state,
+                        projection: projectionMatrix,
+                        view: viewMatrix,
+                        model: modelMatrix,
+                        normal: normalMatrix,
+                        deleta: timeCount,
                     }
                 },
                 {
                     name: 'staticUniform',
                     map: {
-                        radius: radius.state,
+                        radius: radius,
                         alphaTest: scr.asF32(0.3),
                         opacity: scr.asF32(1.),
                     }
@@ -113,10 +100,10 @@ const main = function (canvas) {
                 {
                     name: 'light',
                     map: {
-                        position: lightPos.state,
+                        position: lightPos,
                         color: scr.asVec3f(1.),
                         intensity: scr.asF32(6.),
-                        viewPos: cameraPos.state,
+                        viewPos: cameraPos,
                     }
                 },
                 {
@@ -154,17 +141,17 @@ const main = function (canvas) {
                     name: 'dynamicUniform',
                     dynamic: true,
                     map: {
-                        projection: projectionMatrix.state,
-                        view: viewMatrix.state,
-                        model: modelMatrix.state,
-                        normal: normalMatrix.state,
-                        delta: timeStep.state,
+                        projection: projectionMatrix,
+                        view: viewMatrix,
+                        model: modelMatrix,
+                        normal: normalMatrix,
+                        delta: timeCount,
                     }
                 },
                 {
                     name: 'staticUniform',
                     map: {
-                        radius: radius.state,
+                        radius: radius,
                         alphaTest: scr.asF32(0.3),
                         opacity: scr.asF32(0.6),
                     }
@@ -172,18 +159,18 @@ const main = function (canvas) {
                 {
                     name: 'light',
                     map: {
-                        position: lightPos.state,
+                        position: lightPos,
                         color: scr.asVec3f(1.),
                         intensity: scr.asF32(6.),
-                        viewPos: cameraPos.state,
+                        viewPos: cameraPos,
                     }
                 },
                 {
                     name: 'material',
                     map: {
-                        ambient: scr.vec3f(0.8).state,
-                        diffuse: scr.vec3f(1.).state,
-                        specular: scr.vec3f(1.).state,
+                        ambient: scr.asVec3f(0.8),
+                        diffuse: scr.asVec3f(1.),
+                        specular: scr.asVec3f(1.),
                         shininess: scr.asF32(16.),
                         emissive: scr.asF32(1.),
                     }
@@ -246,14 +233,14 @@ const main = function (canvas) {
             name: 'Storage Buffer (Particle velocity)',
             resource: { arrayRef: scr.aRef(pVelocities) }
         })
+        const vertexBuffer_particle_color = scr.vertexBuffer({
+            name: 'Vertex Buffer (Particle color)',
+            resource: { arrayRef: scr.aRef(pColors), structure: [ { components: 4 } ] }
+        })
         const vertexBuffer_particle_position = scr.vertexBuffer({
             name: 'Vertex Buffer (Particle position)',
             randomAccessible: true,
             resource: { arrayRef: scr.aRef(pPositions), structure: [ { components: 3 } ] }
-        })
-        const vertexBuffer_particle_color = scr.vertexBuffer({
-            name: 'Vertex Buffer (Particle color)',
-            resource: { arrayRef: scr.aRef(pColors), structure: [ { components: 4 } ] }
         })
 
         // Buffer-related resource of links
@@ -269,13 +256,11 @@ const main = function (canvas) {
             resource: { arrayRef: linkIndices }
         })
         
-        connetionNums = scr.aRef(new Uint32Array(maxParticleCount).fill(0))
         const storageBuffer_connection_nums = scr.storageBuffer({
             name: 'Storage Buffer (Connection num)',
             resource: { arrayRef: connetionNums }
         })
 
-        linkIndirect = scr.aRef(new Uint32Array([nodeInLink.data, 0, 0, 0]))
         const indirectBuffer_link = scr.indirectBuffer({
             name: 'Storage Buffer (Indirect)',
             randomAccessible: true,
@@ -284,14 +269,14 @@ const main = function (canvas) {
 
         // Binding: Particles
         const particles = scr.binding({
-            range: () => [ 4, particleCount ],
+            range: () => [ 4, maxParticleCount ],
             uniforms: [
                 {
                     name: 'dynamicUniform',
                     dynamic: true,
                     map: {
-                        projection: projectionMatrix.state,
-                        view: viewMatrix.state,
+                        projection: projectionMatrix,
+                        view: viewMatrix,
                         viewPort: scr.asVec2f(screen.width, screen.height),
                     },
                 },
@@ -315,7 +300,7 @@ const main = function (canvas) {
                 {
                     name: 'staticUniform',
                     map: {
-                        rLink: rLink.state,
+                        rLink: rLink,
                         groupSize: scr.asVec2u(1),
                         angle: scr.asF32(0.01),
                     }
@@ -334,18 +319,18 @@ const main = function (canvas) {
                     name: 'dynamicUniform',
                     dynamic: true,
                     map: {
-                        projection: projectionMatrix.state,
-                        view: viewMatrix.state,
+                        projection: projectionMatrix,
+                        view: viewMatrix,
                     },
                 },
                 {
                     name: 'staticUniform',
                     map: {
-                        minDistance: minDistance.state,
+                        minDistance: minDistance,
                         cardinalColor: scr.asVec3f(175. / 255., 65. / 255., 5. / 255.),
                         evenColor: scr.asVec3f(80. / 255., 190. / 255., 1.),
-                        rLink: rLink.state,
-                        maxNodeIndex: nodeInLink.add(-1.).state,
+                        rLink: rLink,
+                        maxNodeIndex: nodeInLink.add(-1.),
                     }
                 }
             ],
@@ -363,8 +348,8 @@ const main = function (canvas) {
                 {
                     name: 'staticUniform',
                     map: {
-                        minDistance: minDistance.state,
-                        maxConnection: maxConnections.state,
+                        minDistance: minDistance,
+                        maxConnection: maxConnections,
                         groupSize: scr.asVec2u(1),
                     }
                 }
@@ -418,13 +403,13 @@ const main = function (canvas) {
             threshold: 0.0,
             strength: 0.4,
             blurCount: 5,
-            inputColorAttachment: sceneTexture
+            inputColorAttachment: sceneTexture,
         })
         // Pass：FXAA postprocess
         const fxaaPass = scr.FXAAPass.create({
             threshold: 0.0312,
             searchStep: 10,
-            inputColorAttachment: bloomPass.getOutputAttachment()
+            inputColorAttachment: bloomPass.getOutputAttachment(),
         })
         screen.addScreenDependentElement(bloomPass).addScreenDependentElement(fxaaPass)
         // Pass: Scene computation
@@ -498,17 +483,15 @@ const main = function (canvas) {
             items: [
                 /* 1st pass */  computePass_scene.add(...simulator).add(...indexer), 
                 /* 2nd pass */  renderPass_scene.add(...land).add(...links).add(...particles).add(...water).add(...cloud),
-                /* 3rd pass */  bloomPass,
-                /* 4th pass */  fxaaPass,
-                /* 5th pass */  outputPass,
+                /* 3rd pass */  bloomPass, /* 4th pass */  fxaaPass, /* 5th pass */  outputPass,
             ],
         })
     }
 
     const animate = function () {
 
-        /* Accumulation */      timeStep.add(-0.001)
-        /* Connections*/        connetionNums.fill(0)
+        /* Accumulation */      timeCount.add(-0.001)
+        /* Connections */       connetionNums.fill(0)
         /* Link buffer */       linkIndirect.element(1, 0)
         /* View matrix */       viewMatrix.lookAt(cameraPos, target, up)
         /* Model matrix */      modelMatrix.data = scr.Mat4f.rotationX(scr.utils.degToRad(32.)).data

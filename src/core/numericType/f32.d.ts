@@ -11,4 +11,4 @@ export class F32 extends Numeric {
 
 
 export function f32(a: number): F32;
-export function asF32(a: number): { type: string, value: Function };
+export function asF32(a: number): { type: string, data: number };

@@ -1,6 +1,4 @@
-import { UUID } from "../../core/utils/uuid.js";
-import getDevice from "../context/device.js";
-import { makeShaderDataDefinitions } from "../../core/utils/webgpu-utils.module.js";
+import { ScratchObject } from "../../core/object/object.js";
 import director from "../director/director.js";
 /**
  * @typedef {Object} ShaderDescription
@@ -8,21 +6,23 @@ import director from "../director/director.js";
  * @property {Function} [codeFunc]
  */
 
-class Shader {
+class Shader extends ScratchObject {
 
     /**
-     * 
      * @param {ShaderDescription} description 
      */
     constructor(description) {
 
-        this.uuid = UUID()
+        super()
 
         this.name = description.name
+
+        /**
+         * @type {GPUShaderModule}
+         */
         this.shaderModule = undefined
         this.code = description.codeFunc
-        this.code() && director.dispatchEvent({type: 'createShader', emitter: this})
-        // this.dirty = true
+        this.code() && this.needUpdate()
     }
 
     /**
@@ -31,6 +31,11 @@ class Shader {
     static create(description) {
 
         return new Shader(description)
+    }
+
+    needUpdate() {
+
+        director.addToUpdateList(this)
     }
 
     exportDescriptor() {
@@ -42,31 +47,23 @@ class Shader {
         }
     }
 
-    /**
-     * @deprecated
-     * @param {GPUDevice} device 
-     */
-    update(device) {
-        // if (!this.dirty) return
-        
-        // const device = getDevice()
+    update() {
 
-        const code = this.code()
-        if (code) {
-            this.shaderModule = device.createShaderModule({
-                label: this.name,
-                code: code
-            })
-            this.defs = makeShaderDataDefinitions(code)
-
-            // this.dirty = false
-        }
+        director.dispatchEvent({type: 'createShader', emitter: this})
     }
 
     isComplete() {
 
         if (this.shaderModule) return true
         return false
+    }
+
+    destroy() {
+
+        this.code = null
+        this.shaderModule = null
+
+        super.destroy()
     }
 }
 

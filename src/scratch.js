@@ -1,3 +1,5 @@
+export { ScratchObject } from './core/object/object.js'
+
 import getDevice from './platform/context/device.js'
 export { getDevice }
 export { Device, StartDash, device } from './platform/context/device.js'

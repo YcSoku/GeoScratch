@@ -11,4 +11,4 @@ export class U32 extends Numeric {
 
 
 export function u32(a: number): U32;
-export function asU32(a: number): { type: string, value: Function };
+export function asU32(a: number): { type: string, data: number };

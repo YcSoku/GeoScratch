@@ -1,8 +1,8 @@
-import { UUID } from "../../core/utils/uuid.js"
 import { ArrayRef } from "../../core/data/arrayRef.js"
 import { BlockRef } from "../../core/data/blockRef.js"
 import director from "../director/director.js"
 import monitor from "../monitor/monitor.js"
+import { ScratchObject } from "../../core/object/object.js"
 
 /**
  * @typedef {Object} BufferDescription
@@ -15,34 +15,25 @@ import monitor from "../monitor/monitor.js"
  * @typedef {ArrayRef | BlockRef} Ref
  */
 
-class Buffer {
+class Buffer extends ScratchObject {
 
     /**
-     * @param {BufferDescription} [description] 
+     * @param {BufferDescription} description
      */
     constructor(description) {
 
-        this.uuid = UUID()
+        super()
 
-        this.name = 'Buffer'
-        this.refCount = 0
-        // this.device = getDevice()
+        this.name = description.name !== undefined ? description.name : 'Buffer'
 
-        if (description) {
+        this.buffer = undefined
 
-            this.buffer = undefined
-            this.name = description.name
-            this.size = description.size
-            this.usage = description.usage
+        this.size = description.size
+        monitor.memorySizeInBytes += this.size
 
-            director.dispatchEvent({type: 'createBuffer', emitter: this})
-            // this.buffer = this.device.createBuffer({
-            //     label: this.name,
-            //     size: this.size,
-            //     usage: this.usage
-            // })
-            monitor.memorySizeInBytes += this.size
-        }
+        this.usage = description.usage
+
+        director.dispatchEvent({type: 'createBuffer', emitter: this})
 
         /**
          * @type {{[mapName: string]: {start: number, length: number, ref: Ref, dataOffset?: number, size?: number, callbackIndex: number}}}
@@ -54,19 +45,6 @@ class Buffer {
         this.dirtyList = new Set()
 
         this.needUpdate()
-    }
-
-    use() {
-        
-        this.refCount++
-        return this
-    }
-
-    release() {
-
-        if (--this.refCount === 0) this.destroy()
-
-        return null
     }
 
     /**
@@ -188,6 +166,8 @@ class Buffer {
     
         this.dirtyList.clear()
         this.dirtyList = null
+
+        super.destroy()
     }
 }
 

@@ -11,4 +11,4 @@ export class I32 extends Numeric {
 
 
 export function i32(a: number): I32;
-export function asI32(a: number): { type: string, value: Function };
+export function asI32(a: number): { type: string, data: number };

@@ -21,9 +21,6 @@ class StorageBuffer extends Buffer {
     constructor(description?: BufferDescription);
 
     static create(description: StorageBufferDescription): StorageBuffer;
-    static fromVertexBuffer(vertexBuffer: VertexBuffer): StorageBuffer;
-    static fromIndexBuffer(indexBuffer: IndexBuffer): StorageBuffer;
-    static fromIndirectBuffer(indirectBuffer: IndirectBuffer): StorageBuffer;
 }
 
 function storageBuffer(description: StorageBufferDescription): StorageBuffer;

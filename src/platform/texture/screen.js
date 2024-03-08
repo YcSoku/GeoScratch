@@ -45,7 +45,6 @@ class Screen extends Texture {
 
         this.needUpdate()
         this.updatePerFrame = true
-        // director.addToUpdateList(this)
 
         window.addEventListener('resize', () => this.onWindowResize())
     }

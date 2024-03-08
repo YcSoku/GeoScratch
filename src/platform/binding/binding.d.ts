@@ -7,6 +7,7 @@ import { UniformBuffer } from '../buffer/uniformBuffer';
 import { StorageBuffer } from '../buffer/storageBuffer';
 import { BlockValueType } from '../../core/data/blockRef';
 import { Sampler } from "../sampler/sampler";
+import { ScratchObject } from "../../core/object/object";
 
 export interface UniformBindingDescription {
     name: string,
@@ -68,7 +69,7 @@ export interface BindingsDescription {
     sharedUniforms?: Array<SharedUniformBindingDescription>,
 };
 
-export class Binding {
+export class Binding extends ScratchObject {
 
     indirectBinding: {buffer: GPUBuffer | undefined, byteOffset: number};
     isComplete: boolean;
@@ -102,10 +103,6 @@ export class Binding {
     getShader(): GPUShaderModule;
 
     tryMakeComplete(): boolean;
-
-    destroy(): void;
-
-    release(): null;
 }
 
 export function binding(description: BindingsDescription): Binding;

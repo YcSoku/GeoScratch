@@ -19,11 +19,10 @@ export class Numeric {
         return this._data
     }
 
-    get state() {
+    get type() {
 
-        return {
-            type: this._type,
-            value: () => this._data
-        }
+        return this._type
     }
+
+    
 }
