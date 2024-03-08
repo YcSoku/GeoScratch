@@ -26,4 +26,6 @@ class StorageBuffer extends Buffer {
     static fromIndirectBuffer(indirectBuffer: IndirectBuffer): StorageBuffer;
 }
 
-export { StorageBuffer };
+function storageBuffer(description: StorageBufferDescription): StorageBuffer;
+
+export { storageBuffer, StorageBuffer };

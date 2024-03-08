@@ -146,3 +146,11 @@ export class Sampler {
         this.name = undefined
     }
 }
+
+/**
+ * @param {SamplerDescription} description 
+ */
+export function sampler(description) {
+
+    return Sampler.create(description)
+}

@@ -35,6 +35,7 @@ class BlockRef {
             ${typeDeclaration}
         }`
         const defs = makeShaderDataDefinitions(this.code)
+        // console.log(this.code, defs)
         this._view = makeStructuredView(defs.structs.Block)
         
 

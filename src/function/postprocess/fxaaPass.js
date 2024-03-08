@@ -1,3 +1,4 @@
+import { f32, i32 } from '../../core/numericType/numericType.js'
 import { Binding } from "../../platform/binding/binding.js"
 import { Texture } from "../../platform/texture/texture.js"
 import { ComputePass } from "../../platform/pass/computePass.js"
@@ -18,8 +19,8 @@ export class FXAAPass {
      */
     constructor(description) {
 
-        this.threshold = description.threshold
-        this.searchStep = description.searchStep
+        this.threshold = f32(description.threshold)
+        this.searchStep = i32(description.searchStep)
         this.inputColorAttachment = description.inputColorAttachment
 
         this.fxaaTexture = Texture.create({
@@ -39,8 +40,8 @@ export class FXAAPass {
                 {
                     name: 'staticUniform',
                     map: {
-                        threshold: { type: 'f32', value: () => this.threshold },
-                        searchStep: { type: 'i32', value: () => this.searchStep },
+                        threshold: this.threshold.state,
+                        searchStep: this.searchStep.state,
                     }
                 }
             ],
@@ -93,4 +94,12 @@ export class FXAAPass {
         
         this.fxaaTexture.reset()
     }
+}
+
+/**
+ * @param {FXAAPassDescription} description 
+ */
+export function fxaaPass(description) {
+
+    return FXAAPass.create(description)
 }

@@ -67,7 +67,7 @@ fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
     let dim = vec2f(textureDimensions(sceneTexture, 0).xy);
     let frequency = dim / staticUniform.density;
     let stripe = sin(fsInput.texcoords.y * frequency.y * 3.14159265 * 2.0) * cos(fsInput.texcoords.x * frequency.x * 3.14159265 * 2.0);
-    let brightness = 0.5 + 0.5 * stripe;
+    let brightness = (0.5 + 0.5 * stripe) * 0.5 + 0.5;
     
     return vec4f(gammaCorrect(toneMapACES(color.rgb * brightness), staticUniform.gamma), color.a);
     // return vec4f(toneMapACES(color.rgb), color.a);

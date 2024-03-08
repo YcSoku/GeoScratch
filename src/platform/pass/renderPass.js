@@ -209,3 +209,11 @@ export class RenderPass {
         this.pass.end()
     }
 }
+
+/**
+ * @param {RenderPassDescription} description 
+ */
+export function renderPass(description) {
+
+    return RenderPass.create(description)
+}

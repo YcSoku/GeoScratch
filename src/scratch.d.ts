@@ -1,10 +1,10 @@
 export { Buffer } from './platform/buffer/buffer'
-export { VertexBuffer } from './platform/buffer/vertexBuffer'
-export { StorageBuffer } from './platform/buffer/storageBuffer'
-export { UniformBuffer } from './platform/buffer/uniformBuffer'
-export { IndexBuffer } from './platform/buffer/indexBuffer'
-export { IndirectBuffer } from './platform/buffer/indirectBuffer';
-export { MapBuffer } from './platform/buffer/mapBuffer'
+export { vertexBuffer, VertexBuffer } from './platform/buffer/vertexBuffer'
+export { storageBuffer, StorageBuffer } from './platform/buffer/storageBuffer'
+export { uniformBuffer, UniformBuffer } from './platform/buffer/uniformBuffer'
+export { indexBuffer, IndexBuffer } from './platform/buffer/indexBuffer'
+export { indirectBuffer, IndirectBuffer } from './platform/buffer/indirectBuffer';
+export { mapBuffer, MapBuffer } from './platform/buffer/mapBuffer'
 
 
 import getDevice from './platform/context/device'
@@ -14,22 +14,23 @@ export { Device, StartDash, device } from './platform/context/device'
 export { ArrayRef, aRef } from './core/data/arrayRef.js'
 export { BlockRefDescription, BlockRef, bRef } from './core/data/blockRef.js'
 
-export { Sampler } from './platform/sampler/sampler'
-export { Texture } from './platform/texture/texture'
-export { Screen } from './platform/texture/screen'
-export { Shader } from './platform/shader/shader'
+export { sampler, Sampler } from './platform/sampler/sampler'
+export { texture, Texture } from './platform/texture/texture'
+export { screen, Screen } from './platform/texture/screen'
+export { shader, Shader } from './platform/shader/shader'
 
 export {
+	binding,
 	Binding, 
 	SamplerDescription, 
 	UniformBindingDescription,
 	BindingsDescription} from './platform/binding/binding'
 
-export { RenderPipeline, RenderPipelineDescription } from './platform/pipeline/renderPipeline'
-export { ComputePipeline, ComputePipelineDescription } from './platform/pipeline/computePipeline'
+export { renderPipeline, RenderPipeline, RenderPipelineDescription } from './platform/pipeline/renderPipeline'
+export { computePipeline, ComputePipeline, ComputePipelineDescription } from './platform/pipeline/computePipeline'
 
-export { RenderPass, RenderPassDescription } from './platform/pass/renderPass'
-export { ComputePass, ComputePassDescription } from './platform/pass/computePass'
+export { renderPass, RenderPass, RenderPassDescription } from './platform/pass/renderPass'
+export { computePass, ComputePass, ComputePassDescription } from './platform/pass/computePass'
 
 import director, { Director } from './platform/director/director'
 export { director, Director }
@@ -51,10 +52,18 @@ export { shaderLoader }
 
 export { sphere } from './core/geometry/sphere'
 export { randomNonZeroBetweenMinusOneAndOne } from './core/math/random'
-export {vec2, vec3, vec4, mat3, mat4, utils, quat} from './core/math/wgpu-matrix.module.js'
-// export {
-// 	vec2, vec3, vec4, mat3, mat4, utils, quat,
-// }
+export { vec2, vec3, vec4, mat3, mat4, utils, quat } from './core/math/wgpu-matrix'
+
+export {
+	Numeric,
+	i32, asI32, I32,
+	u32, asU32, U32,
+	f32, asF32, F32,
+	vec2u, asVec2u, Vec2u,
+	vec2f, asVec2f, Vec2f,
+	vec3f, asVec3f, Vec3f,
+	mat4f, Mat4f
+} from './core/numericType/numericType.js'
 
 export { UUID } from './core/utils/uuid'
 

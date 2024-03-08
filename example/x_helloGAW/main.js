@@ -1,6 +1,6 @@
 import * as scr from '../../src/scratch.js'
 
-scr.StartDash().then(_ => main(document.getElementById('GPUFrame')))
+scr.StartDash().then(() => main(document.getElementById('GPUFrame')))
 
 const main = function (canvas) {
 
@@ -8,45 +8,48 @@ const main = function (canvas) {
     /**
      * @type { scr.Screen }
      */
-    const screen = scr.Screen.create({ canvas })
+    const screen = scr.screen({ canvas })
 
     // Scene parameters
-    let timeStep = 0.
-    let up = scr.vec3.fromValues(0., 1., 0.)
-    let target = scr.vec3.fromValues(0., 0., 0.)
-    let cameraPos = scr.vec3.fromValues(0., 0., 1200.)
-    let lightPos = scr.vec3.transformMat4(scr.vec3.fromValues(-600., 0., 0.), scr.mat4.rotationZ(scr.utils.degToRad(-23.)))
+    let timeStep = scr.f32(0.)
+    let up = scr.vec3f(0., 1., 0.)
+    let target = scr.vec3f(0., 0., 0.)
+    let cameraPos = scr.vec3f(0., 0., 1200.)
+    let lightPos = scr.vec3f(-600., 0., 0.).transformFromMat4(scr.Mat4f.rotationZ(scr.utils.degToRad(-23.)))
 
     // Earth
     let diam = 800.
-    let radius = diam / 2.
-    let rLink = radius - 100.
+    let radius = scr.f32(diam / 2.)
+    let rLink = scr.f32(radius.data - 100.)
 
     // Linking Nodes
-    let nodeInLink = 5
-    let numConnected = 0
     let maxParticleCount = 100
-    let minDistance = rLink * 1.2
+    let nodeInLink = scr.f32(20)
     let particleCount = maxParticleCount
-    let maxConnections = maxParticleCount - 1
+    let minDistance = scr.f32(rLink.data * 2.0)
+    let maxConnections = scr.u32(maxParticleCount / 2)
 
     // Global matrix
-    let viewMatrix = scr.mat4.create()
-    let modelMatrix = scr.mat4.create()
-    let normalMatrix = scr.mat4.create()
-    let projectionMatrix = scr.mat4.create()
+    let viewMatrix = scr.mat4f()
+    let modelMatrix = scr.mat4f()
+    let normalMatrix = scr.mat4f()
+    let projectionMatrix = scr.mat4f()
 
     // Global arrayRef
     /**
      * @type {scr.ArrayRef}
      */
     let linkIndirect
+    /**
+     * @type {scr.ArrayRef}
+     */
+    let connetionNums
 
     // Global sampler
     /**
      * @type { scr.Sampler }
      */
-    const lSampler = scr.Sampler.create({
+    const lSampler = scr.sampler({
         name: 'Sampler (Linear)',
         filterMinMag: ['linear', 'linear'],
         addressModeUVW: ['repeat', 'repeat'],
@@ -55,20 +58,20 @@ const main = function (canvas) {
     const initEarth = function () {
 
         // Buffer-related resource
-        const { indices, vertices, normals, uvs } = scr.sphere(radius, 64, 32)
-        const vertexBuffer_sphere_index = scr.VertexBuffer.create({
+        const { indices, vertices, normals, uvs } = scr.sphere(radius.data, 64, 32)
+        const vertexBuffer_sphere_index = scr.vertexBuffer({
             name: 'Vertex Buffer (Sphere index)',
             resource: { arrayRef: scr.aRef(new Uint32Array(indices)), structure: [ { components: 1 } ] }
         })
-        const storageBuffer_sphere_position = scr.StorageBuffer.create({
+        const storageBuffer_sphere_position = scr.storageBuffer({
             name: 'Storage Buffer (Sphere position)',
             resource: { arrayRef: scr.aRef(new Float32Array(vertices)) }
         })
-        const storageBuffer_sphere_normal = scr.StorageBuffer.create({
+        const storageBuffer_sphere_normal = scr.storageBuffer({
             name: 'Storage Buffer (Sphere normal)',
             resource: { arrayRef: scr.aRef(new Float32Array(normals)) }
         })
-        const storageBuffer_sphere_uv = scr.StorageBuffer.create({
+        const storageBuffer_sphere_uv = scr.storageBuffer({
             name: 'Storage Buffer (Sphere uv)' ,
             resource: { arrayRef: scr.aRef(new Float32Array(uvs)) }
         })
@@ -84,46 +87,46 @@ const main = function (canvas) {
         const leTexture = scr.imageLoader.load('Land emission', '/images/Earth/earth-selfillumination.jpg')
 
         // Binding: Land and water
-        const landWater = scr.Binding.create({
+        const landWater = scr.binding({
             name: 'Binding (Land and Water)',
-            range: _ => [ indices.length ],
+            range: () => [ indices.length ],
             uniforms: [
                 {
                     name: 'dynamicUniform',
                     dynamic: true,
                     map: {
-                        projection: { type: 'mat4x4f', value: _ => projectionMatrix },
-                        view: { type: 'mat4x4f', value: _ => viewMatrix },
-                        model: { type: 'mat4x4f', value: _ => modelMatrix },
-                        normal: { type: 'mat4x4f', value: _ => normalMatrix },
-                        deleta: { type: 'f32', value: _ => timeStep },
+                        projection: projectionMatrix.state,
+                        view: viewMatrix.state,
+                        model: modelMatrix.state,
+                        normal: normalMatrix.state,
+                        deleta: timeStep.state,
                     }
                 },
                 {
                     name: 'staticUniform',
                     map: {
-                        radius: { type: 'f32', value: _ => radius },
-                        alphaTest: { type: 'f32', value: _ => 0.3 },
-                        opacity: { type: 'f32', value: _ => 1. },
+                        radius: radius.state,
+                        alphaTest: scr.asF32(0.3),
+                        opacity: scr.asF32(1.),
                     }
                 },
                 {
                     name: 'light',
                     map: {
-                        position: { type: 'vec3f', value: _ => lightPos },
-                        color: { type: 'vec3f', value: _ => [ 1., 1., 1. ] },
-                        intensity: { type: 'f32', value: _ => 6.0 },
-                        viewPos: { type: 'vec3f', value: _ => cameraPos },
+                        position: lightPos.state,
+                        color: scr.asVec3f(1.),
+                        intensity: scr.asF32(6.),
+                        viewPos: cameraPos.state,
                     }
                 },
                 {
                     name: 'material',
                     map: {
-                        ambient: { type: 'vec3f', value: _ => [ 0.4, 0.4, 0.4 ] },
-                        diffuse: { type: 'vec3f', value: _ => [ 1., 1., 1. ] },
-                        specular: { type: 'vec3f', value: _ => [ 1., 1., 1. ] },
-                        shininess: { type: 'f32', value: _ => 16. },
-                        emissive: { type: 'f32', value: _ => 1. },
+                        ambient: scr.asVec3f(0.4),
+                        diffuse: scr.asVec3f(1.),
+                        specular: scr.asVec3f(1.),
+                        shininess: scr.asF32(16.),
+                        emissive: scr.asF32(1.),
                     }
                 }
             ],
@@ -143,46 +146,46 @@ const main = function (canvas) {
             vertices: [ { buffer: vertexBuffer_sphere_index } ],
         })
         // Binding: Cloud
-        const cloud = scr.Binding.create({
+        const cloud = scr.binding({
             name: 'Binding (Cloud)',
-            range: _ => [ indices.length ],
+            range: () => [ indices.length ],
             uniforms: [
                 {
                     name: 'dynamicUniform',
                     dynamic: true,
                     map: {
-                        projection: { type: 'mat4x4f', value: _ => projectionMatrix },
-                        view: { type: 'mat4x4f', value: _ => viewMatrix },
-                        model: { type: 'mat4x4f', value: _ => modelMatrix },
-                        normal: { type: 'mat4x4f', value: _ => normalMatrix },
-                        delta: { type: 'f32', value: _ => timeStep },
+                        projection: projectionMatrix.state,
+                        view: viewMatrix.state,
+                        model: modelMatrix.state,
+                        normal: normalMatrix.state,
+                        delta: timeStep.state,
                     }
                 },
                 {
                     name: 'staticUniform',
                     map: {
-                        radius: { type: 'f32', value: _ => radius },
-                        alphaTest: { type: 'f32', value: _ => 0.3 },
-                        opacity: { type: 'f32', value: _ => 0.6 }
+                        radius: radius.state,
+                        alphaTest: scr.asF32(0.3),
+                        opacity: scr.asF32(0.6),
                     }
                 },
                 {
                     name: 'light',
                     map: {
-                        position: { type: 'vec3f', value: _ => lightPos },
-                        color: { type: 'vec3f', value: _ => [ 1., 1., 1. ] },
-                        intensity: { type: 'f32', value: _ => 6. },
-                        viewPos: { type: 'vec3f', value: _ => cameraPos },
+                        position: lightPos.state,
+                        color: scr.asVec3f(1.),
+                        intensity: scr.asF32(6.),
+                        viewPos: cameraPos.state,
                     }
                 },
                 {
                     name: 'material',
                     map: {
-                        ambient: { type: 'vec3f', value: _ => [ 0.8, 0.8, 0.8 ] },
-                        diffuse: { type: 'vec3f', value: _ => [ 1., 1., 1. ] },
-                        specular: { type: 'vec3f', value: _ => [ 1., 1., 1. ] },
-                        shininess: { type: 'f32', value: _ => 16.0 },
-                        emissive: { type: 'f32', value: _ => 1. },
+                        ambient: scr.vec3f(0.8).state,
+                        diffuse: scr.vec3f(1.).state,
+                        specular: scr.vec3f(1.).state,
+                        shininess: scr.asF32(16.),
+                        emissive: scr.asF32(1.),
                     }
                 }
             ],
@@ -201,23 +204,23 @@ const main = function (canvas) {
         })
 
         // Pipeline: Land
-        const landPipeline = scr.RenderPipeline.create({
+        const landPipeline = scr.renderPipeline({
             shader: { module: scr.shaderLoader.load('Shader (GawEarth land)', '/shaders/land.wgsl') },
             colorTargetStates: [ { blend: scr.NormalBlending } ],
         })
         // Pipeline: Water
-        const waterPipeline = scr.RenderPipeline.create({
+        const waterPipeline = scr.renderPipeline({
             shader: { module: scr.shaderLoader.load('Shader (GawEarth water)', '/shaders/water.wgsl') },
             colorTargetStates: [ { blend: scr.NormalBlending } ],
         })
         // Pipeline: Cloud
-        const cloudPipeline = scr.RenderPipeline.create({
+        const cloudPipeline = scr.renderPipeline({
             shader: { module: scr.shaderLoader.load('Shader (GawEarth cloud)', '/shaders/cloud.wgsl') },
             colorTargetStates: [ { blend: scr.AdditiveBlending } ],
         })
 
         return {
-            land: [landPipeline, landWater], water: [waterPipeline, landWater], cloud: [cloudPipeline, cloud]
+            land: [ landPipeline, landWater ], water: [ waterPipeline, landWater ], cloud: [ cloudPipeline, cloud ]
         }
     }
 
@@ -226,75 +229,76 @@ const main = function (canvas) {
         // Buffer-related resource of particles
         const pPositions = new Float32Array(maxParticleCount * 3)
         const pVelocities = new Float32Array(maxParticleCount * 3)
-        const palette = [ 250. / 255., 250. / 255., 210. / 250., 1.0 ]
+        const palette = [ 250. / 255., 250. / 255., 210. / 250., 1. ]
         const pColors = new Float32Array(maxParticleCount * 4).map((_, index) => palette[index % 4])
 
         for (let i = 0; i < maxParticleCount; i++) {
-            let v = scr.vec3.scale(scr.vec3.normalize(scr.vec3.fromValues(Math.random() * 2. - 1., Math.random() * 2. - 1., Math.random() * 2. - 1.)), rLink)
+            const v = scr.vec3f(Math.random() * 2. - 1., Math.random() * 2. - 1., Math.random() * 2. - 1.).normalize().scale(rLink)
         
-            pPositions[i * 3 + 0] = v[0]
-            pPositions[i * 3 + 1] = v[1]
-            pPositions[i * 3 + 2] = v[2]
+            pPositions[i * 3 + 0] = v.x
+            pPositions[i * 3 + 1] = v.y
+            pPositions[i * 3 + 2] = v.z
             pVelocities[i * 3 + 0] = scr.randomNonZeroBetweenMinusOneAndOne(0.3)
             pVelocities[i * 3 + 1] = scr.randomNonZeroBetweenMinusOneAndOne(0.3)
             pVelocities[i * 3 + 2] = scr.randomNonZeroBetweenMinusOneAndOne(0.3)
         }
-        const storageBuffer_particle_velocity = scr.StorageBuffer.create({
+        const storageBuffer_particle_velocity = scr.storageBuffer({
             name: 'Storage Buffer (Particle velocity)',
             resource: { arrayRef: scr.aRef(pVelocities) }
         })
-        const vertexBuffer_particle_position = scr.VertexBuffer.create({
+        const vertexBuffer_particle_position = scr.vertexBuffer({
             name: 'Vertex Buffer (Particle position)',
             randomAccessible: true,
             resource: { arrayRef: scr.aRef(pPositions), structure: [ { components: 3 } ] }
         })
-        const vertexBuffer_particle_color = scr.VertexBuffer.create({
+        const vertexBuffer_particle_color = scr.vertexBuffer({
             name: 'Vertex Buffer (Particle color)',
-            resource: { arrayRef: scr.aRef(pColors), structure: [ {components: 4} ] }
+            resource: { arrayRef: scr.aRef(pColors), structure: [ { components: 4 } ] }
         })
 
         // Buffer-related resource of links
         const linkIndices = scr.aRef(new Uint32Array(maxParticleCount * maxParticleCount * 2).fill(0))
-        for (let i = 0; i < maxParticleCount; ++i) {
-            for (let j = i + 1; j < maxConnections; ++j) {
+        for (let i = 0, numConnected = 0; i < maxParticleCount; ++i) {
+            for (let j = i + 1; j < maxConnections.data; ++j) {
                 linkIndices.element(numConnected++, i)
                 linkIndices.element(numConnected++, j)
             }
         }
-        const storageBuffer_link_index = scr.StorageBuffer.create({
+        const storageBuffer_link_index = scr.storageBuffer({
             name: 'Storage Buffer (Link)',
             resource: { arrayRef: linkIndices }
         })
         
-        const storageBuffer_connection_nums = scr.StorageBuffer.create({
+        connetionNums = scr.aRef(new Uint32Array(maxParticleCount).fill(0))
+        const storageBuffer_connection_nums = scr.storageBuffer({
             name: 'Storage Buffer (Connection num)',
-            resource: { arrayRef: scr.aRef(new Uint32Array(maxParticleCount).fill(0)) }
+            resource: { arrayRef: connetionNums }
         })
 
-        linkIndirect = scr.aRef(new Uint32Array([nodeInLink, 0, 0, 0]))
-        const indirectBuffer_link = scr.IndirectBuffer.create({
+        linkIndirect = scr.aRef(new Uint32Array([nodeInLink.data, 0, 0, 0]))
+        const indirectBuffer_link = scr.indirectBuffer({
             name: 'Storage Buffer (Indirect)',
             randomAccessible: true,
             resource: { arrayRef: linkIndirect }
         })
 
         // Binding: Particles
-        const particles = scr.Binding.create({
-            range: _ => [ 4, particleCount ],
+        const particles = scr.binding({
+            range: () => [ 4, particleCount ],
             uniforms: [
                 {
                     name: 'dynamicUniform',
                     dynamic: true,
                     map: {
-                        projection: { type: 'mat4x4f', value: _ => projectionMatrix },
-                        view: { type: 'mat4x4f', value: _ => viewMatrix },
-                        viewPort: { type: 'mat4x4f', value: _ => [ screen.width, screen.height ] },
+                        projection: projectionMatrix.state,
+                        view: viewMatrix.state,
+                        viewPort: scr.asVec2f(screen.width, screen.height),
                     },
                 },
                 {
                     name: 'staticUniform',
                     map: {
-                        size: { type: 'f32', value: _ => 5.0 },
+                        size: scr.asF32(5.),
                     },
                 },
             ],
@@ -305,15 +309,15 @@ const main = function (canvas) {
         })
 
         // Binding: Particle simulator
-        const particleSimulator = scr.Binding.create({
-            range: _ => [ 1, 1 ],
+        const particleSimulator = scr.binding({
+            range: () => [ 1, 1 ],
             uniforms: [
                 {
                     name: 'staticUniform',
                     map: {
-                        rLink: { type: 'f32', value: _ => rLink },
-                        groupSize: { type: 'vec2u', value: _ => [ 1.0, 1.0 ] },
-                        angle: { type: 'f32', value: _ => 0.01 },
+                        rLink: rLink.state,
+                        groupSize: scr.asVec2u(1),
+                        angle: scr.asF32(0.01),
                     }
                 }
             ],
@@ -324,24 +328,24 @@ const main = function (canvas) {
         })
 
         // Binding: Links
-        const links = scr.Binding.create({
+        const links = scr.binding({
             uniforms: [
                 {
                     name: 'dynamicUniform',
                     dynamic: true,
                     map: {
-                        projection: { type: 'mat4x4f', value: _ => projectionMatrix },
-                        view: { type: 'mat4x4f', value: _ => viewMatrix },
+                        projection: projectionMatrix.state,
+                        view: viewMatrix.state,
                     },
                 },
                 {
                     name: 'staticUniform',
                     map: {
-                        minDistance: { type: 'f32', value: _ => minDistance },
-                        cardinalColor: { type: 'vec3f', value: _ => [ 175. / 255., 65. / 255., 5. / 255. ] },
-                        evenColor: { type: 'vec3f', value: _ => [ 80. / 255., 190. / 255., 1. ] },
-                        rLink: { type: 'f32', value: _ => rLink },
-                        maxNodeIndex: { type: 'f32', value: _ => nodeInLink - 1. },
+                        minDistance: minDistance.state,
+                        cardinalColor: scr.asVec3f(175. / 255., 65. / 255., 5. / 255.),
+                        evenColor: scr.asVec3f(80. / 255., 190. / 255., 1.),
+                        rLink: rLink.state,
+                        maxNodeIndex: nodeInLink.add(-1.).state,
                     }
                 }
             ],
@@ -353,15 +357,15 @@ const main = function (canvas) {
         })
 
         // Binding: Link indexer
-        const linkIndexer = scr.Binding.create({
-            range: _ => [ 1, 1 ],
+        const linkIndexer = scr.binding({
+            range: () => [ 1, 1 ],
             uniforms: [
                 {
                     name: 'staticUniform',
                     map: {
-                        minDistance: { type: 'f32', value: _ => minDistance },
-                        maxConnection: { type: 'f32', value: _ => maxConnections },
-                        groupSize: {type: 'vec2u', value: _ => [ 1.0, 1.0 ] },
+                        minDistance: minDistance.state,
+                        maxConnection: maxConnections.state,
+                        groupSize: scr.asVec2u(1),
                     }
                 }
             ],
@@ -374,25 +378,25 @@ const main = function (canvas) {
         })
 
         // Pipeline: Particle
-        const particlePipeline = scr.RenderPipeline.create({
+        const particlePipeline = scr.renderPipeline({
             shader: { module: scr.shaderLoader.load('Shader (Earth core particel)', '/shaders/point.wgsl') },
             colorTargetStates: [ { blend: scr.NormalBlending} ],
             primitive: { topology: 'triangle-strip' },
             depthTest: false,
         })
         // Pipeline: Link
-        const linkPipeline = scr.RenderPipeline.create({
+        const linkPipeline = scr.renderPipeline({
             shader: { module: scr.shaderLoader.load('Shader (Earth core link)', '/shaders/link.wgsl') },
             primitive: { topology: 'line-strip' },
             depthTest: false,
         })
         // Pipeline: Simulation
-        const simulationPipeline = scr.ComputePipeline.create({
+        const simulationPipeline = scr.computePipeline({
             shader: { module: scr.shaderLoader.load('Shader (Particle simulation)', '/shaders/particle.compute.wgsl') },
             constants: { blockSize: 10 },
         })
         // Pipeline: Indexing
-        const indexingPipeline = scr.ComputePipeline.create({
+        const indexingPipeline = scr.computePipeline({
             shader: { module: scr.shaderLoader.load('Shader (Link indexing)', '/shaders/link.compute.wgsl') },
             constants: { blockSize: 10 },
         })
@@ -424,11 +428,11 @@ const main = function (canvas) {
         })
         screen.addScreenDependentElement(bloomPass).addScreenDependentElement(fxaaPass)
         // Pass: Scene computation
-        const computePass_scene = scr.ComputePass.create({
+        const computePass_scene = scr.computePass({
             name: 'Compute Pass (GAW Compute)',
         })
         // Pass: Scene rendering
-        const renderPass_scene = scr.RenderPass.create({
+        const renderPass_scene = scr.renderPass({
             name: 'Render Pass (GAW Scene)',
             colorAttachments: [ { colorResource: sceneTexture } ],
             depthStencilAttachment: { depthStencilResource: depthTexture },
@@ -443,16 +447,16 @@ const main = function (canvas) {
     const initOutputPass = function (prePass) {
         
         // Binding: Output
-        const output = scr.Binding.create({
+        const output = scr.binding({
             name: 'Binding (Output)',
-            range: _ => [ 4 ],
+            range: () => [ 4 ],
             samplers: [ { sampler: lSampler } ],
             uniforms: [
                 {
                     name: 'staticUniform',
                     map: {
-                        gamma: { type: 'f32', value: _ => 1.0 },
-                        density: { type: 'f32', value: _ => 6.0 },
+                        gamma: scr.asF32(1.),
+                        density: scr.asF32(6.),
                     }
                 }
             ],
@@ -460,13 +464,13 @@ const main = function (canvas) {
         })
 
         // Pipeline: Output
-        const outputPipeline = scr.RenderPipeline.create({
+        const outputPipeline = scr.renderPipeline({
             shader: { module: scr.shaderLoader.load('Shader (Last)', '/shaders/last.wgsl') },
             primitive: { topology: 'triangle-strip' },
         })
 
         // Pass: Output rendering
-        const renderPass_output = scr.RenderPass.create({
+        const renderPass_output = scr.renderPass({
             name: 'Render Pass (GAW Output)',
             colorAttachments: [ { colorResource: screen } ],
         }).add(outputPipeline, output)
@@ -503,16 +507,17 @@ const main = function (canvas) {
 
     const animate = function () {
 
-        /* Accumulation */      timeStep -= 0.001
+        /* Accumulation */      timeStep.add(-0.001)
+        /* Connections*/        connetionNums.fill(0)
         /* Link buffer */       linkIndirect.element(1, 0)
-        /* View matrix */       scr.mat4.lookAt(cameraPos, target, up, viewMatrix)
-        /* Model matrix */      scr.mat4.rotationX(scr.utils.degToRad(32.), modelMatrix)
-        /* Normal matrix */     scr.mat4.transpose(scr.mat4.invert(modelMatrix, normalMatrix), normalMatrix)
-        /* Projection matrix */ scr.mat4.perspective(45.0, screen.width / screen.height, 1., 4000., projectionMatrix)
+        /* View matrix */       viewMatrix.lookAt(cameraPos, target, up)
+        /* Model matrix */      modelMatrix.data = scr.Mat4f.rotationX(scr.utils.degToRad(32.)).data
+        /* Projection matrix */ projectionMatrix.perspective(45., screen.width / screen.height, 1., 4000.)
+        /* Normal matrix */     normalMatrix.data = scr.Mat4f.transposing(scr.Mat4f.inverse(modelMatrix)).data
 
         scr.director.tick()
 
-        setTimeout(_ => requestAnimationFrame( animate ), 1000.0 / 45.0 )
+        setTimeout(() => requestAnimationFrame( animate ), 1000. / 45. )
     }
 
     init()

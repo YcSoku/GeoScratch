@@ -45,3 +45,5 @@ export class Screen {
 
     swap(): void;
 }
+
+export function screen(description: ScreenDescription): Screen;

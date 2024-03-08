@@ -22,3 +22,5 @@ export class IndirectBuffer extends Buffer {
      */
     static create(description: IndirectBufferDescription): IndirectBuffer;
 }
+
+export function indirectBuffer(description: IndirectBufferDescription): IndirectBuffer;

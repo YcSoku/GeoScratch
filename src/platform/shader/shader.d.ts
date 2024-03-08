@@ -23,3 +23,5 @@ export class Shader {
     isComplete(): boolean;
     exportDescriptor(): GPUShaderModuleDescriptor;
 }
+
+export function shader(description: ShaderDescription): Shader;

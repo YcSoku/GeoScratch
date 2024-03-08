@@ -62,6 +62,15 @@ class IndexBuffer extends Buffer {
     }
 }
 
+/**
+ * @param {IndexBufferDescription} description 
+ */
+function indexBuffer(description) {
+    
+    return IndexBuffer.create(description)
+}
+
 export {
+    indexBuffer,
     IndexBuffer,
 }

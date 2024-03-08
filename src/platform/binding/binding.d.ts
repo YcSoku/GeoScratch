@@ -107,3 +107,5 @@ export class Binding {
 
     release(): null;
 }
+
+export function binding(description: BindingsDescription): Binding;

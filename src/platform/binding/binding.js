@@ -941,6 +941,15 @@ class Binding {
     }
 }
 
+/**
+ * @param {BindingsDescription} description 
+ */
+function binding(description) {
+
+    return Binding.create(description)
+}
+
 export {
+    binding,
     Binding,
 }

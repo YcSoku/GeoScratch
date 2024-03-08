@@ -164,6 +164,15 @@ class Screen extends Texture {
     }
 }
 
+/**
+ * @param {ScreenDescription} description 
+ */
+function screen(description) {
+
+    return Screen.create(description)
+}
+
 export {
-    Screen
+    screen,
+    Screen,
 }

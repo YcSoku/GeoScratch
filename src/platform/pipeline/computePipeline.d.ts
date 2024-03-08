@@ -55,3 +55,5 @@ export class ComputePipeline {
 
     triggerFiniteTimes(times: number): ComputePipeline;
 }
+
+export function computePipeline(description: ComputePipelineDescription): ComputePipeline;

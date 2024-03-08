@@ -22,11 +22,11 @@ import { VertexBuffer } from "./vertexBuffer.js";
 class StorageBuffer extends Buffer {
 
     /**
-     * @param {StorageBufferDescription} [bufferDesc] 
+     * @param {StorageBufferDescription} [description] 
      */
-    constructor(bufferDesc) {
+    constructor(description) {
 
-        super(bufferDesc)
+        super(description)
         this.componetsPerElement = 0
     }
 
@@ -114,6 +114,15 @@ class StorageBuffer extends Buffer {
     }
 }
 
+/**
+ * @param {StorageBufferDescription} [description] 
+ */
+function storageBuffer(description) {
+
+    return StorageBuffer.create(description)
+}
+
 export {
+    storageBuffer,
     StorageBuffer,
 }

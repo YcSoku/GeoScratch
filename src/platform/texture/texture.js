@@ -504,6 +504,16 @@ class Texture {
     }
 }
 
+/**
+ * 
+ * @param {TextureDescription} description 
+ */
+function texture(description) {
+
+    return Texture.create(description)
+}
+
 export {
+    texture,
     Texture
 }

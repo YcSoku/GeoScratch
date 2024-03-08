@@ -49,6 +49,15 @@ class IndirectBuffer extends Buffer {
     }
 }
 
+/**
+ * @param {IndirectBufferDescription} description 
+ */
+function indirectBuffer(description) {
+
+    return IndirectBuffer.create(description)
+}
+
 export {
+    indirectBuffer,
     IndirectBuffer,
 }

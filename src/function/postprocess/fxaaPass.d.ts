@@ -24,3 +24,5 @@ export class FXAAPass {
 
     onWindowResize(): void;
 }
+
+export function fxaaPass(description: FXAAPassDescription): FXAAPass;

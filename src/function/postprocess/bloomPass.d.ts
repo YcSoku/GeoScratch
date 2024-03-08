@@ -25,3 +25,5 @@ export class BloomPass {
 
     onWindowResize(): void;
 }
+
+export function bloomPass(description: BloomPassDescription): BloomPass;

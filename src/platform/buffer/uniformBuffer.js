@@ -47,7 +47,7 @@ class UniformBuffer extends Buffer {
     }
 
     /**
-     * @param {VertexBufferDescription} description 
+     * @param {UniformBufferDescription} description 
      */
     static create(description) {
 
@@ -83,6 +83,15 @@ class UniformBuffer extends Buffer {
     }
 }
 
+/**
+ * @param {UniformBufferDescription} description 
+ */
+function uniformBuffer(description) {
+
+    return UniformBuffer.create(description)
+}
+
 export {
+    uniformBuffer,
     UniformBuffer,
 }

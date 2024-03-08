@@ -118,6 +118,13 @@ class ArrayRef {
         return this._data[index]
     }
 
+    fill(num) {
+
+        this._data.fill(num)
+
+        this.onChanges.forEach(callback => callback && callback())
+    }
+
     /**
      * 
      * @param {number} index 

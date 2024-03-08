@@ -284,6 +284,15 @@ class RenderPipeline {
     }
 }
 
+/**
+ * @param {RenderPipelineDescription} description 
+ */
+function renderPipeline(description) {
+
+    return RenderPipeline.create(description)
+}
+
 export {
+    renderPipeline,
     RenderPipeline
 }

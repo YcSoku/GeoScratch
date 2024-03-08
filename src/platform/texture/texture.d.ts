@@ -54,6 +54,9 @@ export class Texture {
     destroy(): void;
 }
 
+function texture(description: TextureDescription): Texture;
+
 export {
+    texture,
     Texture
 }

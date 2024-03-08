@@ -70,6 +70,15 @@ class Shader {
     }
 }
 
+/**
+ * @param {ShaderDescription} description 
+ */
+function shader(description) {
+
+    return Shader.create(description)
+}
+
 export {
+    shader,
     Shader
 }

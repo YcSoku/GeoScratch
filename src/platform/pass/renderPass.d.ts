@@ -65,3 +65,5 @@ export class RenderPass {
      */
     updateSwapChain(canvasTextureIndex = 0)
 }
+
+export function renderPass(description: RenderPassDescription): RenderPass;

@@ -35,52 +35,59 @@ fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let aPos = getPosition(aIndex);
 
+    // for(var bIndex: u32 = aIndex + 1; bIndex < 100; bIndex++) {
+    //     if (atomicLoad(&connectionNums[bIndex]) > staticUniform.maxConnection) {
+    //         continue;
+    //     }
+
+    //     let bPos = getPosition(bIndex);
+    //     let length = distance(aPos, bPos);
+
+    //     if (aPos.z * bPos.z < 0) {
+    //         continue;
+    //     }
+    //     if (length < staticUniform.minDistance) {
+    //         atomicAdd(&connectionNums[aIndex], 1);
+    //         atomicAdd(&connectionNums[bIndex], 1);
+
+    //         let indexAddress = atomicAdd(&numConnected[1], 1);
+    //         linkIndices[indexAddress * 2 + 0] = aIndex;
+    //         linkIndices[indexAddress * 2 + 1] = bIndex;
+            
+    //     }
+    // }
+
+    var minPropDistance: f32 = 0.0;
+    var minIndex: u32 = 0;
     for(var bIndex: u32 = aIndex + 1; bIndex < 100; bIndex++) {
         if (atomicLoad(&connectionNums[bIndex]) > staticUniform.maxConnection) {
             continue;
         }
 
-        let bPos = getPosition(bIndex);
-        let length = distance(aPos, bPos);
+        minPropDistance = distance(aPos, getPosition(bIndex));
+        minIndex = bIndex;
 
-        if (aPos.z * bPos.z < 0) {
-            continue;
+        for (var cIndex: u32 = bIndex + 1; cIndex < 100; cIndex++) {
+            if (atomicLoad(&connectionNums[cIndex]) > staticUniform.maxConnection) {
+                continue;
+            }
+            let distance = distance(aPos, getPosition(cIndex));
+            if (distance < minPropDistance) {
+                minPropDistance = distance;
+                minIndex = cIndex;
+            }
         }
-        if (length < staticUniform.minDistance) {
+
+        if (minPropDistance < staticUniform.minDistance) {
             atomicAdd(&connectionNums[aIndex], 1);
-            atomicAdd(&connectionNums[bIndex], 1);
+            atomicAdd(&connectionNums[minIndex], 1);
 
             let indexAddress = atomicAdd(&numConnected[1], 1);
             linkIndices[indexAddress * 2 + 0] = aIndex;
-            linkIndices[indexAddress * 2 + 1] = bIndex;
+            linkIndices[indexAddress * 2 + 1] = minIndex;
             
+        } else {
+            return;
         }
     }
-
-    // var minPropDistance: f32 = 0.0;
-    // var minIndex: u32 = 0;
-    // for(var bIndex: u32 = aIndex + 1; bIndex < 100; bIndex++) {
-    //     minPropDistance = distance(aPos, getPosition(bIndex));
-    //     minIndex = bIndex;
-
-    //     for (var cIndex: u32 = bIndex + 1; cIndex < 100; cIndex++) {
-    //         let distance = distance(aPos, getPosition(cIndex));
-    //         if (distance < minPropDistance) {
-    //             minPropDistance = distance;
-    //             minIndex = cIndex;
-    //         }
-    //     }
-
-    //     if (minPropDistance < staticUniform.minDistance) {
-    //         atomicAdd(&connectionNums[aIndex], 1);
-    //         atomicAdd(&connectionNums[minIndex], 1);
-
-    //         let indexAddress = atomicAdd(&numConnected[1], 1);
-    //         linkIndices[indexAddress * 2 + 0] = aIndex;
-    //         linkIndices[indexAddress * 2 + 1] = minIndex;
-            
-    //     } else {
-    //         return;
-    //     }
-    // }
 }

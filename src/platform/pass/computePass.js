@@ -75,3 +75,11 @@ export class ComputePass {
         this.pass.end()
     }
 }
+
+/**
+ * @param {ComputePassDescription} description 
+ */
+export function computePass(description) {
+
+    return ComputePass.create(description)
+}

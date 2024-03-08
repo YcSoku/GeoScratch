@@ -4,7 +4,7 @@ scr.StartDash().then(() => main(document.getElementById('GPUFrame')))
 
 const main = function (canvas) {
     
-    const screen = scr.Screen.create({ canvas })
+    const screen = scr.screen({ canvas })
 
     const shaderCode = `
     const pos = array<vec2f, 3>(
@@ -29,21 +29,19 @@ const main = function (canvas) {
     function init() {
     
         // Triangle Binding
-        const tBinding = scr.Binding.create({ 
+        const tBinding = scr.binding({ 
             range: () => [ 3 ] // Draw 3 points of a triangle (1 instance as default)
         })
     
         // Triangle Pipeline
-        const tPipeline = scr.RenderPipeline.create({
+        const tPipeline = scr.renderPipeline({
             shader: {
-                module: scr.Shader.create({
-                    codeFunc: () => shaderCode,
-                })
+                module: scr.shader({ codeFunc: () => shaderCode })
             },
         })
     
         // Triangle Pass
-        const tPass = scr.RenderPass.create({
+        const tPass = scr.renderPass({
             colorAttachments: [ { colorResource: screen } ]
         }).add(tPipeline, tBinding)
     

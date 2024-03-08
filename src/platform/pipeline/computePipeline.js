@@ -141,6 +141,15 @@ class ComputePipeline {
     }
 }
 
+/**
+ * @param {ComputePipelineDescription} description 
+ */
+function computePipeline(description) {
+
+    return ComputePipeline.create(description)
+}
+
 export {
+    computePipeline,
     ComputePipeline
 }

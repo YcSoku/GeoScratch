@@ -71,6 +71,15 @@ class MapBuffer extends Buffer {
     }
 }
 
+/**
+ * @param {MapBufferDescription} description 
+ */
+function mapBuffer(description) {
+
+    return MapBuffer.create(description)
+}
+
 export {
+    mapBuffer,
     MapBuffer,
 }

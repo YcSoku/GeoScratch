@@ -30,4 +30,6 @@ class VertexBuffer extends Buffer {
     getComponentsPerElement(): number;
 }
 
-export { VertexBuffer };
+function vertexBuffer(description: VertexBufferDescription): VertexBuffer;
+
+export { vertexBuffer, VertexBuffer };

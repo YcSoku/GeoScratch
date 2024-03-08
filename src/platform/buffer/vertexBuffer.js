@@ -102,6 +102,15 @@ class VertexBuffer extends Buffer {
     }
 }
 
+/**
+ * @param {VertexBufferDescription} description 
+ */
+function vertexBuffer(description) {
+
+    return VertexBuffer.create(description)
+}
+
 export {
+    vertexBuffer,
     VertexBuffer,
 }

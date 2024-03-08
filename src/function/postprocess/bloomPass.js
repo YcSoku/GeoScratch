@@ -1,3 +1,4 @@
+import { asU32, f32 } from '../../core/numericType/numericType.js'
 import { aRef } from "../../core/data/arrayRef.js"
 import { Binding } from "../../platform/binding/binding.js"
 import { Texture } from "../../platform/texture/texture.js"
@@ -27,8 +28,8 @@ export class BloomPass {
      */
     constructor(description) {
 
-        this.strength = description.strength
-        this.threshold = description.threshold
+        this.strength = f32(description.strength)
+        this.threshold = f32(description.threshold)
         this.blurCount = description.blurCount
         this.inputColorAttachment = description.inputColorAttachment
 
@@ -143,7 +144,7 @@ export class BloomPass {
                 {
                     name: 'staticUniform',
                     map: {
-                        threshold: { type: 'f32', value: () => this.threshold },
+                        threshold: this.threshold.state,
                     }
                 }
             ],
@@ -186,7 +187,7 @@ export class BloomPass {
                     {
                         name: 'staticUniform',
                         map: {
-                            steps: { type: 'u32', value: () => 3 + i * 2 },
+                            steps: asU32(3 + i * 2),
                         }
                     }
                 ],
@@ -204,7 +205,7 @@ export class BloomPass {
                     {
                         name: 'staticUniform',
                         map: {
-                            steps: { type: 'u32', value: () => 3 + i * 2 },
+                            steps: asU32(3 + i * 2),
                         }
                     }
                 ],
@@ -226,7 +227,7 @@ export class BloomPass {
                 {
                     name: 'staticUniform',
                     map: {
-                        strength: { type: 'f32', value: () => this.strength }
+                        strength: this.strength.state
                     }
                 }
             ],
@@ -330,4 +331,12 @@ export class BloomPass {
         .concat(this.blurYTextures)
         .concat(this.dHighlightTextures).forEach(texture => texture.reset())
     }
+}
+
+/**
+ * @param {BloomPassDescription} description 
+ */
+export function bloomPass(description) {
+
+    return BloomPass.create(description)
 }

@@ -13,3 +13,5 @@ export class MapBuffer extends Buffer {
 
     mapping(): Promise<ArrayBuffer>;
 }
+
+export function mapBuffer(description: MapBuffer): MapBuffer;

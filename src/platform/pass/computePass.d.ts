@@ -34,3 +34,5 @@ export class ComputePass {
      */
     execute(encoder: GPUCommandEncoder): void;
 }
+
+export function computePass(description: ComputePassDescription): ComputePass;

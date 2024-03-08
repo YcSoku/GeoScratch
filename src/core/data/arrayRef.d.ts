@@ -10,9 +10,11 @@ export class ArrayRef {
     removeCallback(index: number): null;
 
     get value(): ArrayBufferLike;
-    set value(data: ArrayBufferLike);
+    set value(data: ArrayBufferLike): void;
 
     element(index: number, data?: number): ArrayBufferLike | void;
+
+    fill(num: number): void;
 
     use(): ArrayRef;
 

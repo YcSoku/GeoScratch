@@ -1,5 +1,3 @@
-
-
 /**
  * @typedef {Object} SamplerDescription
  * @property {string} name
@@ -27,3 +25,5 @@ export class Sampler {
     set sampler(sampler: GPUSampler): void;
     exportDescriptor(): GPUSamplerDescriptor;
 }
+
+export function sampler(description: SamplerDescription): Sampler;

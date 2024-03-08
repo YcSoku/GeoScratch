@@ -31,3 +31,5 @@ export class RenderPipeline {
 
     triggerFiniteTimes(times: number): RenderPipeline;
 }
+
+export function renderPipeline(description: RenderPipelineDescription): RenderPipeline;

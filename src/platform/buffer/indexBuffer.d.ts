@@ -18,3 +18,5 @@ export class IndexBuffer extends Buffer {
     constructor(description: IndexBufferDescription);
     static create(description: IndexBufferDescription): IndexBuffer;
 }
+
+export function indexBuffer(description: IndexBufferDescription): IndexBuffer;
