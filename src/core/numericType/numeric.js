@@ -23,6 +23,4 @@ export class Numeric {
 
         return this._type
     }
-
-    
 }

@@ -61,6 +61,7 @@ export {
 	i32, asI32, I32,
 	u32, asU32, U32,
 	f32, asF32, F32,
+	vec2i, asVec2i, Vec2i,
 	vec2u, asVec2u, Vec2u,
 	vec2f, asVec2f, Vec2f,
 	vec3f, asVec3f, Vec3f,

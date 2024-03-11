@@ -8,6 +8,8 @@ export { f32, asF32, F32 } from './f32.js'
 
 export { vec2u, asVec2u, Vec2u } from './vec2u.js'
 
+export { vec2i, asVec2i, Vec2i } from './vec2i.js'
+
 export { vec2f, asVec2f, Vec2f } from './vec2f.js'
 
 export { vec3f, asVec3f, Vec3f } from './vec3f.js'

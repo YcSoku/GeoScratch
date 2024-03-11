@@ -1,4 +1,5 @@
 import director from "../director/director.js"
+import { vec2f, vec2i, vec2u } from '../../core/numericType/numericType.js'
 import { Texture } from "./texture.js"
 
 /**
@@ -42,6 +43,10 @@ class Screen extends Texture {
         this.screenDependentTextures = []
 
         this.screenDependentElements = []
+
+        this._sizeI = vec2i(this.canvas.width, this.canvas.height)
+        this._sizeU = vec2u(this.canvas.width, this.canvas.height)
+        this._sizeF = vec2f(this.canvas.width, this.canvas.height)
 
         this.needUpdate()
         this.updatePerFrame = true
@@ -130,6 +135,9 @@ class Screen extends Texture {
 
         this.canvas.width = width
         this.canvas.height = height
+        this._sizeI.data = [ this.canvas.width, this.canvas.height ]
+        this._sizeU.data = [ this.canvas.width, this.canvas.height ]
+        this._sizeF.data = [ this.canvas.width, this.canvas.height ]
 
         if (this.sampleCount > 1) {
         }
@@ -157,9 +165,29 @@ class Screen extends Texture {
         return this.canvas.height
     }
 
+    get sizeF() {
+
+        return this._sizeF
+    }
+
+    get sizeU() {
+
+        return this._sizeU
+    }
+
+    get sizeI() {
+
+        return this._sizeI
+    }
+
     swap() {
 
         this.reset()
+    }
+
+    destroy() {
+
+        super.destroy()
     }
 }
 

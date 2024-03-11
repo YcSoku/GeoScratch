@@ -93,6 +93,7 @@ export class FXAAPass {
     onWindowResize() {
         
         this.fxaaTexture.reset()
+        this.fxaaBinding.range = () => [ Math.ceil(this.fxaaTexture.width / this.blockSizeX), Math.ceil(this.fxaaTexture.height / this.blockSizeY) ]
     }
 }
 

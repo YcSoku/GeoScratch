@@ -1,3 +1,4 @@
+import { Vec2f, Vec2i, Vec2u } from "../../core/numericType/numericType";
 import { Texture } from "../texture/texture";
 
 /**
@@ -42,6 +43,9 @@ export class Screen {
 
     get width(): number;
     get height(): number;
+    get sizeI(): Vec2i;
+    get sizeU(): Vec2u;
+    get sizeF(): Vec2f;
 
     swap(): void;
 }

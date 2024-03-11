@@ -52,8 +52,13 @@ export class Director extends EventDispatcher {
 
     tryGetDevice() {
 
-        this.device === undefined && (this.device = getDevice())
-        this._limits = this.device.limits
+        if (this.device === undefined) {
+
+            this.device = getDevice()
+            this._limits = this.device.limits
+        }
+
+        return this.device
     }
 
     makeNewStage(name) {
@@ -75,7 +80,6 @@ export class Director extends EventDispatcher {
 
     addToUpdateList(item) {
 
-        // this.buffers[buffer.uuid] = buffer
         this.updateList.push(item)
     }
 
@@ -183,11 +187,9 @@ export default director
 // Create context
 director.addEventListeners('createContext', ({_, emitter}) => {
 
-    director.tryGetDevice()
-    const device = director.device
+    const device = director.tryGetDevice()
 
     const descriptor = emitter.exportDescriptor()
-
     emitter.context = emitter.canvas.getContext("webgpu")
     emitter.context.configure({
         device: device,
@@ -199,36 +201,36 @@ director.addEventListeners('createContext', ({_, emitter}) => {
 // Create shader
 director.addEventListeners('createShader', ({_, emitter}) => {
 
-    director.tryGetDevice()
-    emitter.shaderModule = director.device.createShaderModule(emitter.exportDescriptor())
+    const device = director.tryGetDevice()
+    emitter.shaderModule = device.createShaderModule(emitter.exportDescriptor())
 })
 
 // Create buffer
 director.addEventListeners('createBuffer', ({_, emitter}) => {
 
-    director.tryGetDevice()
-    emitter.buffer = director.device.createBuffer(emitter.exportDescriptor())
+    const device = director.tryGetDevice()
+    emitter.buffer = device.createBuffer(emitter.exportDescriptor())
 })
 
 // Create sampler
 director.addEventListeners('createSampler', ({_, emitter}) => {
 
-    director.tryGetDevice()
-    emitter.sampler = director.device.createSampler(emitter.exportDescriptor())
+    const device = director.tryGetDevice()
+    emitter.sampler = device.createSampler(emitter.exportDescriptor())
 })
 
 // Create binding group layout
 director.addEventListeners('createBindGroupLayout', ({_, emitter, bindGroupType, order}) => {
 
-    director.tryGetDevice()
-    emitter.layouts[order] = director.device.createBindGroupLayout(emitter.exportLayoutDescriptor(bindGroupType))
+    const device = director.tryGetDevice()
+    emitter.layouts[order] = device.createBindGroupLayout(emitter.exportLayoutDescriptor(bindGroupType))
 })
 
 // Create binding group
 director.addEventListeners('createBindGroup', ({_, emitter, bindGroupType, order}) => {
 
-    director.tryGetDevice()
-    emitter.groups[order] = director.device.createBindGroup(emitter.exportDescriptor(bindGroupType))
+    const device = director.tryGetDevice()
+    emitter.groups[order] = device.createBindGroup(emitter.exportDescriptor(bindGroupType))
 })
 
 // Generate mipmaps
@@ -242,8 +244,7 @@ director.addEventListeners('generateMips', (() => {
 
     return function generateMips({_, texture}) {
 
-        director.tryGetDevice()
-        const device = director.device
+        const device = director.tryGetDevice()
         if (!generator.module) {
             generator.module = device.createShaderModule({
             label: 'textured quad shaders for mip level generation',
@@ -352,8 +353,7 @@ director.addEventListeners('generateMips', (() => {
 // Create texture by imageBitmap
 director.addEventListeners('createTextureByImageBitmap', ({_, emitter, imageBitmap}) => {
     
-    director.tryGetDevice()
-    const device = director.device
+    const device = director.tryGetDevice()
 
     let rgba8Texture = device.createTexture({
         label: `${emitter.name}`,
@@ -424,8 +424,7 @@ director.addEventListeners('createTextureByImageBitmap', ({_, emitter, imageBitm
 // Create texture by size
 director.addEventListeners('createTextureBySize', ({_, emitter}) => {
 
-    director.tryGetDevice()
-    const device = director.device
+    const device = director.tryGetDevice()
 
     emitter.texture = device.createTexture({
         label: `${emitter.name}`,
@@ -445,8 +444,7 @@ director.addEventListeners('createTextureBySize', ({_, emitter}) => {
 // Create pipeline layout
 director.addEventListeners('createPipelineLayout', ({_, emitter, binding}) => {
 
-    director.tryGetDevice()
-    const device = director.device
+    const device = director.tryGetDevice()
 
     emitter.pipelineLayout = device.createPipelineLayout(emitter.exportLayoutDescriptor(binding))
 })
@@ -454,8 +452,7 @@ director.addEventListeners('createPipelineLayout', ({_, emitter, binding}) => {
 // Create render pipeline async
 director.addEventListeners('createRenderPipelineAsync', ({_, emitter, binding}) => {
 
-    director.tryGetDevice()
-    const device = director.device
+    const device = director.tryGetDevice()
     
     device.createRenderPipelineAsync(emitter.exportDescriptor(binding))
     .then(pipeline => {
@@ -470,8 +467,7 @@ director.addEventListeners('createRenderPipelineAsync', ({_, emitter, binding}) 
 // Create render bundle
 director.addEventListeners('createRenderBundle', ({_, emitter, renderPass, binding}) => {
 
-    director.tryGetDevice()
-    const device = director.device
+    const device = director.tryGetDevice()
 
     const renderBundleEncoder = device.createRenderBundleEncoder({
         colorFormats: renderPass.makeColorFormats(),
@@ -484,6 +480,6 @@ director.addEventListeners('createRenderBundle', ({_, emitter, renderPass, bindi
 // Update buffer
 director.addEventListeners('writeBuffer', ({_, emitter, subArea}) => {
 
-    director.tryGetDevice()
-    director.device.queue.writeBuffer(emitter.buffer, subArea.start, subArea.ref.value, subArea.dataOffset, subArea.size)
+    const device = director.tryGetDevice()
+    device.queue.writeBuffer(emitter.buffer, subArea.start, subArea.ref.value, subArea.dataOffset, subArea.size)
 })

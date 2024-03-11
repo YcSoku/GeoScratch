@@ -25,7 +25,7 @@ export function vec2u(x, y) {
 
 export function asVec2u(x, y) {
 
-    const v = [0., 0.]
+    const v = [ 0, 0 ]
 
     if (x !== undefined && y === undefined) {
         v[0] = x

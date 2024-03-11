@@ -27,9 +27,9 @@ const main = function (canvas) {
 
     // Global matrix
     const viewMatrix = scr.mat4f()
-    const modelMatrix = scr.mat4f()
-    const normalMatrix = scr.mat4f()
     const projectionMatrix = scr.mat4f()
+    const modelMatrix = scr.Mat4f.rotationX(scr.utils.degToRad(32.))
+    const normalMatrix = scr.Mat4f.transposing(scr.Mat4f.inverse(modelMatrix))
 
     // Global arrayRef
     const connetionNums = scr.aRef(new Uint32Array(maxParticleCount).fill(0))
@@ -192,16 +192,19 @@ const main = function (canvas) {
 
         // Pipeline: Land
         const landPipeline = scr.renderPipeline({
+            name: 'Render Pipeline (Land)',
             shader: { module: scr.shaderLoader.load('Shader (GawEarth land)', '/shaders/land.wgsl') },
             colorTargetStates: [ { blend: scr.NormalBlending } ],
         })
         // Pipeline: Water
         const waterPipeline = scr.renderPipeline({
+            name: 'Render Pipeline (Water)',
             shader: { module: scr.shaderLoader.load('Shader (GawEarth water)', '/shaders/water.wgsl') },
             colorTargetStates: [ { blend: scr.NormalBlending } ],
         })
         // Pipeline: Cloud
         const cloudPipeline = scr.renderPipeline({
+            name: 'Render Pipeline (Cloud)',
             shader: { module: scr.shaderLoader.load('Shader (GawEarth cloud)', '/shaders/cloud.wgsl') },
             colorTargetStates: [ { blend: scr.AdditiveBlending } ],
         })
@@ -245,8 +248,8 @@ const main = function (canvas) {
 
         // Buffer-related resource of links
         const linkIndices = scr.aRef(new Uint32Array(maxParticleCount * maxParticleCount * 2).fill(0))
-        for (let i = 0, numConnected = 0; i < maxParticleCount; ++i) {
-            for (let j = i + 1; j < maxConnections.data; ++j) {
+        for (let i = 0, numConnected = 0; i < maxParticleCount; i++) {
+            for (let j = i + 1; j < maxConnections.data; j++) {
                 linkIndices.element(numConnected++, i)
                 linkIndices.element(numConnected++, j)
             }
@@ -269,6 +272,7 @@ const main = function (canvas) {
 
         // Binding: Particles
         const particles = scr.binding({
+            name: 'Binding (Earth core particels)',
             range: () => [ 4, maxParticleCount ],
             uniforms: [
                 {
@@ -277,7 +281,7 @@ const main = function (canvas) {
                     map: {
                         projection: projectionMatrix,
                         view: viewMatrix,
-                        viewPort: scr.asVec2f(screen.width, screen.height),
+                        viewPort: screen.sizeF,
                     },
                 },
                 {
@@ -295,6 +299,7 @@ const main = function (canvas) {
 
         // Binding: Particle simulator
         const particleSimulator = scr.binding({
+            name: 'Binding (Particel simulator)',
             range: () => [ 1, 1 ],
             uniforms: [
                 {
@@ -314,6 +319,7 @@ const main = function (canvas) {
 
         // Binding: Links
         const links = scr.binding({
+            name: 'Binding (Earth core link)',
             uniforms: [
                 {
                     name: 'dynamicUniform',
@@ -343,6 +349,7 @@ const main = function (canvas) {
 
         // Binding: Link indexer
         const linkIndexer = scr.binding({
+            name: 'Binding (Link indexer)',
             range: () => [ 1, 1 ],
             uniforms: [
                 {
@@ -364,24 +371,28 @@ const main = function (canvas) {
 
         // Pipeline: Particle
         const particlePipeline = scr.renderPipeline({
+            name: 'Render Pipeline (Earth core particel)',
             shader: { module: scr.shaderLoader.load('Shader (Earth core particel)', '/shaders/point.wgsl') },
-            colorTargetStates: [ { blend: scr.NormalBlending} ],
+            colorTargetStates: [ { blend: scr.NormalBlending } ],
             primitive: { topology: 'triangle-strip' },
             depthTest: false,
         })
         // Pipeline: Link
         const linkPipeline = scr.renderPipeline({
+            name: 'Render Pipeline (Earth core link)',
             shader: { module: scr.shaderLoader.load('Shader (Earth core link)', '/shaders/link.wgsl') },
             primitive: { topology: 'line-strip' },
             depthTest: false,
         })
         // Pipeline: Simulation
         const simulationPipeline = scr.computePipeline({
+            name: 'Compute Pipeline (Particle simulation)',
             shader: { module: scr.shaderLoader.load('Shader (Particle simulation)', '/shaders/particle.compute.wgsl') },
             constants: { blockSize: 10 },
         })
         // Pipeline: Indexing
         const indexingPipeline = scr.computePipeline({
+            name: 'Compute Pipeline (Link indexing)',
             shader: { module: scr.shaderLoader.load('Shader (Link indexing)', '/shaders/link.compute.wgsl') },
             constants: { blockSize: 10 },
         })
@@ -450,7 +461,8 @@ const main = function (canvas) {
 
         // Pipeline: Output
         const outputPipeline = scr.renderPipeline({
-            shader: { module: scr.shaderLoader.load('Shader (Last)', '/shaders/last.wgsl') },
+            name: 'Render Pipeline (Output)',
+            shader: { module: scr.shaderLoader.load('Shader (Output)', '/shaders/last.wgsl') },
             primitive: { topology: 'triangle-strip' },
         })
 
@@ -494,12 +506,9 @@ const main = function (canvas) {
         /* Connections */       connetionNums.fill(0)
         /* Link buffer */       linkIndirect.element(1, 0)
         /* View matrix */       viewMatrix.lookAt(cameraPos, target, up)
-        /* Model matrix */      modelMatrix.data = scr.Mat4f.rotationX(scr.utils.degToRad(32.)).data
         /* Projection matrix */ projectionMatrix.perspective(45., screen.width / screen.height, 1., 4000.)
-        /* Normal matrix */     normalMatrix.data = scr.Mat4f.transposing(scr.Mat4f.inverse(modelMatrix)).data
 
         scr.director.tick()
-
         setTimeout(() => requestAnimationFrame( animate ), 1000. / 45. )
     }
 

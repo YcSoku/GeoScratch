@@ -182,7 +182,7 @@ export class BloomPass {
             let groupY = Math.ceil(this.blurXTextures[i].height / this.blockSizeY)
 
             this.blurUpXBindings[i] = Binding.create({
-                range: () => [groupX, groupY],
+                range: () => [ groupX, groupY] ,
                 uniforms: [
                     {
                         name: 'staticUniform',
@@ -200,7 +200,7 @@ export class BloomPass {
             })
 
             this.blurUpYBindings[i] = Binding.create({
-                range: () => [groupX, groupY],
+                range: () => [ groupX, groupY ],
                 uniforms: [
                     {
                         name: 'staticUniform',
@@ -324,12 +324,24 @@ export class BloomPass {
     onWindowResize() {
 
         this.highlightTexture.reset()
+        this.highlightBinding.range = () => [ Math.ceil(this.highlightTexture.texture.width / this.blockSizeX), Math.ceil(this.highlightTexture.texture.height / this.blockSizeY) ]
         
-        this.outputTexture.reset()
+        this.dHighlightTextures.forEach(texture => texture.reset())
+        for (let i = 0; i < this.blurCount; i++) {
+            this.downSampleBindings[i].range = () => [ Math.ceil(this.dHighlightTextures[i].width / this.blockSizeX), Math.ceil(this.dHighlightTextures[i].height / this.blockSizeY) ]
+        }
 
-        this.blurXTextures
-        .concat(this.blurYTextures)
-        .concat(this.dHighlightTextures).forEach(texture => texture.reset())
+        this.blurXTextures.concat(this.blurYTextures).forEach(texture => texture.reset())
+        for (let i = 0; i < this.blurCount; i++) {
+            let groupX = Math.ceil(this.blurXTextures[i].width / this.blockSizeX)
+            let groupY = Math.ceil(this.blurXTextures[i].height / this.blockSizeY)
+
+            this.blurUpXBindings[i].range = () => [ groupX, groupY]
+            this.blurUpYBindings[i].range = () => [ groupX, groupY]
+        }
+
+        this.outputTexture.reset()
+        this.outputBinding.range = () => [ Math.ceil(this.outputTexture.width / this.blockSizeX), Math.ceil(this.outputTexture.height / this.blockSizeY) ]
     }
 }
 
