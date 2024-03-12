@@ -67,7 +67,7 @@ export function asVec3f(x, y, z) {
         v[1] = x
         v[2] = x
     }
-    else if (x !== undefined && y !== undefined) {
+    else if (x !== undefined && y !== undefined && z === undefined) {
         v[0] = x
         v[1] = y
         v[2] = y

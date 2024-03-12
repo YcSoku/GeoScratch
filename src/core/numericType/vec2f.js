@@ -15,7 +15,37 @@ export class Vec2f extends Numeric {
         return new Vec2f(x, y)
     }
 
-    
+    get x() {
+
+        return this._data[0]
+    }
+
+    get y() {
+
+        return this._data[1]
+    }
+
+    set x(x) {
+
+        this._data[0] = x
+    }
+
+    set y(y) {
+
+        this._data[1] = y
+    }
+
+    reset() {
+
+        this._data[0] = 0
+        this._data[1] = 0
+    }
+
+    copy(v) {
+
+        this._data[0] = v._data[0]
+        this._data[1] = v._data[1]
+    }
 }
 
 export function vec2f(x, y) {

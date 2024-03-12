@@ -12,4 +12,6 @@ export { vec2f, asVec2f, Vec2f } from './vec2f'
 
 export { vec3f, asVec3f, Vec3f } from './vec3f'
 
+export { vec4f, asVec4f, Vec4f } from './vec4f'
+
 export { mat4f, Mat4f } from './mat4f'

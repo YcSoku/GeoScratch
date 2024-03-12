@@ -8,12 +8,13 @@ import { StorageBuffer } from '../buffer/storageBuffer';
 import { BlockValueType } from '../../core/data/blockRef';
 import { Sampler } from "../sampler/sampler";
 import { ScratchObject } from "../../core/object/object";
+import { Numeric } from '../../core/numericType/numericType.js';
 
 export interface UniformBindingDescription {
     name: string,
     dynamic?: boolean,
     visibility?: number,
-    map: {[varName: string]: {type: BlockValueType, value: Function}},
+    map: { [varName: string]: Numeric | { type: string, data: any } },
 };
 
 export interface SharedUniformBindingDescription {

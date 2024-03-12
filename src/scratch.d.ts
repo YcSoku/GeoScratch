@@ -13,8 +13,10 @@ import getDevice from './platform/context/device'
 export { getDevice }
 export { Device, StartDash, device } from './platform/context/device'
 
-export { ArrayRef, aRef } from './core/data/arrayRef.js'
-export { BlockRefDescription, BlockRef, bRef } from './core/data/blockRef.js'
+export { ArrayRef, aRef } from './core/data/arrayRef'
+export { BlockRefDescription, BlockRef, bRef } from './core/data/blockRef'
+export { BoundingBox2D } from './core/box/boundingBox2D'
+export { Node2D } from './core/quadTree/node2D'
 
 export { sampler, Sampler } from './platform/sampler/sampler'
 export { texture, Texture } from './platform/texture/texture'
@@ -52,7 +54,7 @@ export { imageLoader }
 import shaderLoader from './resource/shader/shaderLoader'
 export { shaderLoader }
 
-export { sphere } from './core/geometry/sphere'
+export { sphere } from './core/geometry/sphere/sphere.js'
 export { randomNonZeroBetweenMinusOneAndOne } from './core/math/random'
 export { vec2, vec3, vec4, mat3, mat4, utils, quat } from './core/math/wgpu-matrix'
 
@@ -65,6 +67,7 @@ export {
 	vec2u, asVec2u, Vec2u,
 	vec2f, asVec2f, Vec2f,
 	vec3f, asVec3f, Vec3f,
+	vec4f, asVec4f, Vec4f,
 	mat4f, Mat4f
 } from './core/numericType/numericType.js'
 

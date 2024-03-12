@@ -193,19 +193,19 @@ const main = function (canvas) {
         // Pipeline: Land
         const landPipeline = scr.renderPipeline({
             name: 'Render Pipeline (Land)',
-            shader: { module: scr.shaderLoader.load('Shader (GawEarth land)', '/shaders/land.wgsl') },
+            shader: { module: scr.shaderLoader.load('Shader (GawEarth land)', '/shaders/examples/GAW/land.wgsl') },
             colorTargetStates: [ { blend: scr.NormalBlending } ],
         })
         // Pipeline: Water
         const waterPipeline = scr.renderPipeline({
             name: 'Render Pipeline (Water)',
-            shader: { module: scr.shaderLoader.load('Shader (GawEarth water)', '/shaders/water.wgsl') },
+            shader: { module: scr.shaderLoader.load('Shader (GawEarth water)', '/shaders/examples/GAW/water.wgsl') },
             colorTargetStates: [ { blend: scr.NormalBlending } ],
         })
         // Pipeline: Cloud
         const cloudPipeline = scr.renderPipeline({
             name: 'Render Pipeline (Cloud)',
-            shader: { module: scr.shaderLoader.load('Shader (GawEarth cloud)', '/shaders/cloud.wgsl') },
+            shader: { module: scr.shaderLoader.load('Shader (GawEarth cloud)', '/shaders/examples/GAW/cloud.wgsl') },
             colorTargetStates: [ { blend: scr.AdditiveBlending } ],
         })
 
@@ -372,7 +372,7 @@ const main = function (canvas) {
         // Pipeline: Particle
         const particlePipeline = scr.renderPipeline({
             name: 'Render Pipeline (Earth core particel)',
-            shader: { module: scr.shaderLoader.load('Shader (Earth core particel)', '/shaders/point.wgsl') },
+            shader: { module: scr.shaderLoader.load('Shader (Earth core particel)', '/shaders/examples/GAW/point.wgsl') },
             colorTargetStates: [ { blend: scr.NormalBlending } ],
             primitive: { topology: 'triangle-strip' },
             depthTest: false,
@@ -380,20 +380,20 @@ const main = function (canvas) {
         // Pipeline: Link
         const linkPipeline = scr.renderPipeline({
             name: 'Render Pipeline (Earth core link)',
-            shader: { module: scr.shaderLoader.load('Shader (Earth core link)', '/shaders/link.wgsl') },
+            shader: { module: scr.shaderLoader.load('Shader (Earth core link)', '/shaders/examples/GAW/link.wgsl') },
             primitive: { topology: 'line-strip' },
             depthTest: false,
         })
         // Pipeline: Simulation
         const simulationPipeline = scr.computePipeline({
             name: 'Compute Pipeline (Particle simulation)',
-            shader: { module: scr.shaderLoader.load('Shader (Particle simulation)', '/shaders/particle.compute.wgsl') },
+            shader: { module: scr.shaderLoader.load('Shader (Particle simulation)', '/shaders/examples/GAW/particle.compute.wgsl') },
             constants: { blockSize: 10 },
         })
         // Pipeline: Indexing
         const indexingPipeline = scr.computePipeline({
             name: 'Compute Pipeline (Link indexing)',
-            shader: { module: scr.shaderLoader.load('Shader (Link indexing)', '/shaders/link.compute.wgsl') },
+            shader: { module: scr.shaderLoader.load('Shader (Link indexing)', '/shaders/examples/GAW/link.compute.wgsl') },
             constants: { blockSize: 10 },
         })
 
@@ -462,7 +462,7 @@ const main = function (canvas) {
         // Pipeline: Output
         const outputPipeline = scr.renderPipeline({
             name: 'Render Pipeline (Output)',
-            shader: { module: scr.shaderLoader.load('Shader (Output)', '/shaders/last.wgsl') },
+            shader: { module: scr.shaderLoader.load('Shader (Output)', '/shaders/examples/GAW/last.wgsl') },
             primitive: { topology: 'triangle-strip' },
         })
 

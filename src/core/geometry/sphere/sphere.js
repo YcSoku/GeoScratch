@@ -1,4 +1,3 @@
-
 export function sphere (radius = 1, widthSegments = 32, heightSegments = 16, phiStart = 0, phiLength = Math.PI * 2, thetaStart = 0, thetaLength = Math.PI) {
 
 

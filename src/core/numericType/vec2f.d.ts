@@ -6,8 +6,16 @@ export class Vec2f extends Numeric {
     constructor(x?: number, y?: number): Vec2f;
 
     static create(x: number, y: number): Vec2f;
+
+    get x(): number;
+    get y(): number;
+    set x(x: number): void;
+    set y(y: number): void;
+
+    reset(): void;
+    copy(v: Vec2f): void;
 }
 
-export function vec2f(x?: number, y?: number): Vec2u;
+export function vec2f(x?: number, y?: number): Vec2f;
 
 export function asVec2f(x?: number, y?: number): { type: string, data: Vec2 };

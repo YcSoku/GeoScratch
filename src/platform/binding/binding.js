@@ -50,7 +50,7 @@ import { ScratchObject } from '../../core/object/object.js'
  * @property {string} name
  * @property {boolean} [dynamic]
  * @property {number} [visibility]
- * @property {{[varName: string]: {type: import('../data/blockRef.js').BlockValueType, value: Function}}} map
+ * @property {{[varName: string]: Numeric | { type: string, data: any }}} map
  */
 
 /**
