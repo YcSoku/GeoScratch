@@ -214,7 +214,7 @@ const main = function (canvas) {
         }
     }
 
-    const initLinks = function () {
+    const initEarthCore = function () {
 
         // Buffer-related resource of particles
         const pPositions = new Float32Array(maxParticleCount * 3)
@@ -481,7 +481,7 @@ const main = function (canvas) {
         const { land, water, cloud } = initEarth()
 
         // Particle and link
-        const { simulator, indexer, particles, links } = initLinks()
+        const { simulator, indexer, particles, links } = initEarthCore()
 
         // Intermediate pass
         const { renderPass_scene, computePass_scene, bloomPass, fxaaPass } = initPass()
