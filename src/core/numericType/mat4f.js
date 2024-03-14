@@ -96,6 +96,19 @@ export class Mat4f extends Numeric {
         mat4.perspective(fov, aspect, near, far, this._data)
         return this
     }
+
+    static translation(v) {
+
+        const nm = new Mat4f()
+        mat4.translation(v.data, nm.data)
+        return this
+    }
+
+    translate(v) {
+
+        mat4.translate( this._data, v.data, this._data)
+        return this
+    }
 }
 
 export function mat4f() {

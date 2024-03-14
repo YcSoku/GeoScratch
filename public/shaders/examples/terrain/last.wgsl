@@ -7,16 +7,9 @@ struct VertexOutput {
     @location(0) @interpolate(perspective, center) texcoords: vec2f,
 };
 
-struct StaticUniformBlock {
-    gamma: f32,
-}
-
-// Uniform bindings
-@group(0) @binding(0) var<uniform> staticUniform: StaticUniformBlock;
-
 // Texture bindings
-@group(1) @binding(0) var lsampler: sampler;
-@group(1) @binding(1) var srcTexture: texture_2d<f32>;
+@group(0) @binding(0) var lsampler: sampler;
+@group(0) @binding(1) var srcTexture: texture_2d<f32>;
 
 @vertex
 fn vMain(vsInput: VertexInput) -> VertexOutput {
@@ -75,27 +68,17 @@ fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
 
     let dim = vec2f(textureDimensions(srcTexture, 0).xy);
     let color = textureSample(srcTexture, lsampler, fsInput.texcoords);
-    let sum = color
-     - 1.0 * textureSample(srcTexture, lsampler, fsInput.texcoords + vec2f(-1.0, 0.0) / dim);
-    //  - 0.25 * textureSample(srcTexture, lsampler, fsInput.texcoords + vec2f(1.0, 0.0) / dim)
-    //  - 0.25 * textureSample(srcTexture, lsampler, fsInput.texcoords + vec2f(0.0, 1.0) / dim)
-    //  - 0.25 * textureSample(srcTexture, lsampler, fsInput.texcoords + vec2f(0.0, -1.0) / dim);
-    //  - 0.125 * textureSample(srcTexture, lsampler, fsInput.texcoords + vec2f(0.0, -1.0) / dim)
-    //  - 0.125 * textureSample(srcTexture, lsampler, fsInput.texcoords + vec2f(0.0, 1.0) / dim)
-    //  - 0.125 * textureSample(srcTexture, lsampler, fsInput.texcoords + vec2f(1.0, 0.0) / dim)
-    //  - 0.075 * textureSample(srcTexture, lsampler, fsInput.texcoords + vec2f(-1.0, -1.0) / dim)
-    //  - 0.075 * textureSample(srcTexture, lsampler, fsInput.texcoords + vec2f(1.0, 1.0) / dim)
-    //  - 0.075 * textureSample(srcTexture, lsampler, fsInput.texcoords + vec2f(1.0, -1.0) / dim)
-    //  - 0.075 * textureSample(srcTexture, lsampler, fsInput.texcoords + vec2f(-1.0, 1.0) / dim);
+    // let sum = color
+    //  - 1.0 * textureSample(srcTexture, lsampler, fsInput.texcoords + vec2f(-1.0, 0.0) / dim);
 
-    let shapen_amount = 0.25;
-    let outColor = (sum * shapen_amount) + color;
+    // let shapen_amount = 0.25;
+    // let outColor = (sum * shapen_amount) + color;
 
-    return outColor;
+    return color;
+    // return outColor;
     // return vec4f(1.0);
 
     // let color = textureSample(srcTexture, lsampler, fsInput.texcoords);
-    // return vec4f(gammaCorrect(toneMapACES(color.rgb), staticUniform.gamma), color.a);
     // return vec4f(toneMapACES(color.rgb), color.a);
     // return color;
 }

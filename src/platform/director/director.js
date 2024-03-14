@@ -134,7 +134,7 @@ export class Director extends EventDispatcher {
      */
     addItem(stageName, item) {
 
-        this.stages[stageName].push(item)
+        this.stages[stageName].items.push(item)
 
         return this
     }

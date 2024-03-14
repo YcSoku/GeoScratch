@@ -18,19 +18,16 @@ struct StaticUniformBlock {
 };
 
 struct DynamicUniformBlock {
-    matrix: mat4x4f,
-    oMatrix: mat4x4f,
-    exaggeration: f32,
-    zoom: f32,
+    uMatrix: mat4x4f,
     centerLow: vec2f,
     centerHigh: vec2f,
-    z: vec2f,
 };
 
 struct TileUniformBlock {
     tileBox: vec4f,
     levelRange: vec2f,
     sectorSize: vec2f,
+    exaggeration: f32,
 };
 
 // Uniform Bindings
@@ -205,13 +202,13 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
     let dim = vec2f(textureDimensions(demTexture, 0).xy);
 
     let eleavation = mix(staticUniform.e.x, staticUniform.e.y, IDW(demTexture, uv * dim, dim, 3, 1).r);
-    z = dynamicUniform.exaggeration * eleavation / 1000000.0;
+    z = tileUniform.exaggeration * eleavation / 1000000.0;
     z = select(z, 0.0, z >= 0.0);
     depth = (eleavation - staticUniform.e.x) / (staticUniform.e.y - staticUniform.e.x);
     borderFactor = linearSampling(borderTexture, uv * dim, dim).r;
 
     var output: VertexOutput;
-    output.position = dynamicUniform.matrix * vec4f(translateRelativeToEye(calcWebMercatorCoord(coord), vec2f(0.0)), z, 1.0);
+    output.position = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(calcWebMercatorCoord(coord), vec2f(0.0)), z, 1.0);
     output.alpha = borderFactor;
     output.depth = depth;
     output.level = f32(level[vsInput.instanceIndex]);

@@ -31,9 +31,13 @@ export class Mat4f extends Numeric{
 
     invert(m: Mat4f): Mat4f
 
-    static projection(foc: number, aspect: number, near: number, far: number): Mat4f
+    static projection(foc: number, aspect: number, near: number, far: number): Mat4f;
 
-    perspective(fov: number, aspect: number, near: number, far: number): Mat4f
+    perspective(fov: number, aspect: number, near: number, far: number): Mat4f;
+
+    static translation(v: Vec3f): Mat4f;
+
+    translate(v: Vec3f): Mat4f;
 }
 
 export function mat4f(): Mat4f;
