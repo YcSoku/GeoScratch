@@ -7,6 +7,9 @@ export class U32 extends Numeric {
     static create(a?: number): U32;
 
     add(a: number): U32;
+
+    set n(a: number): void;
+    get n(): number;
 }
 
 

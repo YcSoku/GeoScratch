@@ -35,6 +35,11 @@ export class Vec2f extends Numeric {
         this._data[1] = y
     }
 
+    get array() {
+
+        return this._data
+    }
+
     reset() {
 
         this._data[0] = 0

@@ -15,7 +15,7 @@ export { mapBuffer, MapBuffer } from './platform/buffer/mapBuffer.js'
 
 export { ArrayRef, aRef } from './core/data/arrayRef.js'
 export { BlockRef, bRef } from './core/data/blockRef.js'
-export { BoundingBox2D } from './core/box/boundingBox2D.js'
+export { boundingBox2D, BoundingBox2D } from './core/box/boundingBox2D.js'
 export { Node2D } from './core/quadTree/node2D.js'
 
 export { sampler, Sampler } from './platform/sampler/sampler.js'

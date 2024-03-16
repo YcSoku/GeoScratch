@@ -14,6 +14,8 @@ export class Vec2f extends Numeric {
 
     reset(): void;
     copy(v: Vec2f): void;
+
+    get array(): Float32Array;
 }
 
 export function vec2f(x?: number, y?: number): Vec2f;

@@ -15,6 +15,11 @@ export class Vec2u extends Numeric {
         return new Vec2u(x, y)
     }
 
+
+    get array() {
+
+        return this._data
+    }
     
 }
 

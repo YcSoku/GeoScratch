@@ -109,6 +109,11 @@ export class Mat4f extends Numeric {
         mat4.translate( this._data, v.data, this._data)
         return this
     }
+
+    get array() {
+
+        return this._data
+    }
 }
 
 export function mat4f() {

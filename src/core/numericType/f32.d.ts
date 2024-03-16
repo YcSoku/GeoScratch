@@ -7,6 +7,9 @@ export class F32 extends Numeric {
     static create(a?: number): F32;
 
     add(a: number): F32;
+    
+    set n(a: number): void;
+    get n(): number;
 }
 
 

@@ -18,15 +18,18 @@ struct StaticUniformBlock {
 };
 
 struct DynamicUniformBlock {
+    far: f32,
+    near: f32,
     uMatrix: mat4x4f,
-    centerLow: vec2f,
-    centerHigh: vec2f,
+    centerLow: vec3f,
+    centerHigh: vec3f,
 };
 
 struct TileUniformBlock {
     tileBox: vec4f,
     levelRange: vec2f,
-    sectorSize: vec2f,
+    sectorRange: vec2f,
+    sectorSize: f32,
     exaggeration: f32,
 };
 
@@ -44,9 +47,8 @@ struct TileUniformBlock {
 // Texture Bindings
 @group(2) @binding(0) var lSampler: sampler;
 @group(2) @binding(1) var demTexture: texture_2d<f32>;
-@group(2) @binding(2) var borderTexture: texture_2d<f32>;
-@group(2) @binding(3) var lodMap: texture_2d<f32>;
-@group(2) @binding(4) var palette: texture_2d<f32>;
+@group(2) @binding(2) var lodMap: texture_2d<f32>;
+@group(2) @binding(3) var palette: texture_2d<f32>;
 
 const PI = 3.141592653;
 
@@ -111,7 +113,7 @@ fn nan() -> f32 {
     return a / b;
 }
 
-fn translateRelativeToEye(high: vec2f, low: vec2f) -> vec2f {
+fn translateRelativeToEye(high: vec3f, low: vec3f) -> vec3f {
 
     let highDiff = high - dynamicUniform.centerHigh;
     let lowDiff = low - dynamicUniform.centerLow;
@@ -142,6 +144,35 @@ fn altitude2Mercator(lat: f32, alt: f32) -> f32 {
     return alt / earthCircumference * cos(lat * PI / 180.0);
 }
 
+fn colorMap(index: u32) -> vec3f {
+
+    let palette = array<vec3f, 11> (
+        vec3f(158.0, 1.0, 66.0),
+        vec3f(213.0, 62.0, 79.0),
+        vec3f(244.0, 109.0, 67.0),
+        vec3f(253.0, 174.0, 97.0),
+        vec3f(254.0, 224.0, 139.0),
+        vec3f(255.0, 255.0, 191.0),
+        vec3f(230.0, 245.0, 152.0),
+        vec3f(171.0, 221.0, 164.0),
+        vec3f(102.0, 194.0, 165.0),
+        vec3f(50.0, 136.0, 189.0),
+        vec3f(94.0, 79.0, 162.0),
+    );
+
+    return palette[index] / 255.0;
+}
+
+fn positionCS(coord: vec2f, z: f32) -> vec4f {
+
+    var position_CS = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(calcWebMercatorCoord(coord), z), vec3f(0.0)), 1.0);
+    // let logZ = log(position_CS.w + 1.0) * log2(dynamicUniform.far + 1.0);
+    // position_CS.z = (logZ - dynamicUniform.near) / (dynamicUniform.far - dynamicUniform.near);
+    // position_CS.z = logZ;
+
+    return position_CS;
+}
+
 @vertex
 fn vMain(vsInput: VertexInput) -> VertexOutput {
 
@@ -163,25 +194,24 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
     );
     let centeroidCoord = vec2f(
         mix(nodeBox[0], nodeBox[2], center.x),
-        mix(nodeBox[1], nodeBox[3], center.y),
+        clamp(mix(nodeBox[1], nodeBox[3], center.y), -85.0, 85.0),
     );
 
-    var z: f32;
-    var depth: f32;
-    var borderFactor: f32;
-    var uvs: vec2f;
+    //////////////////
+
+    var z: f32; var uvs: vec2f; var depth: f32;
     if ((coord.x >= staticUniform.terrainBox[0] && coord.x <= staticUniform.terrainBox[2]) && (coord.y >= staticUniform.terrainBox[1] && coord.y <= staticUniform.terrainBox[3])) {
 
         var lodUV: vec2f;
         let lodDim = vec2f(textureDimensions(lodMap, 0).xy) - vec2f(1.0);
-        lodUV.x = floor((centeroidCoord.x - tileUniform.tileBox[0]) / tileUniform.sectorSize.x);
-        lodUV.y = 255.0 - floor((centeroidCoord.y - tileUniform.tileBox[1]) / tileUniform.sectorSize.y);
+        lodUV.x = floor((centeroidCoord.x - tileUniform.tileBox[0]) / tileUniform.sectorRange.x);
+        lodUV.y = 255.0 - floor((centeroidCoord.y - tileUniform.tileBox[1]) / tileUniform.sectorRange.y);
 
         let mLodUV = clamp(lodUV.xy, vec2f(0.0, 0.0), lodDim);
         let lLodUV = clamp(lodUV + vec2f(-1.0, 0.0), vec2f(0.0, 0.0), lodDim);
         let rLodUV = clamp(lodUV + vec2f(1.0, 0.0), vec2f(0.0, 0.0), lodDim);
-        let tLodUV = clamp(lodUV + vec2f(0.0, 1.0), vec2f(0.0, 0.0), lodDim);
-        let bLodUV = clamp(lodUV + vec2f(0.0, -1.0), vec2f(0.0, 0.0), lodDim);
+        let tLodUV = clamp(lodUV + vec2f(0.0, -1.0), vec2f(0.0, 0.0), lodDim);
+        let bLodUV = clamp(lodUV + vec2f(0.0, 1.0), vec2f(0.0, 0.0), lodDim);
 
         let mLevel = textureLoad(lodMap, vec2i(mLodUV.xy), 0).r;
         let lLevel = textureLoad(lodMap, vec2i(lLodUV.xy), 0).r;
@@ -189,89 +219,55 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
         let tLevel = textureLoad(lodMap, vec2i(tLodUV.xy), 0).r;
         let bLevel = textureLoad(lodMap, vec2i(bLodUV.xy), 0).r;
 
-        let deltaX = (nodeBox[2] - nodeBox[0]) / 32;
-        let deltaY = (nodeBox[3] - nodeBox[1]) / 32;
+        let deltaX = (nodeBox[2] - nodeBox[0]) / tileUniform.sectorSize;
+        let deltaY = (nodeBox[3] - nodeBox[1]) / tileUniform.sectorSize;
 
+        var offset = vec2f(0.0);
         if ((coord.x == nodeBox[0] && lLevel < mLevel) || (coord.x == nodeBox[2] && rLevel < mLevel)) {
 
-            let offsetY = select(0.0, deltaY, floor((coord.y - nodeBox[1]) / deltaY) % 2.0 == 1.0);
-            coord.y += offsetY;
+            offset.y = select(0.0, deltaY, floor((coord.y - nodeBox[1]) / deltaY) % 2.0 == 1.0);
         }
-        if ((coord.y == nodeBox[1] && tLevel < mLevel) || (coord.y == nodeBox[3] && bLevel < mLevel)) {
+        if ((coord.y == nodeBox[1] && bLevel < mLevel) || (coord.y == nodeBox[3] && tLevel < mLevel)) {
 
-            let offsetX = select(0.0, deltaX, floor((coord.x - nodeBox[0]) / deltaX) % 2.0 == 1.0);
-            coord.x += offsetX;
+            offset.x = select(0.0, deltaX, floor((coord.x - nodeBox[0]) / deltaX) % 2.0 == 1.0);
         }
-
+        coord += offset;
         let uv = calcUVFromCoord(coord);
         let dim = vec2f(textureDimensions(demTexture, 0).xy);
 
-        // let elevation = mix(staticUniform.e.x, staticUniform.e.y, textureLoad(demTexture, vec2i(uv * dim.xy), 0).r);
         let elevation = mix(staticUniform.e.x, staticUniform.e.y, linearSampling(demTexture, uv * dim, dim).r);
-        // let elevation = mix(staticUniform.e.x, staticUniform.e.y, IDW(demTexture, uv * dim, dim, 2, 3).r);
-        // z = dynamicUniform.exaggeration * elevation / 1000000.0;
-        z = tileUniform.exaggeration * altitude2Mercator(coord.y, elevation) * 10.0;
-        z = select(z, 0.0, z > 0.0);
+        z = tileUniform.exaggeration * altitude2Mercator(coord.y, elevation);
+        z = select(z, 0.0, z >= 0.0);
         depth = (elevation - staticUniform.e.x) / (staticUniform.e.y - staticUniform.e.x);
-        borderFactor = linearSampling(borderTexture, uv * dim, dim).r;
         uvs = uv;
     } else {
+
         z = nan();
-        depth = 0.0;
-        borderFactor = 0.0;
-        uvs = vec2f(0.0);
+        uvs = vec2f(nan());
+        depth = nan();
     }
 
     var output: VertexOutput;
-    output.position = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(calcWebMercatorCoord(coord), vec2f(0.0)), z, 1.0);
-    output.alpha = borderFactor;
-    output.depth = depth;
+    // output.position = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(calcWebMercatorCoord(coord), z), vec3f(0.0)), 1.0);
+    output.position = positionCS(coord, z);
     output.level = f32(level[vsInput.instanceIndex]);
-    output.uv = uvs;
     output.index = f32(vsInput.instanceIndex);
+    output.depth = depth;
+    output.uv = uvs;
     return output;
-}
-
-fn colorMap(index: u32) -> vec3f {
-
-    let palette = array<vec3f, 11> (
-        vec3f(158.0, 1.0, 66.0),
-        vec3f(213.0, 62.0, 79.0),
-        vec3f(244.0, 109.0, 67.0),
-        vec3f(253.0, 174.0, 97.0),
-        vec3f(254.0, 224.0, 139.0),
-        vec3f(255.0, 255.0, 191.0),
-        vec3f(230.0, 245.0, 152.0),
-        vec3f(171.0, 221.0, 164.0),
-        vec3f(102.0, 194.0, 165.0),
-        vec3f(50.0, 136.0, 189.0),
-        vec3f(94.0, 79.0, 162.0),
-    );
-
-    return palette[index] / 255.0;
 }
 
 @fragment
 fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
     
-    let level = clamp(14 - u32(fsInput.level), 0, 10);
+    // let level = clamp(14 - u32(fsInput.level), 0, 10);
+    // let dim = vec2f(textureDimensions(lodMap, 0).xy);
+    // let texcoords = fsInput.uv * dim;
+    // let levelColor = textureLoad(lodMap, vec2i(texcoords.xy), 0).rgb;
 
-    // return vec4f(colorMap(u32(fsInput.index % 11.0)) * 1.2, 1.0);
-
-    let dim = vec2f(textureDimensions(lodMap, 0).xy);
-    let texcoords = fsInput.uv * dim;
-    let levelColor = textureLoad(lodMap, vec2i(texcoords.xy), 0).rgb;
-    // return vec4f(levelColor, 1.0);
-
-    // return vec4f(colorMap(level), 1.0 - fsInput.depth);
-
-
-    let paletteLength = f32(textureDimensions(palette).x);
-    let elevationLevel = fract(paletteLength * fsInput.depth) / paletteLength;
-    let paletteColor = textureSample(palette, lSampler, vec2f(elevationLevel + 0.2, 0.5));
-    // return paletteColor;
+    // let paletteLength = f32(textureDimensions(palette).x);
+    // let elevationLevel = fract(paletteLength * fsInput.depth) / paletteLength;
+    // let paletteColor = textureSample(palette, lSampler, vec2f(elevationLevel + 0.2, 0.5));
+    
     return vec4f(1.0 - fsInput.depth) * 0.5;
-    // return vec4f(paletteColor.rgb, fsInput.depth);
-    // return vec4f(vec3f(1.0 - fsInput.depth), 1.0);
-    // return vec4f(0.5);
 }
