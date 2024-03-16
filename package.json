@@ -30,7 +30,9 @@
   },
   "homepage": "https://github.com/YcSoku/GeoScratch#readme",
   "dependencies": {
-    "@webgpu/types": "^0.1.40"
+    "@webgpu/types": "^0.1.40",
+    "earcut": "^2.2.4",
+    "hammerjs": "^2.0.8"
   },
   "devDependencies": {
     "chai": "^5.1.0",

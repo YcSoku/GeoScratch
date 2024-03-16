@@ -66,8 +66,11 @@ export {
 	vec2f, asVec2f, Vec2f,
 	vec3f, asVec3f, Vec3f,
 	vec4f, asVec4f, Vec4f,
+	mat3f, Mat3f,
 	mat4f, Mat4f
 } from './core/numericType/numericType'
+
+export { MercatorCoordinate } from './core/geo/mercatorCoordinate.js'
 
 
 export { UUID } from './core/utils/uuid.js'

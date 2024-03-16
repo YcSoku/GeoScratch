@@ -33,6 +33,31 @@ export class Vec4f extends Numeric {
         return this._data[3]
     }
 
+    get xy() {
+
+        return [ this._data[0], this._data[1] ]
+    }
+
+    get yz() {
+
+        return [ this._data[1], this._data[2] ]
+    }
+
+    get zw() {
+
+        return [ this._data[2], this._data[3] ]
+    }
+
+    get xyz() {
+
+        return [ this._data[0], this._data[1], this._data[2] ]
+    }
+
+    get yzw() {
+
+        return [ this._data[1], this._data[2], this._data[3] ]
+    }
+
     set x(x) {
 
         this._data[0] = x
@@ -51,6 +76,38 @@ export class Vec4f extends Numeric {
     set w(w) {
 
         this._data[3] = w
+    }
+
+    set xy(xy) {
+
+        this._data[0] = xy[0]
+        this._data[1] = xy[1]
+    }
+
+    set yz(yz) {
+
+        this._data[1] = yz[0]
+        this._data[2] = yz[1]
+    }
+
+    set zw(zw) {
+
+        this._data[2] = zw[0]
+        this._data[3] = zw[1]
+    }
+
+    set xyz(xyz) {
+
+        this._data[0] = xyz[0]
+        this._data[1] = xyz[1]
+        this._data[2] = xyz[1]
+    }
+
+    set yzw(yzw) {
+
+        this._data[1] = yzw[0]
+        this._data[2] = yzw[1]
+        this._data[3] = yzw[2]
     }
 
     static create(x, y, z, w) {

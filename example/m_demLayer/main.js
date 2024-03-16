@@ -3,11 +3,24 @@ import { LocalTerrain } from '../../src/application/terrain/localTerrain.js'
 
 mapboxgl.accessToken = 'pk.eyJ1IjoieWNzb2t1IiwiYSI6ImNrenozdWdodDAza3EzY3BtdHh4cm5pangifQ.ZigfygDi2bK4HXY1pWh-wg'
 
+// DOM Configuration
+const GPUFrame = document.getElementById('GPUFrame')
+GPUFrame.style.zIndex = '1'
+GPUFrame.style.pointerEvents = 'none'
+
+const mapDiv = document.createElement('div')
+mapDiv.id = 'map'
+mapDiv.style.zIndex = '0'
+mapDiv.style.width = '100%'
+mapDiv.style.height = '100%'
+document.body.appendChild(mapDiv)
+
+// StartDash
 scr.StartDash().then(() => {
 
     const map = new ScratchMap({
         style: "mapbox://styles/ycsoku/cldjl0d2m000501qlpmmex490",
-        GPUFrame: document.getElementById('GPUFrame'),
+        GPUFrame: GPUFrame,
         center: [ 120.980697, 31.684162 ],
         projection: 'mercator',
         container: 'map',

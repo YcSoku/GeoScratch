@@ -7,7 +7,7 @@ export class Mat4f extends Numeric{
 
     static create(): Mat4f;
 
-    state(): { type: string, value: Function };
+    scale(v: Vec3f): Mat4f;
 
     static rotationX(radius: number): Mat4f;
 
@@ -38,6 +38,10 @@ export class Mat4f extends Numeric{
     static translation(v: Vec3f): Mat4f;
 
     translate(v: Vec3f): Mat4f;
+
+    static multiplication(m: Mat4f): Mat4f;
+    
+    multiply(m: Mat4f): Mat4f;
 
     get array(): Float32Array;
 }

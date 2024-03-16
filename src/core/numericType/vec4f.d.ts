@@ -14,6 +14,16 @@ export class Vec4f extends Numeric {
     set y(y: number): void;
     set z(z: number): void;
     set w(w: number): void;
+    get xy(): number[]
+    get yz(): number[]
+    get zw(): number[]
+    get xyz(): number[]
+    get yzw(): number[]
+    set xy(xy: number[]): void
+    set yz(yz: number[]): void
+    set zw(zw: number[]): void
+    set xyz(xyz: number[]): void
+    set yzw(yzw: number[]): void
 
     static create(x?: number, y?: number, z?: number, w?: number): Vec4f;
 

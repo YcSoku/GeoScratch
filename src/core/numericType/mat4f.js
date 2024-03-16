@@ -13,6 +13,12 @@ export class Mat4f extends Numeric {
         return new Mat4f()
     }
 
+    scale(v) {
+
+        mat4.scale(this._data, v.data, this._data)
+        return this
+    }
+
     static rotationX(radius) {
         
         const nm = new Mat4f()
@@ -73,9 +79,7 @@ export class Mat4f extends Numeric {
 
     static inverse(m) {
         
-        const nm = new Mat4f()
-        nm.data = mat4.inverse(m.data)
-        return nm
+        return new Mat4f().invert(m)
     }
 
     invert(m) {
@@ -99,14 +103,23 @@ export class Mat4f extends Numeric {
 
     static translation(v) {
 
-        const nm = new Mat4f()
-        mat4.translation(v.data, nm.data)
-        return this
+        return new Mat4f().translate(v)
     }
 
     translate(v) {
 
-        mat4.translate( this._data, v.data, this._data)
+        mat4.translate(this._data, v.data, this._data)
+        return this
+    }
+
+    static multiplication(m) {
+
+        return new Mat4f().multiply(m)
+    }
+
+    multiply(m) {
+
+        mat4.multiply(this._data, m.data, this._data)
         return this
     }
 

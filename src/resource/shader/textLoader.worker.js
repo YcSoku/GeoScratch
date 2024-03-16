@@ -12,6 +12,6 @@ function loadText(url) {
 
       self.postMessage({ text });
     })
-    .catch(error => console.error('Error loading image:', error));
+    .catch(error => console.error('Error loading shader codes:', error));
 }
   
