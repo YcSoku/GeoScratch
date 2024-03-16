@@ -76,3 +76,8 @@ export class BoundingBox2D {
         return null
     }
 }
+
+export function boundingBox2D(xMin, yMin, xMax, yMax) {
+
+    return BoundingBox2D.create(xMin, yMin, xMax, yMax)
+}

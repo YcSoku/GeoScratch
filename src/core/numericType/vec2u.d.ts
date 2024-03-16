@@ -6,6 +6,8 @@ export class Vec2u extends Numeric {
     constructor(x?: number, y?: number): Vec2u;
 
     static create(x: number, y: number): Vec2u;
+
+    get array(): Uint32Array;
 }
 
 export function vec2u(x?: number, y?: number): Vec2u;

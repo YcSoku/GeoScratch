@@ -9,10 +9,15 @@ export class Vec3f extends Numeric {
     get x(): number;
     get y(): number;
     get z(): number;
+    set x(x: number): void;
+    set y(y: number): void;
+    set z(z: number): void;
 
     static create(x?: number, y?: number, z?: number): Vec3f;
 
     transformFromMat4(m: Mat4): Vec3f;
+
+    get array(): Float32Array;
 }
 
 export function vec3f(x?: number, y?: number, z?: number): Vec3f;

@@ -12,7 +12,7 @@ scr.StartDash().then(() => {
         projection: 'mercator',
         container: 'map',
         antialias: true,
-        maxZoom: 20,
+        maxZoom: 18,
         zoom: 9,
     }).on('load', () => map.addLayer(new TerrainLayer(14)))
 })
@@ -24,20 +24,14 @@ class ScratchMap extends mapboxgl.Map {
     constructor(options) {
 
         // Init mapbox map
-        super({
-            zoom: options.zoom,
-            style: options.style,
-            center: options.center,
-            maxZoom: options.maxZoom,
-            antialias: options.antialias,
-            container: options.container,
-            projection: options.projection,
-        })
+        super(options)
         
         // Buffer-related resource (based on map status)
+        this.far = scr.f32()
+        this.near = scr.f32()
         this.uMatrix = scr.mat4f()
-        this.centerLow = scr.vec2f()
-        this.centerHigh = scr.vec2f()
+        this.centerLow = scr.vec3f()
+        this.centerHigh = scr.vec3f()
         this.mercatorCenter = undefined
         this.dynamicUniformBuffer = scr.uniformBuffer({
             name: 'Uniform Buffer (Scratch map dynamic status)',
@@ -46,6 +40,8 @@ class ScratchMap extends mapboxgl.Map {
                     name: 'dynamicUniform',
                     dynamic: true,
                     map: {
+                        far: this.far,
+                        near: this.near,
                         uMatrix: this.uMatrix,
                         centerLow: this.centerLow,
                         centerHigh: this.centerHigh,
@@ -55,7 +51,7 @@ class ScratchMap extends mapboxgl.Map {
         })
 
         // Texture-related resource
-        this.screen = scr.screen({ canvas: options.GPUFrame, alphaMode: 'premultiplied' })
+        this.screen = scr.screen({ canvas: options.GPUFrame, alphaMode: 'premultiplied'})
         this.outputPass = scr.renderPass({
             name: 'Render Pass (Scratch map)',
             colorAttachments: [ { colorResource: this.screen } ],
@@ -63,10 +59,10 @@ class ScratchMap extends mapboxgl.Map {
         })
         
         // Make stages
-        this.preRenderStageName = 'PreRendering'
+        this.preProcessStageName = 'PreRendering'
         this.renderStageName = 'Rendering'
         scr.director.addStage({
-            name: this.preRenderStageName,
+            name: this.preProcessStageName,
             items: [],
         })
         scr.director.addStage({
@@ -84,16 +80,34 @@ class ScratchMap extends mapboxgl.Map {
     updateCenter() {
 
         this.mercatorCenter = new mapboxgl.MercatorCoordinate(...this.transform._computeCameraPosition().slice(0, 3))
+        const { far, near, matrix} = getMercatorMatrix(this.transform.clone())
         const mercatorCenterX = encodeFloatToDouble(this.mercatorCenter.x)
         const mercatorCenterY = encodeFloatToDouble(this.mercatorCenter.y)
+        const mercatorCenterZ = encodeFloatToDouble(this.mercatorCenter.z)
 
         this.centerLow.x = mercatorCenterX[1]
         this.centerLow.y = mercatorCenterY[1]
+        this.centerLow.z = mercatorCenterZ[1]
         this.centerHigh.x = mercatorCenterX[0]
         this.centerHigh.y = mercatorCenterY[0]
+        this.centerHigh.z = mercatorCenterZ[0]
 
-        this.uMatrix.data = getMercatorMatrix(this.transform.clone())
-        this.uMatrix.translate(scr.vec3f(mercatorCenterX[0], mercatorCenterY[0], 0.0))
+        this.far.n = far
+        this.near.n = near
+        this.uMatrix.data = matrix
+        this.uMatrix.translate(scr.vec3f(mercatorCenterX[0], mercatorCenterY[0], mercatorCenterZ[0]))
+    }
+
+    add2PreProcess(prePass) {
+        
+        scr.director.addItem(this.preProcessStageName, prePass)
+        return this
+    }
+
+    add2RenderPass(pipeline, binding) {
+
+        this.outputPass.add(pipeline, binding)
+        return this
     }
 }
 
@@ -112,8 +126,8 @@ class TerrainLayer extends LocalTerrain {
     onAdd(map, gl) {
 
         this.map = map
-        this.setResource(map.dynamicUniformBuffer, map.outputPass)
-        scr.director.addItem(map.preRenderStageName, this.lodMapPass)
+        this.setResource(map.dynamicUniformBuffer)
+        map.add2PreProcess(this.prePass).add2RenderPass(this.pipeline, this.binding)
     }
 
     render(gl, matrix) {
@@ -123,6 +137,7 @@ class TerrainLayer extends LocalTerrain {
             cameraPos: this.map.mercatorCenter.toLngLat().toArray(),
             cameraBounds: new scr.BoundingBox2D(...this.map.getBounds().toArray().flat()),
         })
+        // this.map.triggerRepaint()
     }
 }
 
@@ -130,6 +145,27 @@ class TerrainLayer extends LocalTerrain {
 function smoothstep(e0, e1, x) {
     x = clamp((x - e0) / (e1 - e0), 0, 1);
     return x * x * (3 - 2 * x);
+}
+
+function farthestPixelDistanceOnPlane(tr, minElevation, pixelsPerMeter) {
+    // Find the distance from the center point [width/2 + offset.x, height/2 + offset.y] to the
+    // center top point [width/2 + offset.x, 0] in Z units, using the law of sines.
+    // 1 Z unit is equivalent to 1 horizontal px at the center of the map
+    // (the distance between[width/2, height/2] and [width/2 + 1, height/2])
+    const fovAboveCenter = tr.fovAboveCenter;
+
+    // Adjust distance to MSL by the minimum possible elevation visible on screen,
+    // this way the far plane is pushed further in the case of negative elevation.
+    const minElevationInPixels = minElevation * pixelsPerMeter;
+    const cameraToSeaLevelDistance = ((tr._camera.position[2] * tr.worldSize) - minElevationInPixels) / Math.cos(tr._pitch);
+    const topHalfSurfaceDistance = Math.sin(fovAboveCenter) * cameraToSeaLevelDistance / Math.sin(Math.max(Math.PI / 2.0 - tr._pitch - fovAboveCenter, 0.01));
+
+    // Calculate z distance of the farthest fragment that should be rendered.
+    const furthestDistance = Math.sin(tr._pitch) * topHalfSurfaceDistance + cameraToSeaLevelDistance;
+    const horizonDistance = cameraToSeaLevelDistance * (1 / tr._horizonShift);
+
+    // Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
+    return Math.min(furthestDistance * 1.01, horizonDistance);
 }
 function getMercatorMatrix(t) {
     
@@ -155,7 +191,9 @@ function getMercatorMatrix(t) {
 
     t._updateCameraState();
 
-    t._farZ = t.projection.farthestPixelDistance(t);
+    // t._farZ = t.projection.farthestPixelDistance(t);
+    t._farZ = farthestPixelDistanceOnPlane(t, -100.0 * 30.0, pixelsPerMeter)
+    // console.log(t._farZ, t.projection.farthestPixelDistance(t))
 
     // The larger the value of nearZ is
     // - the more depth precision is available for features (good)
@@ -175,7 +213,10 @@ function getMercatorMatrix(t) {
 
     let cameraToClip;
 
-    const cameraToClipPerspective = t._camera.getCameraToClipPerspective(t._fov, t.width / t.height, t._nearZ, _farZ);
+    // Projection matrix
+    const cameraToClipPerspective = t._camera.getCameraToClipPerspective(t._fov, t.width / t.height, t._nearZ, t._farZ) 
+    // const cameraToClipPerspective = t._camera.getCameraToClipPerspective(t._fov, t.width / t.height, t._nearZ, _farZ) 
+    // const cameraToClipPerspective = scr.mat4.perspective(t._fov, t.width / t.height, t._nearZ, t._farZ)
     // Apply offset/padding
     cameraToClipPerspective[8] = -offset.x * 2 / t.width;
     cameraToClipPerspective[9] = offset.y * 2 / t.height;
@@ -194,7 +235,7 @@ function getMercatorMatrix(t) {
         top += offset.y;
         bottom += offset.y;
 
-        cameraToClip = t._camera.getCameraToClipOrthographic(left, right, bottom, top, t._nearZ, t._farZ);
+        cameraToClip = t._camera.getCameraToClipOrthographic(left, right, bottom, top, t._nearZ, _farZ);
 
         const mixValue =
         t.pitch >= OrthographicPitchTranstionValue ? 1.0 : t.pitch / OrthographicPitchTranstionValue;
@@ -223,14 +264,18 @@ function getMercatorMatrix(t) {
 
     // The mercatorMatrix can be used to transform points from mercator coordinates
     // ([0, 0] nw, [1, 1] se) to GL coordinates. / zUnit compensates for scaling done in worldToCamera.
-    t.mercatorMatrix = scr.mat4.scale(m, scr.vec4.fromValues(t.worldSize, t.worldSize, t.worldSize / zUnit, 1.0));
+    t.mercatorMatrix = scr.mat4.scale(m, scr.vec3.fromValues(t.worldSize, t.worldSize, t.worldSize / zUnit));
     t.projMatrix = m;
 
     // For tile cover calculation, use inverted of base (non elevated) matrix
     // as tile elevations are in tile coordinates and relative to center elevation.
     t.invProjMatrix = scr.mat4.invert(t.projMatrix);
 
-    return t.mercatorMatrix
+    return {
+        far: t._farZ,
+        near: t._nearZ,
+        matrix: t.mercatorMatrix,
+    }
 }
 function encodeFloatToDouble(value) {
     const result = new Float32Array(2);

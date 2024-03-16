@@ -77,6 +77,11 @@ export class Vec4f extends Numeric {
         
         return this
     }
+
+    get array() {
+
+        return this._data
+    }
 }
 
 export function vec4f(x, y, z, w) {

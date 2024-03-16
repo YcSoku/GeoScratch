@@ -7,6 +7,9 @@ export class I32 extends Numeric {
     static create(a?: number): I32;
 
     add(a: number): I32;
+
+    set n(a: number): void;
+    get n(): number;
 }
 
 

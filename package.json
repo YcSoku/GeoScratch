@@ -30,9 +30,7 @@
   },
   "homepage": "https://github.com/YcSoku/GeoScratch#readme",
   "dependencies": {
-    "@types/gl-matrix": "^3.2.0",
-    "@webgpu/types": "^0.1.40",
-    "gl-matrix": "^3.4.3"
+    "@webgpu/types": "^0.1.40"
   },
   "devDependencies": {
     "chai": "^5.1.0",

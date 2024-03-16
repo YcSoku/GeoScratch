@@ -1,8 +1,8 @@
 import { Mat4 } from "../math/mat4";
 import { Vec3 } from "../math/vec3";
 import { Numeric } from "./numeric"
-
 export class Vec4f extends Numeric {
+
      
     constructor(x?: number, y?: number, z?: number, w?: number): Vec4f;
 
@@ -18,6 +18,8 @@ export class Vec4f extends Numeric {
     static create(x?: number, y?: number, z?: number, w?: number): Vec4f;
 
     transformFromMat4(m: Mat4): Vec4f;
+    
+    get array(): Float32Array;
 }
 
 export function vec4f(x?: number, y?: number, z?: number, w?: number): Vec4f;

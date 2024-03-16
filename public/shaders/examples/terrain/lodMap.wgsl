@@ -16,12 +16,19 @@ struct StaticUniformBlock {
 struct TileUniformBlock {
     tileBox: vec4f,
     levelRange: vec2f,
-    sectorSize: vec2f,
+    sectorRange: vec2f,
+    sectorSize: f32,
+    exaggeration: f32,
+};
+
+struct MapUniformBlock {
+    dimensions: vec2f,
 };
 
 // Uniform Bindings
-@group(0) @binding(0) var<uniform> tileUniform: TileUniformBlock;
-@group(0) @binding(1) var<uniform> staticUniform: StaticUniformBlock;
+@group(0) @binding(0) var<uniform> mapUniform: MapUniformBlock;
+@group(0) @binding(1) var<uniform> tileUniform: TileUniformBlock;
+@group(0) @binding(2) var<uniform> staticUniform: StaticUniformBlock;
 
 // Storage Bindings
 @group(1) @binding(0) var<storage> level: array<u32>;
@@ -106,13 +113,10 @@ fn overlap(box: vec4f) -> bool {
 @vertex
 fn vMain(vsInput: VertexInput) -> VertexOutput {
 
-    let sectorSizeX = (tileUniform.tileBox[2] - tileUniform.tileBox[0]) / tileUniform.sectorSize.x;
-    let sectorSizeY = (tileUniform.tileBox[3] - tileUniform.tileBox[1]) / tileUniform.sectorSize.y;
-
-    let nodeStartX = floor((box[vsInput.instanceIndex * 4 + 0] - tileUniform.tileBox[0]) / tileUniform.sectorSize.x);
-    let nodeStartY = floor((box[vsInput.instanceIndex * 4 + 1] - tileUniform.tileBox[1]) / tileUniform.sectorSize.y);
-    let nodeEndX = floor((box[vsInput.instanceIndex * 4 + 2] - tileUniform.tileBox[0]) / tileUniform.sectorSize.x);
-    let nodeEndY = floor((box[vsInput.instanceIndex * 4 + 3] - tileUniform.tileBox[1]) / tileUniform.sectorSize.y);
+    let nodeStartX = floor((box[vsInput.instanceIndex * 4 + 0] - tileUniform.tileBox[0]) / tileUniform.sectorRange.x);
+    let nodeStartY = floor((box[vsInput.instanceIndex * 4 + 1] - tileUniform.tileBox[1]) / tileUniform.sectorRange.y);
+    let nodeEndX = floor((box[vsInput.instanceIndex * 4 + 2] - tileUniform.tileBox[0]) / tileUniform.sectorRange.x);
+    let nodeEndY = floor((box[vsInput.instanceIndex * 4 + 3] - tileUniform.tileBox[1]) / tileUniform.sectorRange.y);
     
     let vertices = array<vec2f, 4>(
         vec2f(nodeStartX, nodeStartY),
@@ -121,7 +125,7 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
         vec2f(nodeEndX, nodeEndY),
     );
 
-    let vertex = vertices[vsInput.vertexIndex] / 256.0;
+    let vertex = vertices[vsInput.vertexIndex] / mapUniform.dimensions;
 
     var output: VertexOutput;
     output.position = vec4f(vertex * 2.0 - 1.0, 0.0, 1.0);
@@ -129,33 +133,8 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
     return output;
 }
 
-fn colorMap(index: u32) -> vec3f {
-
-    let palette = array<vec3f, 11> (
-        vec3f(158.0, 1.0, 66.0),
-        vec3f(213.0, 62.0, 79.0),
-        vec3f(244.0, 109.0, 67.0),
-        vec3f(253.0, 174.0, 97.0),
-        vec3f(254.0, 224.0, 139.0),
-        vec3f(255.0, 255.0, 191.0),
-        vec3f(230.0, 245.0, 152.0),
-        vec3f(171.0, 221.0, 164.0),
-        vec3f(102.0, 194.0, 165.0),
-        vec3f(50.0, 136.0, 189.0),
-        vec3f(94.0, 79.0, 162.0),
-    );
-
-    return palette[index] / 255.0;
-}
-
 @fragment
 fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
-    
-    let level = clamp(14 - u32(fsInput.level), 0, 10);
 
-    // return vec4f(colorMap(level), 1.0);
     return vec4f(fsInput.level / 255.0);
-
-    // return vec4f(1.0 - fsInput.depth);
-    // return vec4f(0.5);
 }

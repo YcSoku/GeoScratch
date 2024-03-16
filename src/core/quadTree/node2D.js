@@ -20,12 +20,12 @@ export class Node2D {
         this.level = level
         this.id = id
 
-        this.size = 180.0 / Math.pow(2, level)
+        this.size = 180. / Math.pow(2, level)
 
-        const subId = this.id % 4
-        const minLon = (this.parent ? this.parent.bBox.boundary.x : 0.0) + (subId % 2) * this.size
+        const childhoodId = this.id % 4
+        const minLon = (this.parent ? this.parent.bBox.boundary.x : -180.) + (childhoodId % 2) * this.size
         const maxLon = minLon + this.size
-        const minLat = (this.parent ? this.parent.bBox.boundary.y : -90.0) + Math.floor((subId / 2)) * this.size
+        const minLat = (this.parent ? this.parent.bBox.boundary.y : -90.) + Math.floor((childhoodId / 2)) * this.size
         const maxLat = minLat + this.size
 
         this.bBox = new BoundingBox2D(
@@ -47,6 +47,7 @@ export class Node2D {
         this.level = null
         this.size = null
         this.id = null
+        return null
     }
 
     /**
@@ -56,11 +57,10 @@ export class Node2D {
     isSubdividable(options) {
 
         const center = this.bBox.center
+        const hDistance = Math.ceil(Math.abs(center[0] - options.cameraPos[0]) / this.size)
+        const vDistance = Math.ceil(Math.abs(center[1] - options.cameraPos[1]) / this.size)
 
-        const hFactor = Math.ceil(Math.abs(center[0] - options.cameraPos[0]) / this.size)
-        const vFactor = Math.ceil(Math.abs(center[1] - options.cameraPos[1]) / this.size)
-        const distance = Math.max(hFactor, vFactor)
-        if (distance <= 2) return true
+        if (Math.max(hDistance, vDistance) <= 2) return true
         else return false
     }
 }

@@ -22,3 +22,5 @@ export class BoundingBox2D {
 
     release(): null;
 }
+
+export function boundingBox2D(xMin?: number, yMin?: number, xMax?: number, yMax?: number): BoundingBox2D

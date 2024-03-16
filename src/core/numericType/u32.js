@@ -13,6 +13,16 @@ export class U32 extends Numeric {
         return new U32(a)
     }
 
+    set n(a) {
+
+        this._data = a
+    }
+
+    get n() {
+
+        return this._data
+    }
+
     add(a) {
 
         this._data += a

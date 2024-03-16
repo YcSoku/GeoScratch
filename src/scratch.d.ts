@@ -15,7 +15,7 @@ export { Device, StartDash, device } from './platform/context/device'
 
 export { ArrayRef, aRef } from './core/data/arrayRef'
 export { BlockRefDescription, BlockRef, bRef } from './core/data/blockRef'
-export { BoundingBox2D } from './core/box/boundingBox2D'
+export { boundingBox2D, BoundingBox2D } from './core/box/boundingBox2D'
 export { Node2D } from './core/quadTree/node2D'
 
 export { sampler, Sampler } from './platform/sampler/sampler'

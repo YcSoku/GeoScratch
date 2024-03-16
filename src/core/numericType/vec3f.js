@@ -27,6 +27,21 @@ export class Vec3f extends Numeric {
         return this._data[2]
     }
 
+    set x(x) {
+
+        this._data[0] = x
+    }
+
+    set y(y) {
+
+        this._data[1] = y
+    }
+
+    set z(z) {
+
+        this._data[2] = z
+    }
+
     static create(x, y, z) {
 
         return new Vec3f(x, y, z)
@@ -50,6 +65,11 @@ export class Vec3f extends Numeric {
         else if (s instanceof F32) vec3.scale(this._data, s.data, this._data)
         
         return this
+    }
+
+    get array() {
+
+        return this._data
     }
 }
 

@@ -9,58 +9,9 @@ export interface MapOptions {
 
 export class Node2D {
 
-    /**
-     * @param {number} level 
-     * @param {number} id 
-     * @param {Node2D} [parent]
-     */
-    constructor(level = 0, id = 0, parent = undefined) {
+    constructor(level: number = 0, id: number = 0, parent: Node2D = undefined): Node2D;
 
-        this.parent = parent
-        this.level = level
-        this.id = id
+    release(): null;
 
-        this.size = 180.0 / Math.pow(2, level)
-
-        const subId = this.id % 4
-        const minLon = (this.parent ? this.parent.bBox.boundary[0] : 0.0) + (subId % 2) * this.size
-        const maxLon = minLon + this.size
-        const minLat = (this.parent ? this.parent.bBox.boundary[1] : -90.0) + Math.floor((subId / 2)) * this.size
-        const maxLat = minLat + this.size
-
-        this.bBox = BoundingBox2D.create([
-            minLon, minLat,
-            maxLon, maxLat,
-        ])
-
-        /**
-         * @type {Node2D[]}
-         */
-        this.children = []
-    }
-
-    release() {
-        
-        this.bBox = this.bBox.release()
-        this.children = null
-        this.parent = null
-        this.level = null
-        this.size = null
-        this.id = null
-    }
-
-    /**
-     * @param {MapOptions} options
-     * @returns 
-     */
-    isSubdividable(options) {
-
-        const center = this.bBox.center()
-
-        const hFactor = Math.ceil(Math.abs(center[0] - options.cameraPos[0]) / this.size)
-        const vFactor = Math.ceil(Math.abs(center[1] - options.cameraPos[1]) / this.size)
-        const distance = Math.max(hFactor, vFactor)
-        if (distance <= 2) return true
-        else return false
-    }
+    isSubdividable(options: MapOptions): Boolean;
 }

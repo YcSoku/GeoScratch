@@ -38,6 +38,8 @@ export class Mat4f extends Numeric{
     static translation(v: Vec3f): Mat4f;
 
     translate(v: Vec3f): Mat4f;
+
+    get array(): Float32Array;
 }
 
 export function mat4f(): Mat4f;

@@ -18,6 +18,16 @@ export class I32 extends Numeric {
         this._data += a
         return this
     }
+
+    set n(a) {
+
+        this._data = a
+    }
+
+    get n() {
+
+        return this._data
+    }
 }
 
 export function i32(a) {
