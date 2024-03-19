@@ -1,6 +1,6 @@
 {
   "name": "geoscratch",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "Tiny 3D library for geovisualization, powered by WebGPU",
   "main": "src/scratch.js",
   "types": "src/scratch.d.ts",
@@ -42,6 +42,5 @@
     "chai": "^5.1.0",
     "mocha": "^10.3.0",
     "vite": "^5.1.5"
-  },
-  "proxy": "https://maps.ckochis.com"
+  }
 }
