@@ -1,13 +1,18 @@
 import * as scr from '../../src/scratch.js'
 import Hammer from 'hammerjs'
 import earcut from 'earcut'
+import tilebelt from '@mapbox/tilebelt'
+import Protobuf from 'pbf'
+import { VectorTile } from '@mapbox/vector-tile'
+import axios from 'axios'
 
 const MIN_ZOOM = 0
 const MAX_ZOOM = 16
-const MAX_FRAME_COUNT = 300
-let FRAME_LEFT = MAX_FRAME_COUNT
+const TILE_SIZE = 512
+const MAX_TILE_ZOOM = MAX_ZOOM
 let startX = 0.
 let startY = 0.
+let tilesInView = []
 const GPUFrame = document.getElementById('GPUFrame')
 scr.StartDash().then(() => main(GPUFrame)) 
 
@@ -26,13 +31,16 @@ function main(canvas) {
     
         // Scale
         const zoomScale = 1. / Math.pow(2, camera.zoom)
-        cameraMat.scale(scr.vec3f(zoomScale))
+        const widthScale = TILE_SIZE / canvas.width
+        const heightScale = TILE_SIZE / canvas.height
+        cameraMat.scale(scr.vec3f(zoomScale / widthScale, zoomScale / heightScale, zoomScale))
     
         // Update matrix
         uMatrix.data = scr.Mat4f.multiplication(scr.Mat4f.inverse(cameraMat)).data
     
         scr.director.tick()
-        FRAME_LEFT = MAX_FRAME_COUNT
+
+        getTilesInView()
     }
     updateMatrix()
     
@@ -145,6 +153,69 @@ function main(canvas) {
     hammer.on('pinch', handleZoom)
     GPUFrame.addEventListener('wheel', handleZoom)
 
+    // Tile //////
+    function getBounds() {
+        
+        const zoomScale = Math.pow(2, camera.zoom)
+
+        // Undo NDC
+        const px = (1. + camera.x) / 2.
+        const py = (1. - camera.y) / 2.
+
+        // Get world coord in px
+        const wx = px * TILE_SIZE
+        const wy = py * TILE_SIZE
+
+        // Get zoom px
+        const zx = wx * zoomScale
+        const zy = wy * zoomScale
+
+        // Get bottom-left and top-right pixels
+        let x1 = zx - (GPUFrame.width / 2.)
+        let y1 = zy + (GPUFrame.height / 2.)
+        let x2 = zx + (GPUFrame.width / 2.)
+        let y2 = zy - (GPUFrame.height / 2.)
+
+        // Convert to world coords
+        x1 = x1 / zoomScale / TILE_SIZE
+        y1 = y1 / zoomScale / TILE_SIZE
+        x2 = x2 / zoomScale / TILE_SIZE
+        y2 = y2 / zoomScale / TILE_SIZE
+        
+        // Get Lon/Lat bounding box
+        const bbox = [
+            Math.max(scr.MercatorCoordinate.lonFromMercatorX(x1), -180.),
+            Math.max(scr.MercatorCoordinate.latFromMercatorY(y1), -85.05),
+            Math.min(scr.MercatorCoordinate.lonFromMercatorX(x2), 180.),
+            Math.min(scr.MercatorCoordinate.latFromMercatorY(y2), 85.05),
+        ]
+
+        return bbox
+    }
+
+
+    function getTilesInView() {
+
+        // Get bbox from viewport
+        const bbox = getBounds()
+
+        // Find min and max tiles
+        const z = Math.min(Math.trunc(camera.zoom), MAX_TILE_ZOOM)
+        const minTile = tilebelt.pointToTile(bbox[0], bbox[3], z) // top-left
+        const maxTile = tilebelt.pointToTile(bbox[2], bbox[1], z) // bottom-right
+
+        // Tiles visible in viewport
+        tilesInView = []
+        const [ minX, maxX ] = [ Math.max(minTile[0], 0), maxTile[0] ]
+        const [ minY, maxY ] = [ Math.max(minTile[1], 0), maxTile[1] ]
+        for (let x = minX; x <= maxX; x++) {
+            for (let y = minY; y <= maxY; y++) {
+
+                tilesInView.push([ x, y, z ])
+            }
+        }
+    }
+
     ///////////////////////////////////////////////////
 
     const screen = scr.screen({ canvas })
@@ -203,6 +274,14 @@ function main(canvas) {
       }
 
     async function init() {
+
+        // const [ x, y, z ] = tilesInView[0]
+        // const res = await axios.get(`https://maps.ckochis.com/data/v3/${z}/${x}/${y}.pbf?apiKey=${config('mapsApiKey')}`, {
+        //   responseType: 'arraybuffer',
+        // })
+        // const pbf = new Protobuf(res.data)
+        // const vectorTile = new VectorTile(pbf)
+        // console.log(vectorTile)
 
         // Buffer-related resource
         const geoJsonResource = await fetch('/json/examples/map/washington.geojson').then(async response => { return await response.text() })
