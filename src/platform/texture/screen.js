@@ -91,15 +91,21 @@ class Screen extends Texture {
     /**
      * 
      * @param {string} [name] 
+     * @param {number} [usage]
+     * @param {boolean} [mipMapped]
+     * @param {boolean} [computable]
      * @param {GPUTextureFormat} [format] 
      * @param {number[]} [multiplier = [1, 1]]
      */
-    createScreenDependentTexture(name, format, multiplier = [1, 1]) {
+    createScreenDependentTexture(name, format, computable, mipMapped, usage, multiplier = [1, 1]) {
         
         const texture = Texture.create({
-            name: name,
-            format: format,
-            resource: { size: () => [this.canvas.width * multiplier[0], this.canvas.height * multiplier[1]] }
+            name,
+            usage,
+            format,
+            mipMapped,
+            computable,
+            resource: { size: () => [ this.canvas.width * multiplier[0], this.canvas.height * multiplier[1] ] }
         })
 
         this.addScreenDependentTexture(texture, multiplier)

@@ -62,12 +62,12 @@ export class BoundingBox2D {
         ]
     }
 
-    reset() {
-
-        this._boundary.x = Infinity
-        this._boundary.y = Infinity
-        this._boundary.z = -Infinity
-        this._boundary.w = -Infinity
+    reset(xMin, yMin, xMax, yMax) {
+        
+        this._boundary.x = xMin !== undefined ? xMin : Infinity
+        this._boundary.y = yMin !== undefined ? yMin : Infinity
+        this._boundary.z = xMax !== undefined ? xMax : -Infinity
+        this._boundary.w = yMax !== undefined ? yMax : -Infinity
     }
 
     release() {

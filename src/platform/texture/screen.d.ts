@@ -33,7 +33,7 @@ export class Screen {
      */
     onWindowResize(): void;
 
-    createScreenDependentTexture(name?: string, format?: GPUTextureFormat, multiplier?: number[]): Texture;
+    createScreenDependentTexture(name?: string, format?: GPUTextureFormat, computable?: boolean, mipMapped?: boolean, usage?: number, multiplier = [1, 1], multiplier?: number[]): Texture;
 
     getCurrentCanvasTexture(): Texture;
 

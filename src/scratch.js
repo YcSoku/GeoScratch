@@ -77,3 +77,5 @@ export { UUID } from './core/utils/uuid.js'
 
 export { bloomPass, BloomPass } from './function/postprocess/bloomPass.js'
 export { fxaaPass, FXAAPass } from './function/postprocess/fxaaPass.js'
+
+export { LocalTerrain } from './application/terrain/localTerrain.js'

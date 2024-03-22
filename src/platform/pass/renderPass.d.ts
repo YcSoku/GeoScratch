@@ -29,6 +29,7 @@ export interface RenderPassDescription {
 export class RenderPass {
     
     pass: GPURenderPassEncoder;
+    executable: boolean;
 
     constructor(description: RenderPassDescription);
     static create(description: RenderPassDescription): RenderPass;

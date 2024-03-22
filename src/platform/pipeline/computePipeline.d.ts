@@ -23,6 +23,8 @@ export class ComputePipeline {
      */
     name: string;
 
+    executable: boolean;
+
     /**
      * Pipeline layout associated with the ComputableBuilder.
      */

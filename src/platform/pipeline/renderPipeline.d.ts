@@ -17,6 +17,8 @@ export interface RenderPipelineDescription {
 
 export class RenderPipeline {
 
+    executable: boolean;
+
     constructor(description: RenderPipelineDescription);
 
     static create(ddescription: RenderPipelineDescription): DrawCommand;

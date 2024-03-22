@@ -26,6 +26,8 @@ export class ComputePass {
         this.pass = undefined
 
         this.update()
+        
+        this.executable = true
     }
 
     /**
@@ -64,10 +66,12 @@ export class ComputePass {
      */
     execute(encoder) {
 
+        if (!this.executable) return
         this.pass = encoder.beginComputePass(this.passDescription)
         this.computecalls.forEach(({ binding, pipeline }) => {
 
-            if (!binding.tryMakeComplete() || !pipeline.tryMakeComplete(this, binding)) return
+            // console.log(this.name, binding, pipeline)
+            if (!binding.tryMakeComplete() || !pipeline.tryMakeComplete(this, binding) || !pipeline.executable || !binding.executable) return
             
             pipeline.dispatch(this, binding)
         })

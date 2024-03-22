@@ -60,6 +60,8 @@ class RenderPipeline {
 
         this.isFinite = false
         this.triggerCount = 0
+
+        this.executable = true
     }
 
     /**
@@ -138,7 +140,7 @@ class RenderPipeline {
         colorFormats.forEach((format, index) => {
             this.colorTargetStates[index] = {
                 format: format,
-                blend: this.colorTargetStateDescriptions !== undefined ? this.colorTargetStateDescriptions[index].blend : NoBlending,
+                blend: this.colorTargetStateDescriptions !== undefined ? this.colorTargetStateDescriptions[index].blend : undefined,
                 writeMask: this.colorTargetStateDescriptions !== undefined ? this.colorTargetStateDescriptions[index].writeMask: undefined,
             }
         })
@@ -275,6 +277,8 @@ class RenderPipeline {
 
         if (this.isFinite && (!this.triggerCount)) return
         else this.triggerCount = Math.max(this.triggerCount - 1, 0)
+
+        if (!this.executable) return
         
         if (this.asBundle) {
             if (this.bundleDirty) this.makeRenderBundle(renderPass, binding)

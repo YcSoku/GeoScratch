@@ -74,6 +74,7 @@ export class Binding extends ScratchObject {
 
     indirectBinding: {buffer: GPUBuffer | undefined, byteOffset: number};
     isComplete: boolean;
+    executable: boolean;
 
     constructor();
 

@@ -36,6 +36,8 @@ class ComputePipeline {
 
         this.isFinite = false
         this.triggerCount = 0
+
+        this.executable = true
     }
 
     /**
@@ -133,6 +135,8 @@ class ComputePipeline {
 
         if (this.isFinite && (!this.triggerCount)) return
         else this.triggerCount = Math.max(this.triggerCount - 1, 0)
+
+        if (!this.executable) return
 
         binding.setBindGroups(computePass.pass)
         computePass.pass.setPipeline(this.pipeline)

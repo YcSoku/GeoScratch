@@ -247,6 +247,8 @@ class Binding extends ScratchObject {
 
         director.addBinding(this)
 
+        this.executable = true
+
     }
 
     /**
@@ -334,7 +336,9 @@ class Binding extends ScratchObject {
 
         this.textureBindings.push({
             texture: bindingDesc.texture.use(),
-            callbackIndex: bindingDesc.texture.registerCallback(() => { 
+            callbackIndex: bindingDesc.texture.registerCallback(() => {
+                
+                if (!this.isComplete) return
                 director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'texture', order: this.textureOrder})
             }),
 

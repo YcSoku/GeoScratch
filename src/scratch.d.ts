@@ -78,3 +78,5 @@ export { UUID } from './core/utils/uuid'
 
 export { BloomPass, BloomPassDescription } from './function/postprocess/bloomPass'
 export { FXAAPass, FXAAPassDescription } from './function/postprocess/fxaaPass'
+
+export { LocalTerrain } from './application/terrain/localTerrain'

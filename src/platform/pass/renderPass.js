@@ -38,6 +38,7 @@ export class RenderPass {
         this.dirty = true
         this.initialized = false
         this.completed = false
+        this.executable = true
     }
 
     addColorAttachments() {
@@ -197,11 +198,13 @@ export class RenderPass {
 
         this.dirty && this.update()
 
+        if (!this.executable) return
+
         this.pass = encoder.beginRenderPass(this.passDescription)
 
         this.drawcalls.forEach(({ binding, pipeline }) => {
             
-            if (!binding.tryMakeComplete() || !pipeline.tryMakeComplete(this, binding)) return
+            if (!binding.tryMakeComplete() || !pipeline.tryMakeComplete(this, binding) || !pipeline.executable || !binding.executable) return
 
             pipeline.draw(this, binding)
         })

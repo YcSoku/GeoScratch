@@ -92,7 +92,7 @@ async function StartDash() {
     for (const value of valueIterator) {
         console.log(value)
     }
-
+    
     const instance = await adapter.requestDevice()
     instance.lost.then(async(info) => {
         console.error("ERROR:: WebGPU device was lost: ${info.message}")

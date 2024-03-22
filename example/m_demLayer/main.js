@@ -1,51 +1,61 @@
 import * as scr from '../../src/scratch.js'
-import { LocalTerrain } from '../../src/application/terrain/localTerrain.js'
+import TerrainLayer from './terrainLayer.js'
+import FlowLayer from './flowLayer.js'
 
 mapboxgl.accessToken = 'pk.eyJ1IjoieWNzb2t1IiwiYSI6ImNrenozdWdodDAza3EzY3BtdHh4cm5pangifQ.ZigfygDi2bK4HXY1pWh-wg'
 
-// DOM Configuration
+// DOM Configuration //////////////////////////////////////////////////////////////////////////////////////////////////////
 const GPUFrame = document.getElementById('GPUFrame')
-GPUFrame.style.zIndex = '1'
 GPUFrame.style.pointerEvents = 'none'
+GPUFrame.style.zIndex = '1'
 
 const mapDiv = document.createElement('div')
-mapDiv.id = 'map'
-mapDiv.style.zIndex = '0'
-mapDiv.style.width = '100%'
 mapDiv.style.height = '100%'
+mapDiv.style.width = '100%'
+mapDiv.style.zIndex = '0'
+mapDiv.id = 'map'
 document.body.appendChild(mapDiv)
 
-// StartDash
+// StartDash //////////////////////////////////////////////////////////////////////////////////////////////////////
 scr.StartDash().then(() => {
 
     const map = new ScratchMap({
         style: "mapbox://styles/ycsoku/cldjl0d2m000501qlpmmex490",
-        GPUFrame: GPUFrame,
         center: [ 120.980697, 31.684162 ],
         projection: 'mercator',
+        GPUFrame: GPUFrame,
         container: 'map',
         antialias: true,
         maxZoom: 18,
         zoom: 9,
-    }).on('load', () => map.addLayer(new TerrainLayer(14)))
+    }).on('load', () => {
+        
+        map.addLayer(new TerrainLayer(14))
+        map.addLayer(new FlowLayer('/json/examples/terrain/stations.json'))
+        // map.getLayer('FlowLayer').implementation.hide()
+    })
 })
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// Map //////////////////////////////////////////////////////////////////////////////////////////////////////
 class ScratchMap extends mapboxgl.Map {
 
     constructor(options) {
 
         // Init mapbox map
         super(options)
-        
-        // Buffer-related resource (based on map status)
+
+        // Attributes
         this.far = scr.f32()
         this.near = scr.f32()
         this.uMatrix = scr.mat4f()
         this.centerLow = scr.vec3f()
         this.centerHigh = scr.vec3f()
-        this.mercatorCenter = undefined
+        this.mercatorCenter = scr.vec3f()
+        this.zoom = scr.f32(this.getZoom())
+        this.mercatorBounds = new scr.BoundingBox2D()
+        this.cameraBounds = new scr.BoundingBox2D(...this.getBounds().toArray())
+        
+        // Buffer-related resource (based on map status)
         this.dynamicUniformBuffer = scr.uniformBuffer({
             name: 'Uniform Buffer (Scratch map dynamic status)',
             blocks: [
@@ -65,10 +75,12 @@ class ScratchMap extends mapboxgl.Map {
 
         // Texture-related resource
         this.screen = scr.screen({ canvas: options.GPUFrame, alphaMode: 'premultiplied'})
+
+        // Pass
         this.outputPass = scr.renderPass({
             name: 'Render Pass (Scratch map)',
             colorAttachments: [ { colorResource: this.screen } ],
-            depthStencilAttachment: { depthStencilResource: this.screen.createScreenDependentTexture('Texture (Depth)', 'depth24plus') }
+            depthStencilAttachment: { depthStencilResource: this.screen.createScreenDependentTexture('Texture (Map Depth)', 'depth24plus') }
         })
         
         // Make stages
@@ -85,25 +97,34 @@ class ScratchMap extends mapboxgl.Map {
 
         this.on('render', () => {
 
-            this.updateCenter()
             scr.director.tick()
+            this.update()
         })
     }
 
-    updateCenter() {
+    update() {
 
         this.mercatorCenter = new mapboxgl.MercatorCoordinate(...this.transform._computeCameraPosition().slice(0, 3))
+        this.zoom.n = this.getZoom()
+        
         const { far, near, matrix} = getMercatorMatrix(this.transform.clone())
         const mercatorCenterX = encodeFloatToDouble(this.mercatorCenter.x)
         const mercatorCenterY = encodeFloatToDouble(this.mercatorCenter.y)
         const mercatorCenterZ = encodeFloatToDouble(this.mercatorCenter.z)
 
-        this.centerLow.x = mercatorCenterX[1]
-        this.centerLow.y = mercatorCenterY[1]
-        this.centerLow.z = mercatorCenterZ[1]
         this.centerHigh.x = mercatorCenterX[0]
         this.centerHigh.y = mercatorCenterY[0]
         this.centerHigh.z = mercatorCenterZ[0]
+        this.centerLow.x = mercatorCenterX[1]
+        this.centerLow.y = mercatorCenterY[1]
+        this.centerLow.z = mercatorCenterZ[1]
+
+        const { _sw, _ne } = this.getBounds()
+        const m_sw = scr.MercatorCoordinate.fromLonLat(_sw.toArray())
+        const m_ne = scr.MercatorCoordinate.fromLonLat(_ne.toArray())
+
+        this.mercatorBounds.reset(...m_sw, ...m_ne)
+        this.cameraBounds.reset(...this.getBounds().toArray().flat())
 
         this.far.n = far
         this.near.n = near
@@ -124,62 +145,7 @@ class ScratchMap extends mapboxgl.Map {
     }
 }
 
-class TerrainLayer extends LocalTerrain {
-
-    constructor(maxLevel) {
-
-        super(maxLevel)
-
-        this.type = 'custom'
-        this.map = undefined
-        this.id = 'TerrainLayer'
-        this.renderingMode = '3d'
-    }
-
-    onAdd(map, gl) {
-
-        this.map = map
-        this.setResource(map.dynamicUniformBuffer)
-        map.add2PreProcess(this.prePass).add2RenderPass(this.pipeline, this.binding)
-    }
-
-    render(gl, matrix) {
-
-        this.registerRenderableNode({
-            zoomLevel: this.map.getZoom(),
-            cameraPos: this.map.mercatorCenter.toLngLat().toArray(),
-            cameraBounds: new scr.BoundingBox2D(...this.map.getBounds().toArray().flat()),
-        })
-        // this.map.triggerRepaint()
-    }
-}
-
-
-function smoothstep(e0, e1, x) {
-    x = clamp((x - e0) / (e1 - e0), 0, 1);
-    return x * x * (3 - 2 * x);
-}
-
-function farthestPixelDistanceOnPlane(tr, minElevation, pixelsPerMeter) {
-    // Find the distance from the center point [width/2 + offset.x, height/2 + offset.y] to the
-    // center top point [width/2 + offset.x, 0] in Z units, using the law of sines.
-    // 1 Z unit is equivalent to 1 horizontal px at the center of the map
-    // (the distance between[width/2, height/2] and [width/2 + 1, height/2])
-    const fovAboveCenter = tr.fovAboveCenter;
-
-    // Adjust distance to MSL by the minimum possible elevation visible on screen,
-    // this way the far plane is pushed further in the case of negative elevation.
-    const minElevationInPixels = minElevation * pixelsPerMeter;
-    const cameraToSeaLevelDistance = ((tr._camera.position[2] * tr.worldSize) - minElevationInPixels) / Math.cos(tr._pitch);
-    const topHalfSurfaceDistance = Math.sin(fovAboveCenter) * cameraToSeaLevelDistance / Math.sin(Math.max(Math.PI / 2.0 - tr._pitch - fovAboveCenter, 0.01));
-
-    // Calculate z distance of the farthest fragment that should be rendered.
-    const furthestDistance = Math.sin(tr._pitch) * topHalfSurfaceDistance + cameraToSeaLevelDistance;
-    const horizonDistance = cameraToSeaLevelDistance * (1 / tr._horizonShift);
-
-    // Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
-    return Math.min(furthestDistance * 1.01, horizonDistance);
-}
+// Helpers //////////////////////////////////////////////////////////////////////////////////////////////////////
 function getMercatorMatrix(t) {
     
     if (!t.height) return;
@@ -205,7 +171,7 @@ function getMercatorMatrix(t) {
     t._updateCameraState();
 
     // t._farZ = t.projection.farthestPixelDistance(t);
-    t._farZ = farthestPixelDistanceOnPlane(t, -100.0 * 30.0, pixelsPerMeter)
+    t._farZ = farthestPixelDistanceOnPlane(t, -80.06899999999999 * 30.0, pixelsPerMeter)
     // console.log(t._farZ, t.projection.farthestPixelDistance(t))
 
     // The larger the value of nearZ is
@@ -290,6 +256,10 @@ function getMercatorMatrix(t) {
         matrix: t.mercatorMatrix,
     }
 }
+function smoothstep(e0, e1, x) {
+    x = clamp((x - e0) / (e1 - e0), 0, 1);
+    return x * x * (3 - 2 * x);
+}
 function encodeFloatToDouble(value) {
     const result = new Float32Array(2);
     result[0] = value;
@@ -306,6 +276,26 @@ function circumferenceAtLatitude(latitude) {
 }
 function mercatorZfromAltitude(altitude, lat) {
     return altitude / circumferenceAtLatitude(lat)
+}
+function farthestPixelDistanceOnPlane(tr, minElevation, pixelsPerMeter) {
+    // Find the distance from the center point [width/2 + offset.x, height/2 + offset.y] to the
+    // center top point [width/2 + offset.x, 0] in Z units, using the law of sines.
+    // 1 Z unit is equivalent to 1 horizontal px at the center of the map
+    // (the distance between[width/2, height/2] and [width/2 + 1, height/2])
+    const fovAboveCenter = tr.fovAboveCenter;
+
+    // Adjust distance to MSL by the minimum possible elevation visible on screen,
+    // this way the far plane is pushed further in the case of negative elevation.
+    const minElevationInPixels = minElevation * pixelsPerMeter;
+    const cameraToSeaLevelDistance = ((tr._camera.position[2] * tr.worldSize) - minElevationInPixels) / Math.cos(tr._pitch);
+    const topHalfSurfaceDistance = Math.sin(fovAboveCenter) * cameraToSeaLevelDistance / Math.sin(Math.max(Math.PI / 2.0 - tr._pitch - fovAboveCenter, 0.01));
+
+    // Calculate z distance of the farthest fragment that should be rendered.
+    const furthestDistance = Math.sin(tr._pitch) * topHalfSurfaceDistance + cameraToSeaLevelDistance;
+    const horizonDistance = cameraToSeaLevelDistance * (1 / tr._horizonShift);
+
+    // Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
+    return Math.min(furthestDistance * 1.01, horizonDistance);
 }
 function getProjectionInterpolationT(projection, zoom, width, height, maxSize = Infinity) {
     const range = projection.range;
