@@ -786,7 +786,7 @@ class Binding extends ScratchObject {
         this.createBindGroups()
 
         this.isComplete = true
-        return false
+        return true
     }
     
     update() {

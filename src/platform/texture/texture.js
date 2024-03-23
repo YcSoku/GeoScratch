@@ -264,8 +264,6 @@ class Texture extends ScratchObject {
             this.texture = null
         }
 
-        director.removeTexture(this.uuid)
-
         this.uuid = null
         this.refCount = null
         this.name = null

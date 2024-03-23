@@ -8,6 +8,7 @@ struct VertexOutput {
     @location(0) uv: vec2f,
     @location(1) hide: f32,
     @location(2) coords: vec2f,
+    @location(3) velocity: vec2f,
 };
 
 struct StaticUniformBlock {
@@ -24,8 +25,11 @@ struct DynamicUniformBlock {
 };
 
 struct FrameUniformBlock {
-    mapBounds: vec4f,
+    randomSeed: f32,
     viewPort: vec2f,
+    mapBounds: vec4f,
+    zoomLevel: f32,
+    progressRate: f32,
 };
 
 // Uniform bindings
@@ -142,6 +146,7 @@ fn vMain(input: VertexInput) -> VertexOutput {
     output.uv = vec2f(uv.x, 1.0 - uv.y);
     output.hide = select(0.0, 1.0, cExtent.z <= cExtent.x || cExtent.w <= cExtent.y);
     output.coords = offset;
+    output.velocity = vec2f(particles[input.instanceIndex * 4 + 2], particles[input.instanceIndex * 4 + 3]);
     return output;
 }
 
@@ -159,15 +164,16 @@ fn fMain(input: VertexOutput) -> @location(0) vec4f {
         0xd53e4f
     );
 
-
     let dim = vec2f(textureDimensions(flowTexture, 0).xy);
-    let velocity = linearSampling(input.uv * dim, dim).rg;
+    let pos = linearSampling(input.uv * dim, dim).rg;
+    let velocity = input.velocity;
     // if (input.hide == 1.0 || (velocity.x == 0.0 && velocity.y == 0.0) || length(input.coords) > 1.0) {
-    if (input.hide == 1.0 || (velocity.x == 0.0 && velocity.y == 0.0)) {
+    if (input.hide == 1.0 || length(pos) == 0.0) {
         discard;
     }
 
     let color = velocityColor(length(velocity) / staticUniform.maxSpeed, rampColors0);
     // return vec4f(color, 0.0, 1.0);
     return vec4f(color, 0.5);
+    // return vec4f(0.5);
 }

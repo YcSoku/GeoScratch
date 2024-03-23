@@ -9,6 +9,7 @@ struct FrameUniformBlock {
     viewPort: vec2f,
     mapBounds: vec4f,
     zoomLevel: f32,
+    progressRate: f32,
 };
 
 struct DynamicUniformBlock {
@@ -36,7 +37,8 @@ struct ControllerUniformBlock {
 @group(1) @binding(0) var<storage, read_write> particles: array<f32>;
 
 // Texture bindings
-@group(2) @binding(0) var flowTexture: texture_2d<f32>;
+@group(2) @binding(0) var fromTexture: texture_2d<f32>;
+@group(2) @binding(1) var toTexture: texture_2d<f32>;
 
 // Constants
 override blockSize: u32;
@@ -96,8 +98,10 @@ fn IDW(texture: texture_2d<f32>, uv: vec2f, dim: vec2f, step: i32, p: f32) -> ve
 
 // pseudo-random generator
 fn rand(co: vec2f) -> f32 {
+
     let rand_constants = vec3f(12.9898, 78.233, 4375.85453);
     let t = dot(rand_constants.xy, co);
+
     return abs(fract(sin(t) * (rand_constants.z + t)));
 }
 
@@ -105,6 +109,7 @@ fn drop(velocity: vec2f, seed: vec2f) -> f32 {
     
     let speedRate = length(velocity) / staticUniform.maxSpeed;
     let drop_rate = controllerUniform.dropRate + speedRate * controllerUniform.dropRateBump;
+
     return step(1.0 - drop_rate, rand(seed));
 }
 
@@ -112,6 +117,7 @@ fn calcWebMercatorCoord(coord: vec2f) -> vec2f {
 
     let lon = (180.0 + coord.x) / 360.0;
     let lat = (180.0 - (180.0 / PI * log(tan(PI / 4.0 + coord.y * PI / 360.0)))) / 360.0;
+
     return vec2f(lon, lat);
 }
 
@@ -129,6 +135,7 @@ fn currentExtent() -> vec4f {
     let latMin = max(staticUniform.extent.y, frameUniform.mapBounds.y);
     let lonMax = min(staticUniform.extent.z, frameUniform.mapBounds.z);
     let latMax = min(staticUniform.extent.w, frameUniform.mapBounds.w);
+    
     return vec4f(lonMin, latMin, lonMax, latMax);
 }
 
@@ -147,6 +154,12 @@ fn calculateDisplacedLonLat(lon: f32, lat: f32, offsetX: f32, offsetY: f32) -> v
     return vec2f(newLon, newLat);
 }
 
+fn getVelocity(texture: texture_2d<f32>, uv: vec2f) -> vec2f {
+
+    let dim = vec2f(textureDimensions(texture, 0).xy);
+    return linearSampling(texture, uv * dim, dim).rg;
+}
+
 @compute @workgroup_size(blockSize, blockSize, 1)
 fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
 
@@ -156,6 +169,10 @@ fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
     }
 
     let index = id.y * staticUniform.groupSize.x * blockSize + id.x;
+    if (index >= controllerUniform.particleNum) {
+        return;
+    }
+
     var lastPos = vec2f(
         particles[index * 4 + 0],
         particles[index * 4 + 1],
@@ -173,10 +190,10 @@ fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
     var uv = (position_SS + 1.0) / 2.0;
     uv = vec2f(uv.x, 1.0 - uv.y);
 
-    let dim = vec2f(textureDimensions(flowTexture, 0).xy);
-    // var velocity = IDW(flowTexture, uv * dim, dim, 3, 1.0).rg;
-    var velocity = linearSampling(flowTexture, uv * dim, dim).rg;
-    velocity = mix(velocity, vPast, FACTOR);
+    let vLast = getVelocity(fromTexture, uv);
+    let vNext = getVelocity(toTexture, uv);
+    let vCurrent = mix(vLast, vNext, frameUniform.progressRate);
+    let velocity = mix(vCurrent, vPast, FACTOR);
     let offset = velocity * 100.0;
     let nextCoords = clamp(calculateDisplacedLonLat(x, y, offset.x, offset.y), vec2f(-180.0, -85.05), vec2f(180.0, 85.05));
 

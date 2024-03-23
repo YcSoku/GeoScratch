@@ -31,8 +31,7 @@ scr.StartDash().then(() => {
     }).on('load', () => {
         
         map.addLayer(new TerrainLayer(14))
-        map.addLayer(new FlowLayer('/json/examples/terrain/stations.json'))
-        // map.getLayer('FlowLayer').implementation.hide()
+        map.addLayer(new FlowLayer())
     })
 })
 
@@ -97,8 +96,8 @@ class ScratchMap extends mapboxgl.Map {
 
         this.on('render', () => {
 
-            scr.director.tick()
             this.update()
+            scr.director.tick()
         })
     }
 

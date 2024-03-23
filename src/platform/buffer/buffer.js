@@ -143,8 +143,6 @@ class Buffer extends ScratchObject {
         }
 
         if (this.size) monitor.memorySizeInBytes -= this.size
-    
-        director.removeBuffer(this.uuid)
         
         this.uuid = null
         this.name = null

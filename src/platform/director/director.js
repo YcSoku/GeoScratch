@@ -32,7 +32,6 @@ export class Director extends EventDispatcher {
                 this.updateList.nextSet[item.uuid] = item
             },
         }
-        this.textures = {}
 
         /**
          * @type {GPUDevice}
@@ -81,23 +80,6 @@ export class Director extends EventDispatcher {
     addToUpdateList(item) {
 
         this.updateList.push(item)
-    }
-
-    addTexture(texture) {
-
-        this.textures[texture.uuid] = texture
-    }
-
-    removeBuffer(uuid) {
-
-        this.buffers[uuid] = null
-        delete this.buffers[uuid]
-    }
-
-    removeTexture(uuid) {
-
-        this.textures[uuid] = null
-        delete this.textures[uuid]
     }
 
     /** 
