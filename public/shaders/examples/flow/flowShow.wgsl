@@ -7,16 +7,21 @@ struct VertexOutput {
     @location(0) @interpolate(perspective, center) texcoords: vec2f,
 };
 
-struct StaticUniformBlock {
-    extent: vec4f,
+struct FrameUniformBlock {
+    randomSeed: f32,
+    viewPort: vec2f,
+    mapBounds: vec4f,
+    zoomLevel: f32,
+    progressRate: f32,
     maxSpeed: f32,
-}
+};
 
 // Uniform bindings
-@group(0) @binding(0) var<uniform> staticUniform: StaticUniformBlock;
+@group(0) @binding(0) var<uniform> frameUniform: FrameUniformBlock;
 
 // Texture bindings
-@group(1) @binding(0) var srcTexture: texture_2d<f32>;
+@group(1) @binding(0) var fromTexture: texture_2d<f32>;
+@group(1) @binding(1) var toTexture: texture_2d<f32>;
 
 fn toneMapACES(color: vec3f) -> vec3f {
     let a = 2.51;
@@ -76,6 +81,12 @@ fn velocityColor(speed: f32, rampColors: array<u32, 8>) -> vec3f {
     return mix(slowColor, fastColor, interval);
 }
 
+fn getVelocity(texture: texture_2d<f32>, uv: vec2f) -> vec2f {
+
+    let dim = vec2f(textureDimensions(texture, 0).xy);
+    return linearSampling(texture, uv * dim, dim).rg;
+}
+
 @vertex
 fn vMain(vsInput: VertexInput) -> VertexOutput {
 
@@ -116,13 +127,12 @@ fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
         0xd53e4f
     );
 
-    let dim = vec2f(textureDimensions(srcTexture, 0).xy);
-    let velocity = linearSampling(srcTexture, fsInput.texcoords * dim, dim).rg;
+    let velocity = mix(getVelocity(fromTexture, fsInput.texcoords), getVelocity(toTexture, fsInput.texcoords), frameUniform.progressRate);
     if (all(velocity == vec2f(0.0))) {
         discard;
     }
 
-    let color = velocityColor(length(velocity) / staticUniform.maxSpeed, rampColors0);
+    let color = velocityColor(length(velocity) / frameUniform.maxSpeed, rampColors0);
     // return vec4f(color, 0.0, 0.2);
     return vec4f(color, 0.5);
 }

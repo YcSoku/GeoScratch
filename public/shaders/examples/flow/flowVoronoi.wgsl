@@ -11,6 +11,7 @@ struct VertexOutput {
 };
 
 struct StaticUniformBlock {
+    groupSize: vec2u,
     extent: vec4f,
 };
 

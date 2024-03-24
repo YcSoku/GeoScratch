@@ -29,7 +29,7 @@ export class LocalTerrain {
 
         this.sectorSize = f32(64)
         this.sectorRange = vec2f()
-        this.exaggeration = f32(30.)
+        this.exaggeration = f32(50.)
         this.tileBox = boundingBox2D()
         this.lodMapSize = vec2f(512, 256)
         this.visibleNodeLevel = vec2f(0, this.maxLevel)

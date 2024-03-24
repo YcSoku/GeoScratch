@@ -115,7 +115,7 @@ fn vMain(input: VertexInput) -> VertexOutput {
     let position_SS = position_CS.xy / position_CS.w;
     let uv = (position_SS + 1.0) / 2.0;
     let offset = vertices[input.vertexIndex];
-    let vertexPos_SS = position_SS + 1.0 * offset * 2.0 / frameUniform.viewPort;
+    let vertexPos_SS = position_SS + 8.0 * offset * 2.0 / frameUniform.viewPort;
     let vertexPos_CS = vertexPos_SS * position_CS.w;
 
     var output: VertexOutput;
@@ -127,6 +127,19 @@ fn vMain(input: VertexInput) -> VertexOutput {
     output.coords = offset;
     output.velocity = vec2f(particles[input.instanceIndex * 4 + 2], particles[input.instanceIndex * 4 + 3]);
     return output;
+}
+
+fn crossProductSign(a: vec2f, b: vec2f) -> f32 {
+    return sign(a.x * b.y - a.y * b.x);
+}
+
+fn pointInTriangle(p: vec2f, a: vec2f, b: vec2f, c: vec2f) -> bool {
+
+    let signABP = crossProductSign(b - a, p - a);
+    let signBCP = crossProductSign(c - b, p - b);
+    let signCAP = crossProductSign(a - c, p - c);
+    
+    return (signABP == signBCP) && (signBCP == signCAP);
 }
 
 @fragment
@@ -143,14 +156,43 @@ fn fMain(input: VertexOutput) -> @location(0) vec4f {
         0xd53e4f
     );
 
+    var A: vec2<f32> = vec2<f32>(0.0, 1.0);
+    var B: vec2<f32> = vec2<f32>(0.86602540378, -0.5); // sqrt(3)/2
+    var C: vec2<f32> = vec2<f32>(-0.86602540378, -0.5);
+
     let velocity = input.velocity;
-    // if (input.hide == 1.0 || (velocity.x == 0.0 && velocity.y == 0.0) || length(input.coords) > 1.0) {
+    let direction = normalize(velocity);
+    let theta = atan2(direction.y, direction.x);
+    
+    let cosTheta: f32 = cos(theta);
+    let sinTheta: f32 = sin(theta);
+    let rotationMatrix: mat2x2f = mat2x2f(vec2f(cosTheta, -sinTheta), vec2f(sinTheta, cosTheta));
+
+    A = rotationMatrix * A;
+    B = rotationMatrix * B;
+    C = rotationMatrix * C;
+
+    var color = vec3f(0.0);
+
     if (input.hide == 1.0 || length(velocity) == 0.0) {
         discard;
     }
 
-    let color = velocityColor(length(velocity) / frameUniform.maxSpeed, rampColors0);
-    // return vec4f(color, 0.0, 1.0);
+    if (length(velocity) / frameUniform.maxSpeed < 0.1) {
+
+        if(length(input.coords) > 0.5) {
+            discard;
+        }
+        color = vec3f(1.0);
+    }
+    else {
+        if (!pointInTriangle(input.coords, A, B, C)) {
+            discard;
+        }
+        // color = velocityColor(length(velocity) / frameUniform.maxSpeed, rampColors0);
+
+        color = vec3f(1.0);
+    }
+
     return vec4f(color, 0.5);
-    // return vec4f(0.5);
 }

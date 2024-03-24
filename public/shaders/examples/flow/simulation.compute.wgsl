@@ -1,7 +1,6 @@
 struct StaticUniformBlock {
     groupSize: vec2u,
     extent: vec4f,
-    maxSpeed: f32,
 };
 
 struct FrameUniformBlock {
@@ -10,6 +9,7 @@ struct FrameUniformBlock {
     mapBounds: vec4f,
     zoomLevel: f32,
     progressRate: f32,
+    maxSpeed: f32,
 };
 
 struct DynamicUniformBlock {
@@ -28,9 +28,9 @@ struct ControllerUniformBlock {
 }
 
 // Uniform bindings
-@group(0) @binding(0) var<uniform> staticUniform: StaticUniformBlock;
+@group(0) @binding(0) var<uniform> controllerUniform: ControllerUniformBlock;
 @group(0) @binding(1) var<uniform> frameUniform: FrameUniformBlock;
-@group(0) @binding(2) var<uniform> controllerUniform: ControllerUniformBlock;
+@group(0) @binding(2) var<uniform> staticUniform: StaticUniformBlock;
 @group(0) @binding(3) var<uniform> dynamicUniform: DynamicUniformBlock;
 
 // Storage bindings
@@ -107,7 +107,7 @@ fn rand(co: vec2f) -> f32 {
 
 fn drop(velocity: vec2f, seed: vec2f) -> f32 {
     
-    let speedRate = length(velocity) / staticUniform.maxSpeed;
+    let speedRate = length(velocity) / frameUniform.maxSpeed;
     let drop_rate = controllerUniform.dropRate + speedRate * controllerUniform.dropRateBump;
 
     return step(1.0 - drop_rate, rand(seed));
@@ -193,7 +193,7 @@ fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
     let vLast = getVelocity(fromTexture, uv);
     let vNext = getVelocity(toTexture, uv);
     let vCurrent = mix(vLast, vNext, frameUniform.progressRate);
-    let velocity = mix(vCurrent, vPast, FACTOR);
+    var velocity = mix(vCurrent, vPast, FACTOR);
     let offset = velocity * 100.0;
     let nextCoords = clamp(calculateDisplacedLonLat(x, y, offset.x, offset.y), vec2f(-180.0, -85.05), vec2f(180.0, 85.05));
 
@@ -203,19 +203,21 @@ fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
     );
     let seed = frameUniform.randomSeed * (nextPos + uv + vec2f(f32(id.x), f32(id.y)));
 
-    if (drop(velocity, seed) == 1.0 || all(velocity == vec2f(0.0)) || lastPos.x * lastPos.y * nextPos.x * nextPos.y * uv.x * uv.y == 0.0) {
+    if (drop(velocity, seed) == 1.0 || all(velocity == vec2f(0.0)) || lastPos.x * lastPos.y * uv.x * uv.y * nextPos.x * nextPos.y == 0.0 || any(nextPos <= vec2f(0.0)) || any(nextPos >= vec2f(1.0))) {
 
         let rebirth_x = rand(seed + f32(id.x));
         let rebirth_y = rand(seed + f32(id.y));
 
         particles[index * 4 + 0] = rebirth_x;
         particles[index * 4 + 1] = rebirth_y;
+        particles[index * 4 + 2] = 0.0;
+        particles[index * 4 + 3] = 0.0;
 
     } else {
 
         particles[index * 4 + 0] = nextPos.x;
         particles[index * 4 + 1] = nextPos.y;
+        particles[index * 4 + 2] = velocity.x;
+        particles[index * 4 + 3] = velocity.y;
     }
-    particles[index * 4 + 2] = velocity.x;
-    particles[index * 4 + 3] = velocity.y;
 }

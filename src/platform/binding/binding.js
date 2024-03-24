@@ -858,6 +858,8 @@ class Binding extends ScratchObject {
         this.isComplete = false
         this.released = true
 
+        this.range = null
+
         this.uniforms.forEach(block => {
             block.ref = block.ref?.release()
             block.visibility = null
@@ -865,13 +867,13 @@ class Binding extends ScratchObject {
             block.view = null
             block.map = null
         })
-        this.uniforms = []
+        this.uniforms = null
 
         this.sharedUniforms.forEach(sharedUniform => {
             sharedUniform.buffer = sharedUniform.buffer.release()
             sharedUniform.visibility = null
         })
-        this.sharedUniforms = []
+        this.sharedUniforms = null
 
         if (this.indexBinding) {
             this.indexBinding.buffer = this.indexBinding.buffer.release()
@@ -888,14 +890,14 @@ class Binding extends ScratchObject {
             binding.visibility = null
             binding.stepMode = null
         })
-        this.vertexBindings = []
+        this.vertexBindings = null
     
         this.storageBindings.forEach(binding => {
             binding.buffer = binding.buffer.release()
             binding.visibility = null
             binding.type = null
         })
-        this.storageBindings = []
+        this.storageBindings = null
 
         this.textureBindings.forEach(binding => {
             binding.callbackIndex = binding.texture.removeCallback(binding.callbackIndex)
@@ -907,27 +909,29 @@ class Binding extends ScratchObject {
             binding.visibility = null
             binding.asStorage = null
         })
-        this.textureBindings = []
+        this.textureBindings = null
     
         this.samplerBindings.forEach(binding => {
             binding.sampler = binding.sampler.release()
             binding.bindingType = null
             binding.visibility = null
         })
-        this.samplerBindings = []
+        this.samplerBindings = null
     
-        this.vertexLayouts.forEach(layout => layout = null)
-        this.layouts.forEach(layout => layout = null)
-        this.groups.forEach(group => group = null)
-        this.vertexLayouts = []
-        this.layouts = []
-        this.groups = []
+        this.vertexLayouts = null
+        this.layouts = null
+        this.groups = null
+        this.vertexLayouts = null
+        this.layouts = null
+        this.groups = null
     
         this.uniformBuffer = this.uniformBuffer?.release()
         this.refCount = null
         this.name = null
 
         super.destroy()
+
+        return null
     }
 }
 

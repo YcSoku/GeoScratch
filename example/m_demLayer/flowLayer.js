@@ -2,7 +2,6 @@ import * as scr from '../../src/scratch.js'
 import { Delaunay } from 'd3-delaunay'
 import axios from 'axios'
 
-const flowJsonWorker = new Worker(new URL( './flowJson.worker.js', import.meta.url ), { type: 'module' })
 const resourceUrl = [
     '/json/examples/terrain/stations_0.json',
     '/json/examples/terrain/stations_1.json',
@@ -33,47 +32,6 @@ const resourceUrl = [
     '/json/examples/terrain/stations_26.json',
 ]
 
-function encodeFloatToDouble(value) {
-
-    const result = new Float32Array(2);
-    result[0] = value;
-    
-    const delta = value - result[0];
-    result[1] = delta;
-    return result;
-}
-
-function triangulate(data) {
-
-    const vertices = []
-    data.forEach(station => {
-        vertices.push(station.lon)
-        vertices.push(station.lat)
-    })
-    const meshes = new Delaunay(vertices)
-
-    let maxSpeed = 0.0
-    const attributes = []
-    for (let i = 0; i < meshes.points.length; i += 2) {
-
-        const station = data[Math.floor(i / 2)]
-        const x = encodeFloatToDouble(scr.MercatorCoordinate.mercatorXfromLon(meshes.points[i + 0]))
-        const y = encodeFloatToDouble(scr.MercatorCoordinate.mercatorYfromLat(meshes.points[i + 1]))
-
-        attributes.push(x[0])
-        attributes.push(y[0])
-        attributes.push(x[1])
-        attributes.push(y[1])
-        attributes.push(station.u)
-        attributes.push(station.v)
-
-        const speed = Math.sqrt(station.u * station.u + station.v * station.v)
-        maxSpeed = speed > maxSpeed ? speed : maxSpeed
-    }
-    
-    return { maxSpeed, indices: meshes.triangles, attributes }
-}
-
 export default class FlowLayer {
 
     constructor() {
@@ -87,31 +45,38 @@ export default class FlowLayer {
         // Attributes
         this.preheat = 0
         this.swapPointer = 0
-        this.maxSpeed = scr.f32()
+        this.extent = scr.boundingBox2D()
         this.randomSeed = scr.f32(Math.random())
 
-        // Compute configuration
-        this.blockSizeX = 16
-        this.blockSizeY = 16
+        // Resource worker
+        this.loadWorker = undefined
+
+        // Control
         this.progress = 0.0
-        this.particleNum = 262144
         this.framesPerPhase = 300
+        this.particleNum = scr.u32(65536)
+        this.maxSpeed = scr.f32()
         this.currentResourceUrl = 0
         this.maxParticleNum = 262144
         this.progressRate = scr.f32()
-        this.extent = scr.boundingBox2D()
+
+        // Compute
+        this.blockSizeX = 16
+        this.blockSizeY = 16
         this.groupSizeX = Math.ceil(Math.sqrt(this.maxParticleNum) / this.blockSizeX)
         this.groupSizeY = Math.ceil(Math.sqrt(this.maxParticleNum) / this.blockSizeY)
-        this.randomFillData = new Float32Array(this.maxParticleNum * 4).map(() => Math.random())
+        this.randomFillData = new Float32Array(this.maxParticleNum * 2).map((_, index) => {
+            if (index % 4 == 0 || index % 4 == 1) return Math.random()
+            else return 0.0
+        })
 
         // Buffer-related resource
-        this.indexBuffer_voronoi = undefined
-        this.vertexBuffer_station = undefined
+        this.uniformBuffer_frame = undefined
+        this.uniformBuffer_static = undefined
         this.storageBuffer_particle = undefined
         this.particleRef = scr.aRef(this.randomFillData)
 
         // Texture-related resource
-        this.depthTexture = undefined
         this.layerTexture1 = undefined
         this.layerTexture2 = undefined
         this.flowToTexture = undefined
@@ -144,33 +109,60 @@ export default class FlowLayer {
         // Flag
         this.isHided = false
         this.isIdling = false
+        this.showArrow = false
         this.showVoronoi = true
         this.nextPrepared = false
         this.isInitialized = false
         this.nextPreparing = false
-
-        // Worker
-        this.loadWorker = undefined
     }
 
     async onAdd(map, gl) {
 
         this.map = map
 
-        this.addWorker(flowJsonWorker)
+        this.addWorker(new Worker(new URL( './flowJson.worker.js', import.meta.url ), { type: 'module' }))
 
         this.extent.reset(120.0437360613468201, 31.1739019522094871, 121.9662324011692220, 32.0840108580467813)
 
         // Buffer-related resource
         this.storageBuffer_particle = scr.storageBuffer({
-            name: 'StorageBuffer (Particle Position & Velocity)',
+            name: 'Storage Buffer (Particle Position & Velocity)',
             resource: { arrayRef: this.particleRef }
+        })
+        this.uniformBuffer_static = scr.uniformBuffer({
+            name: 'Uniform Buffer (Flow Layer Static)',
+            blocks: [
+                scr.bRef(
+                    {
+                        name: 'staticUniform',
+                        map: {
+                            groupSize: scr.asVec2u(this.groupSizeX, this.groupSizeY),
+                            extent: this.extent.boundary,
+                        }
+                    },)
+            ]
+        })
+        this.uniformBuffer_frame = scr.uniformBuffer({
+            name: 'Uniform Buffer (Flow Layer Frame)',
+            blocks: [
+                scr.bRef({
+                    name: 'frameUniform',
+                    dynamic: true,
+                    map: {
+                        randomSeed: this.randomSeed,
+                        viewPort: this.map.screen.sizeF,
+                        mapBounds: this.map.cameraBounds.boundary,
+                        zoomLevel: this.map.zoom,
+                        progressRate: this.progressRate,
+                        maxSpeed: this.maxSpeed,
+                    }
+                })
+            ]
         })
 
         // Texture-related resource
         this.layerTexture1 = this.map.screen.createScreenDependentTexture('Texture (Background 1)')
         this.layerTexture2 = this.map.screen.createScreenDependentTexture('Texture (Background 2)')
-        this.depthTexture = this.map.screen.createScreenDependentTexture('Texture (Flow Depth)', 'depth24plus')
         this.flowToTexture = this.map.screen.createScreenDependentTexture('Texture (Velocity To)', 'rg32float')
         this.flowFromTexture = this.map.screen.createScreenDependentTexture('Texture (Velocity From)', 'rg32float')
 
@@ -183,13 +175,13 @@ export default class FlowLayer {
         this.voronoiFromPass = scr.renderPass({
             name: 'Render Pass (Voronoi Flow From)',
             colorAttachments: [ { colorResource: this.flowFromTexture } ],
-            depthStencilAttachment: { depthStencilResource: this.depthTexture }
+            depthStencilAttachment: { depthStencilResource: this.map.depthTexture }
         })
         // SubPass - 1.1: texture (to) generation
         this.voronoiToPass = scr.renderPass({
             name: 'Render Pass (Voronoi Flow To)',
             colorAttachments: [ { colorResource: this.flowToTexture } ],
-            depthStencilAttachment: { depthStencilResource: this.depthTexture }
+            depthStencilAttachment: { depthStencilResource: this.map.depthTexture }
         })
         await this.addVoronoiBindingSync('/json/examples/terrain/stations_0.json'); this.swapVoronoiBinding()
         await this.addVoronoiBindingSync('/json/examples/terrain/stations_1.json'); this.swapVoronoiBinding()
@@ -207,35 +199,20 @@ export default class FlowLayer {
             storages: [ { buffer: this.storageBuffer_particle, writable: true } ],
             uniforms: [
                 {
-                    name: 'staticUniform',
-                    map: {
-                        groupSize: scr.asVec2u(this.groupSizeX, this.groupSizeY),
-                        extent: this.extent.boundary,
-                        maxSpeed: this.maxSpeed
-                    }
-                },
-                {
-                    name: 'frameUniform',
-                    dynamic: true,
-                    map: {
-                        randomSeed: this.randomSeed,
-                        viewPort: this.map.screen.sizeF,
-                        mapBounds: this.map.cameraBounds.boundary,
-                        zoomLevel: this.map.zoom,
-                        progressRate: this.progressRate,
-                    }
-                },
-                {
                     name: 'controllerUniform',
                     map: {
-                        particleNum: scr.asU32(this.particleNum),
+                        particleNum: scr.asVec2u(this.maxParticleNum),
                         dropRate: scr.asF32(0.003),
                         dropRateBump: scr.asF32(0.001),
-                        speedFactor: scr.asF32(5.)
+                        speedFactor: scr.asF32(1.)
                     }
                 }
             ],
-            sharedUniforms: [ { buffer: this.map.dynamicUniformBuffer } ],
+            sharedUniforms: [
+                { buffer: this.uniformBuffer_frame },
+                { buffer: this.uniformBuffer_static },
+                { buffer: this.map.dynamicUniformBuffer },
+            ],
         })
         this.simulationPipeline = scr.computePipeline({
             name: 'Compute Pipeline (Flow Simulation)',
@@ -270,33 +247,13 @@ export default class FlowLayer {
         // SubPass - 3.2: current position rendering
         this.particleBinding = scr.binding({
             name: 'Binding (Particles)',
-            range: () => [ 4, this.particleNum ],
-            textures: [
-                { texture: this.flowFromTexture, sampleType: 'unfilterable-float' },
-                { texture: this.flowToTexture, sampleType: 'unfilterable-float' }
-            ],
+            range: () => [ 4, this.particleNum.n ],
             storages: [ { buffer: this.storageBuffer_particle } ],
-            uniforms: [
-                {
-                    name: 'frameUniform',
-                    dynamic: true,
-                    map: {
-                        randomSeed: this.randomSeed,
-                        viewPort: this.map.screen.sizeF,
-                        mapBounds: this.map.cameraBounds.boundary,
-                        zoomLevel: this.map.zoom,
-                        progressRate: this.progressRate,
-                    }
-                },
-                {
-                    name: 'staticUniform',
-                    map: {
-                        extent: this.extent.boundary,
-                        maxSpeed: this.maxSpeed
-                    }
-                },
+            sharedUniforms: [
+                { buffer: this.uniformBuffer_frame },
+                { buffer: this.uniformBuffer_static },
+                { buffer: this.map.dynamicUniformBuffer },
             ],
-            sharedUniforms: [ { buffer: this.map.dynamicUniformBuffer } ],
         })
         this.particlePipeline = scr.renderPipeline({
             name: 'Render Pipeline (Particles)',
@@ -307,7 +264,7 @@ export default class FlowLayer {
             scr.renderPass({
                 name: 'Render Pass (Past Trajectory 1)',
                 colorAttachments: [ { colorResource: this.layerTexture1 } ],
-                depthStencilAttachment: { depthStencilResource: this.depthTexture }
+                depthStencilAttachment: { depthStencilResource: this.map.depthTexture }
             })
             /* Pass 3.1 */.add(this.trajectoryPipeline, this.trajectoryBindings[0])
             /* Pass 3.2 */.add(this.particlePipeline, this.particleBinding),
@@ -315,7 +272,7 @@ export default class FlowLayer {
             scr.renderPass({
                 name: 'Render Pass (Past Trajectory 2)',
                 colorAttachments: [ { colorResource: this.layerTexture2 } ],
-                depthStencilAttachment: { depthStencilResource: this.depthTexture }
+                depthStencilAttachment: { depthStencilResource: this.map.depthTexture }
             })
             /* Pass 3.1 */.add(this.trajectoryPipeline, this.trajectoryBindings[1])
             /* Pass 3.2 */.add(this.particlePipeline, this.particleBinding),
@@ -353,20 +310,21 @@ export default class FlowLayer {
         this.showBinding = scr.binding({
             name: 'Binding (Flow Show)',
             range: () => [ 4 ],
-            textures: [ { texture: this.flowFromTexture, sampleType: 'unfilterable-float' } ],
-            uniforms: [
-                {
-                    name: 'staticUniform',
-                    map: {
-                        extent: this.extent.boundary,
-                        maxSpeed: this.maxSpeed
-                    }
-                },
+            textures: [
+                { texture: this.flowFromTexture, sampleType: 'unfilterable-float' },
+                { texture: this.flowToTexture, sampleType: 'unfilterable-float' }
             ],
+            sharedUniforms: [ { buffer: this.uniformBuffer_frame } ]
         })
         this.showPipeline = scr.renderPipeline({
             name: 'Render Pipeline (Flow Show)',
             shader: { module: scr.shaderLoader.load('Shader (Flow Show)', '/shaders/examples/flow/flowShow.wgsl') },
+            primitive: { topology: 'triangle-strip' },
+            colorTargetStates: [ { blend: scr.NormalBlending } ],
+        })
+        this.arrowPipeline = scr.renderPipeline({
+            name: 'Render Pipeline (Flow Arrow)',
+            shader: { module: scr.shaderLoader.load('Shader (Flow Show)', '/shaders/examples/flow/arrow.wgsl') },
             primitive: { topology: 'triangle-strip' },
             colorTargetStates: [ { blend: scr.NormalBlending } ],
         })
@@ -386,9 +344,10 @@ export default class FlowLayer {
         .add2PreProcess(this.swapPasses[0])
         .add2PreProcess(this.swapPasses[1])
         .add2PreProcess(this.swapPasses[2])
+        this.showArrow && this.map.add2RenderPass(this.arrowPipeline, this.particleBinding)
+        this.showVoronoi && this.map.add2RenderPass(this.showPipeline, this.showBinding)
         .add2RenderPass(this.layerPipeline, this.layerBindings[0])
         .add2RenderPass(this.layerPipeline, this.layerBindings[1])
-        this.showVoronoi && this.map.add2RenderPass(this.showPipeline, this.showBinding)
 
         this.map.on('movestart', () => this.idle())
         this.map.on('move', () => this.idle())
@@ -411,54 +370,47 @@ export default class FlowLayer {
 
     async render(gl, matrix) {
 
+        // Ask map to repaint
         this.map.triggerRepaint()
 
-        if (!this.isInitialized) return
+        // No render condition
+        if (!this.isInitialized || this.isIdling || this.preheat-- > 0) return
         if (this.isHided) { this.makeVisibility(false); return } else { this.makeVisibility(true) }
 
-        if (this.isIdling) {
-            
-            this.swapPasses[0].executable = false
-            this.swapPasses[1].executable = false
-            this.swapPasses[2].executable = true
-            this.layerBindings[0].executable = false
-            this.layerBindings[1].executable = false
-        }
-        else {
+        // Swap
+        this.showBinding.executable = false
+        this.swapPasses[2].executable = false
 
-            if (this.preheat-- > 0) return
+        this.swapPasses[0].executable = this.swapPointer
+        this.layerBindings[0].executable = this.swapPointer
+        this.swapPasses[1].executable = 1 - this.swapPointer
+        this.layerBindings[1].executable = 1 - this.swapPointer
 
-            this.randomSeed.n = Math.random()
-            this.updateVoronoi()
-            // console.log(this.voronoiFromBinding.name, this.voronoiToBinding.name)
-
-            if (!this.swapPointer % 2) {
-
-                this.swapPasses[0].executable = false
-                this.swapPasses[1].executable = true
-                this.layerBindings[0].executable = false
-                this.layerBindings[1].executable = true
-    
-            } else {
-                this.swapPasses[0].executable = true
-                this.swapPasses[1].executable = false
-                this.layerBindings[0].executable = true
-                this.layerBindings[1].executable = false
-            }
-            this.swapPasses[2].executable = false
-            this.swapPointer = (this.swapPointer + 1) % 2
-        }
+        // Update
+        this.updateVoronoi()
+        this.randomSeed.n = Math.random()
+        this.swapPointer = (this.swapPointer + 1) % 2
     }
 
     idle() {
 
         this.isIdling = true
+            
+        this.showBinding.executable = true
+        this.swapPasses[2].executable = true
+        this.arrowPipeline.executable = false
+        
+        this.swapPasses[0].executable = false
+        this.swapPasses[1].executable = false
+        this.layerBindings[0].executable = false
+        this.layerBindings[1].executable = false
     }
 
     restart() {
 
         this.preheat = 10
         this.isIdling = false
+        this.arrowPipeline.executable = true
         this.swapPasses[2].executable = false
         this.particleRef.value = this.randomFillData
     }
@@ -478,6 +430,8 @@ export default class FlowLayer {
         if (!visibility) {
 
             this.showPipeline.executable = false
+            this.layerBindings[0].executable = false
+            this.layerBindings[1].executable = false
     
             this.voronoiFromPass.executable = false
             this.voronoiToPass.executable = false
@@ -485,8 +439,7 @@ export default class FlowLayer {
             this.swapPasses[1].executable = false
             this.swapPasses[2].executable = false
             this.simulationPass.executable = false
-            this.layerBindings[0].executable = false
-            this.layerBindings[1].executable = false
+
         } else {
 
             this.showPipeline.executable = true
@@ -502,23 +455,32 @@ export default class FlowLayer {
         this.maxSpeed.n = maxSpeed > this.maxSpeed.n ? maxSpeed : this.maxSpeed.n
     }
 
-    async updateVoronoi() {
+    updateVoronoi() {
 
+        // No update and tick when preparing resource
         if (this.nextPreparing) return
+
+        // Update resource codition
         if (this.progress === 0) {
 
             this.currentResourceUrl = (this.currentResourceUrl + 1) % resourceUrl.length
             this.addVoronoiBindingAsync(resourceUrl[this.currentResourceUrl])
         }
 
+        // Tick progress
         this.progress = Math.min(this.progress + 1, this.framesPerPhase - 1)
+
+        // Swap condition
         if (this.nextPrepared && this.progress === this.framesPerPhase - 1) {
 
             this.progress = 0
             this.swapVoronoiBinding()
         }
+
+        // Tick progress rate
         this.progressRate.n = this.progress / (this.framesPerPhase - 1)
     }
+
     async addVoronoiBindingSync(url) {
         
         this.nextPreparing = true
@@ -549,20 +511,17 @@ export default class FlowLayer {
                         resource: { arrayRef: scr.aRef(new Float32Array(attributes)), structure: [ { components: 4 }, { components: 2 } ] }
                     })
                 } ],
-                uniforms: [
-                    {
-                        name: 'staticUniform',
-                        map: {
-                            extent: that.extent.boundary,
-                        }
-                    }
+                sharedUniforms: [
+                    { buffer: that.uniformBuffer_static },
+                    { buffer: that.map.dynamicUniformBuffer },
                 ],
-                sharedUniforms: [ { buffer: that.map.dynamicUniformBuffer } ],
             })
         }
     }
 
     swapVoronoiBinding() {
+
+        // from - to - next --> to - next - from
 
         let tempBinding = this.voronoiFromBinding
         this.voronoiFromBinding = this.voronoiToBinding
@@ -570,8 +529,7 @@ export default class FlowLayer {
 
         tempBinding = this.voronoiToBinding
         this.voronoiToBinding = this.voronoiNextBinding
-        this.voronoiNextBinding = tempBinding
-        this.voronoiNextBinding?.release()
+        this.voronoiNextBinding = tempBinding?.release()
         this.nextPrepared = false
         
         // Update voronoi passes
@@ -590,39 +548,29 @@ export default class FlowLayer {
             const { url, maxSpeed, indices, attributes } = event.data
             const name = url
             that.updateMaxSpeed(maxSpeed)
-            that.voronoiNextBinding = makeBinding()
+            that.voronoiNextBinding = scr.binding({
+                name: `Binding (Voronoi Flow ${name})`,
+                range: () => [ indices.length ],
+                index: {
+                    buffer: scr.indexBuffer({
+                        name: `IndexBuffer (Voronoi Polygon Index (${name}))`,
+                        resource: { arrayRef: scr.aRef(new Uint32Array(indices)) }
+                    })
+                },
+                vertices: [ {
+                    buffer: scr.vertexBuffer({
+                        name: `VertexBuffer (Station Position & Velocity (${name}))`,
+                        resource: { arrayRef: scr.aRef(new Float32Array(attributes)), structure: [ { components: 4 }, { components: 2 } ] }
+                    })
+                } ],
+                sharedUniforms: [
+                    { buffer: that.uniformBuffer_static },
+                    { buffer: that.map.dynamicUniformBuffer },
+                ],
+            })
 
             that.nextPreparing = false
             that.nextPrepared = true
-
-            function makeBinding() {
-                
-                return scr.binding({
-                    name: `Binding (Voronoi Flow ${name})`,
-                    range: () => [ indices.length ],
-                    index: {
-                        buffer: scr.indexBuffer({
-                            name: `IndexBuffer (Voronoi Polygon Index (${name}))`,
-                            resource: { arrayRef: scr.aRef(new Uint32Array(indices)) }
-                        })
-                    },
-                    vertices: [ {
-                        buffer: scr.vertexBuffer({
-                            name: `VertexBuffer (Station Position & Velocity (${name}))`,
-                            resource: { arrayRef: scr.aRef(new Float32Array(attributes)), structure: [ { components: 4 }, { components: 2 } ] }
-                        })
-                    } ],
-                    uniforms: [
-                        {
-                            name: 'staticUniform',
-                            map: {
-                                extent: that.extent.boundary,
-                            }
-                        }
-                    ],
-                    sharedUniforms: [ { buffer: that.map.dynamicUniformBuffer } ],
-                })
-            }
         })
     }
 
@@ -630,6 +578,49 @@ export default class FlowLayer {
 
         this.nextPreparing = true
 
-        flowJsonWorker.postMessage({ url })
+        this.loadWorker.postMessage({ url })
     }
+}
+
+// Helpers //////////////////////////////////////////////////////////////////////////////////////////////////////
+function encodeFloatToDouble(value) {
+
+    const result = new Float32Array(2);
+    result[0] = value;
+    
+    const delta = value - result[0];
+    result[1] = delta;
+    return result;
+}
+
+function triangulate(data) {
+
+    const vertices = []
+    data.forEach(station => {
+        
+        vertices.push(station.lon)
+        vertices.push(station.lat)
+    })
+    const meshes = new Delaunay(vertices)
+
+    let maxSpeed = 0.0
+    const attributes = []
+    for (let i = 0; i < meshes.points.length; i += 2) {
+
+        const station = data[Math.floor(i / 2)]
+        const x = encodeFloatToDouble(scr.MercatorCoordinate.mercatorXfromLon(meshes.points[i + 0]))
+        const y = encodeFloatToDouble(scr.MercatorCoordinate.mercatorYfromLat(meshes.points[i + 1]))
+
+        attributes.push(x[0])
+        attributes.push(y[0])
+        attributes.push(x[1])
+        attributes.push(y[1])
+        attributes.push(station.u)
+        attributes.push(station.v)
+
+        const speed = Math.sqrt(station.u * station.u + station.v * station.v)
+        maxSpeed = speed > maxSpeed ? speed : maxSpeed
+    }
+    
+    return { maxSpeed, indices: meshes.triangles, attributes }
 }

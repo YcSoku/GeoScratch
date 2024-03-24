@@ -34,6 +34,7 @@ function triangulate(data) {
 
     const vertices = []
     data.forEach(station => {
+        
         vertices.push(station.lon)
         vertices.push(station.lat)
     })

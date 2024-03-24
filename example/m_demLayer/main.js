@@ -74,12 +74,13 @@ class ScratchMap extends mapboxgl.Map {
 
         // Texture-related resource
         this.screen = scr.screen({ canvas: options.GPUFrame, alphaMode: 'premultiplied'})
+        this.depthTexture = this.screen.createScreenDependentTexture('Texture (Map Common Depth)', 'depth32float')
 
         // Pass
         this.outputPass = scr.renderPass({
             name: 'Render Pass (Scratch map)',
             colorAttachments: [ { colorResource: this.screen } ],
-            depthStencilAttachment: { depthStencilResource: this.screen.createScreenDependentTexture('Texture (Map Depth)', 'depth24plus') }
+            depthStencilAttachment: { depthStencilResource: this.depthTexture }
         })
         
         // Make stages
