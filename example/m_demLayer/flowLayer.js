@@ -54,7 +54,7 @@ export default class FlowLayer {
         // Control
         this.progress = 0.0
         this.framesPerPhase = 300
-        this.particleNum = scr.u32(65536)
+        this.particleNum = scr.u32(262144)
         this.maxSpeed = scr.f32()
         this.currentResourceUrl = 0
         this.maxParticleNum = 262144
@@ -65,9 +65,9 @@ export default class FlowLayer {
         this.blockSizeY = 16
         this.groupSizeX = Math.ceil(Math.sqrt(this.maxParticleNum) / this.blockSizeX)
         this.groupSizeY = Math.ceil(Math.sqrt(this.maxParticleNum) / this.blockSizeY)
-        this.randomFillData = new Float32Array(this.maxParticleNum * 2).map((_, index) => {
-            if (index % 4 == 0 || index % 4 == 1) return Math.random()
-            else return 0.0
+        this.randomFillData = new Float32Array(this.maxParticleNum * 6).map((_, index) => {
+            if (index % 6 == 4 || index % 6 == 5) return 0.
+            else return Math.random()
         })
 
         // Buffer-related resource
@@ -247,7 +247,7 @@ export default class FlowLayer {
         // SubPass - 3.2: current position rendering
         this.particleBinding = scr.binding({
             name: 'Binding (Particles)',
-            range: () => [ 4, this.particleNum.n ],
+            range: () => [ 2, this.particleNum.n ],
             storages: [ { buffer: this.storageBuffer_particle } ],
             sharedUniforms: [
                 { buffer: this.uniformBuffer_frame },
@@ -258,7 +258,7 @@ export default class FlowLayer {
         this.particlePipeline = scr.renderPipeline({
             name: 'Render Pipeline (Particles)',
             shader: { module: scr.shaderLoader.load('Shader (Particles)', '/shaders/examples/flow/particles.wgsl') },
-            primitive: { topology: 'triangle-strip' },
+            primitive: { topology: 'line-list' },
         })
         this.swapPasses = [
             scr.renderPass({

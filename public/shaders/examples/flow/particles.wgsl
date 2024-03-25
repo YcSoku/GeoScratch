@@ -102,10 +102,17 @@ fn vMain(input: VertexInput) -> VertexOutput {
         vec2f(1.0, 1.0)
     );
 
-    let position = vec2f(
-        particles[input.instanceIndex * 4 + 0],
-        particles[input.instanceIndex * 4 + 1],
+    let currentPosition = vec2f(
+        particles[input.instanceIndex * 6 + 0],
+        particles[input.instanceIndex * 6 + 1],
     );
+
+    let lastPosition = vec2f(
+        particles[input.instanceIndex * 6 + 2],
+        particles[input.instanceIndex * 6 + 3],
+    );
+
+    let position = select(currentPosition, lastPosition, input.vertexIndex % 2 == 0);
 
     let cExtent = currentExtent();
     let x = mix(cExtent.x, cExtent.z, position.x);
@@ -119,13 +126,13 @@ fn vMain(input: VertexInput) -> VertexOutput {
     let vertexPos_CS = vertexPos_SS * position_CS.w;
 
     var output: VertexOutput;
-    output.position = vec4f(vertexPos_CS, 0.0, position_CS.w);
-    // output.position = position_CS;
+    // output.position = vec4f(vertexPos_CS, 0.0, position_CS.w);
+    output.position = position_CS;
     // output.position = vec4f((position * 2.0 - 1.0) * 0.5, 0.0, 1.0);
     output.uv = vec2f(uv.x, 1.0 - uv.y);
     output.hide = select(0.0, 1.0, cExtent.z <= cExtent.x || cExtent.w <= cExtent.y);
     output.coords = offset;
-    output.velocity = vec2f(particles[input.instanceIndex * 4 + 2], particles[input.instanceIndex * 4 + 3]);
+    output.velocity = vec2f(particles[input.instanceIndex * 6 + 4], particles[input.instanceIndex * 6 + 5]);
     return output;
 }
 

@@ -174,12 +174,12 @@ fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
     }
 
     var lastPos = vec2f(
-        particles[index * 4 + 0],
-        particles[index * 4 + 1],
+        particles[index * 6 + 0],
+        particles[index * 6 + 1],
     );
     let vPast = vec2f(
-        particles[index * 4 + 2],
-        particles[index * 4 + 3],
+        particles[index * 6 + 4],
+        particles[index * 6 + 5],
     );
     let x = mix(cExtent.x, cExtent.z, lastPos.x);
     let y = mix(cExtent.y, cExtent.w, lastPos.y);
@@ -208,16 +208,20 @@ fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
         let rebirth_x = rand(seed + f32(id.x));
         let rebirth_y = rand(seed + f32(id.y));
 
-        particles[index * 4 + 0] = rebirth_x;
-        particles[index * 4 + 1] = rebirth_y;
-        particles[index * 4 + 2] = 0.0;
-        particles[index * 4 + 3] = 0.0;
+        particles[index * 6 + 0] = rebirth_x;
+        particles[index * 6 + 1] = rebirth_y;
+        particles[index * 6 + 2] = rebirth_x;
+        particles[index * 6 + 3] = rebirth_y;
+        particles[index * 6 + 4] = 0.0;
+        particles[index * 6 + 5] = 0.0;
 
     } else {
 
-        particles[index * 4 + 0] = nextPos.x;
-        particles[index * 4 + 1] = nextPos.y;
-        particles[index * 4 + 2] = velocity.x;
-        particles[index * 4 + 3] = velocity.y;
+        particles[index * 6 + 0] = nextPos.x;
+        particles[index * 6 + 1] = nextPos.y;
+        particles[index * 6 + 2] = lastPos.x;
+        particles[index * 6 + 3] = lastPos.y;
+        particles[index * 6 + 4] = velocity.x;
+        particles[index * 6 + 5] = velocity.y;
     }
 }
