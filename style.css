@@ -10,3 +10,13 @@ body {
     height: 100%;
     width: 100%;
 }
+
+#UnityIFrame {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    opacity: 0.5;
+    border: none;
+    z-index: 2;
+    pointer-events: none;
+}

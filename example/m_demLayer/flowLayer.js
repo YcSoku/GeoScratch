@@ -54,11 +54,11 @@ export default class FlowLayer {
         // Control
         this.progress = 0.0
         this.framesPerPhase = 300
-        this.particleNum = scr.u32(262144)
         this.maxSpeed = scr.f32()
         this.currentResourceUrl = 0
         this.maxParticleNum = 262144
         this.progressRate = scr.f32()
+        this.particleNum = scr.u32(262144)
 
         // Compute
         this.blockSizeX = 16
@@ -201,10 +201,10 @@ export default class FlowLayer {
                 {
                     name: 'controllerUniform',
                     map: {
-                        particleNum: scr.asVec2u(this.maxParticleNum),
+                        particleNum: scr.asU32(this.maxParticleNum),
                         dropRate: scr.asF32(0.003),
                         dropRateBump: scr.asF32(0.001),
-                        speedFactor: scr.asF32(1.)
+                        speedFactor: scr.asF32(1.0),
                     }
                 }
             ],
@@ -569,8 +569,8 @@ export default class FlowLayer {
                 ],
             })
 
-            that.nextPreparing = false
             that.nextPrepared = true
+            that.nextPreparing = false
         })
     }
 

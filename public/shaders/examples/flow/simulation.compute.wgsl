@@ -164,12 +164,8 @@ fn getVelocity(texture: texture_2d<f32>, uv: vec2f) -> vec2f {
 fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let cExtent = currentExtent();
-    if (cExtent.z <= cExtent.x || cExtent.w <= cExtent.y) {
-        return;
-    }
-
     let index = id.y * staticUniform.groupSize.x * blockSize + id.x;
-    if (index >= controllerUniform.particleNum) {
+    if (cExtent.z <= cExtent.x || cExtent.w <= cExtent.y || index >= controllerUniform.particleNum) {
         return;
     }
 
@@ -194,15 +190,15 @@ fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
     let vNext = getVelocity(toTexture, uv);
     let vCurrent = mix(vLast, vNext, frameUniform.progressRate);
     var velocity = mix(vCurrent, vPast, FACTOR);
-    let offset = velocity * 100.0;
-    let nextCoords = clamp(calculateDisplacedLonLat(x, y, offset.x, offset.y), vec2f(-180.0, -85.05), vec2f(180.0, 85.05));
+    let offset = velocity * 100.0 * controllerUniform.speedFactor;
+    let nextCoords = clamp(calculateDisplacedLonLat(x, y, offset.x, offset.y), cExtent.xy, cExtent.zw);
 
     let nextPos = vec2f(
         (nextCoords.x - cExtent.x) / (cExtent.z - cExtent.x),
         (nextCoords.y - cExtent.y) / (cExtent.w - cExtent.y),
     );
-    let seed = frameUniform.randomSeed * (nextPos + uv + vec2f(f32(id.x), f32(id.y)));
 
+    let seed = frameUniform.randomSeed * (nextPos - uv + vec2f(f32(id.x), f32(id.y)));
     if (drop(velocity, seed) == 1.0 || all(velocity == vec2f(0.0)) || lastPos.x * lastPos.y * uv.x * uv.y * nextPos.x * nextPos.y == 0.0 || any(nextPos <= vec2f(0.0)) || any(nextPos >= vec2f(1.0))) {
 
         let rebirth_x = rand(seed + f32(id.x));
