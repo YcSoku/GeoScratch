@@ -40,4 +40,4 @@ Thumbs.db
 # Directories #
 ######################
 node_modules/
-public/json/examples/
+public/json/examples/*
