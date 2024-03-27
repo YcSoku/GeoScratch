@@ -15,6 +15,7 @@ export interface IndexBufferDescription {
 
 export class IndexBuffer extends Buffer {
     type: string;
+    length: number;
     constructor(description: IndexBufferDescription);
     static create(description: IndexBufferDescription): IndexBuffer;
 }

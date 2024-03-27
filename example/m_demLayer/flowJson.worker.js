@@ -5,8 +5,27 @@ import * as scr from '../../src/scratch.js'
 self.addEventListener('message', (event) => {
 
   const { url } = event.data
-  parseStations(url)
+  parseBin(url)
+  // parseStations(url)
 })
+
+async function parseBin(url) {
+
+  const res = await axios.get(url, { responseType: 'arraybuffer' })
+  const uvs = new Float32Array(res.data)
+
+  let maxSpeed = -Infinity
+  for (let i = 0; i < uvs.length / 2; i++) {
+      
+      const u = uvs[2 * i + 0]
+      const v = uvs[2 * i + 1]
+
+      const speed = Math.sqrt(u * u + v * v)
+      maxSpeed = speed > maxSpeed ? speed : maxSpeed
+  }
+
+  self.postMessage({ url, maxSpeed, uvs }) 
+}
 
 async function parseStations(url) {
 
