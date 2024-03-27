@@ -44,6 +44,8 @@ class IndexBuffer extends Buffer {
 
         this.type = parseArrayType(description.resource.arrayRef.value)
 
+        this.length = description.resource.arrayRef.value.length
+
         this.registerStrutureMap(description.resource.arrayRef, description.resource.dataOffset, description.resource.size)
     }
 
@@ -57,6 +59,7 @@ class IndexBuffer extends Buffer {
 
     destroy() {
 
+        this.length = null
         this.type = null
         super.destroy()
     }

@@ -1,13 +1,23 @@
 struct VertexInput {
     @builtin(vertex_index) vertexIndex: u32,
     @location(0) position: vec4f,
-    @location(1) uv: vec2f,
+    @location(1) vFrom: vec2f,
+    @location(2) vTo: vec2f,
 };
 
 struct VertexOutput {
     @builtin(position) position: vec4f,
     @location(0) velocity: vec2f,
     @location(1) uv: vec2f,
+};
+
+struct FrameUniformBlock {
+    randomSeed: f32,
+    viewPort: vec2f,
+    mapBounds: vec4f,
+    zoomLevel: f32,
+    progressRate: f32,
+    maxSpeed: f32,
 };
 
 struct StaticUniformBlock {
@@ -24,8 +34,9 @@ struct DynamicUniformBlock {
 };
 
 // Uniform Bindings
-@group(0) @binding(0) var<uniform> staticUniform: StaticUniformBlock;
-@group(0) @binding(1) var<uniform> dynamicUniform: DynamicUniformBlock;
+@group(0) @binding(0) var<uniform> frameUniform: FrameUniformBlock;
+@group(0) @binding(1) var<uniform> staticUniform: StaticUniformBlock;
+@group(0) @binding(2) var<uniform> dynamicUniform: DynamicUniformBlock;
 
 const PI = 3.1415926535;
 
@@ -52,7 +63,7 @@ fn vMain(input: VertexInput) -> VertexOutput {
 
     var output: VertexOutput;
     output.position = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(input.position.xy, 0.0), vec3f(input.position.zw, 0.0)), 1.0);
-    output.velocity = input.uv;
+    output.velocity = mix(input.vFrom, input.vTo, frameUniform.progressRate);
     return output;
 }
 

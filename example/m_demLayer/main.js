@@ -1,6 +1,6 @@
 import * as scr from '../../src/scratch.js'
 import TerrainLayer from './terrainLayer.js'
-import FlowLayer from './flowLayer.js'
+import SteadyFlowLayer from './steadyFlowLayer.js'
 
 mapboxgl.accessToken = 'pk.eyJ1IjoieWNzb2t1IiwiYSI6ImNrenozdWdodDAza3EzY3BtdHh4cm5pangifQ.ZigfygDi2bK4HXY1pWh-wg'
 
@@ -31,7 +31,7 @@ scr.StartDash().then(() => {
     }).on('load', () => {
         
         map.addLayer(new TerrainLayer(14))
-        map.addLayer(new FlowLayer())
+        map.addLayer(new SteadyFlowLayer())
     })
 })
 

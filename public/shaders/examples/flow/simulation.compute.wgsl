@@ -38,12 +38,12 @@ struct ControllerUniformBlock {
 
 // Texture bindings
 @group(2) @binding(0) var fromTexture: texture_2d<f32>;
-@group(2) @binding(1) var toTexture: texture_2d<f32>;
+// @group(2) @binding(1) var toTexture: texture_2d<f32>;
 
 // Constants
 override blockSize: u32;
 
-const FACTOR = 0.05;
+const FACTOR = 0.0;
 const PI = 3.1415926535;
 const PI2 = 1.5707963267949;
 const PI4 = 0.78539816339745;
@@ -186,9 +186,10 @@ fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
     var uv = (position_SS + 1.0) / 2.0;
     uv = vec2f(uv.x, 1.0 - uv.y);
 
-    let vLast = getVelocity(fromTexture, uv);
-    let vNext = getVelocity(toTexture, uv);
-    let vCurrent = mix(vLast, vNext, frameUniform.progressRate);
+    // let vLast = getVelocity(fromTexture, uv);
+    // let vNext = getVelocity(toTexture, uv);
+    // let vCurrent = mix(vLast, vNext, frameUniform.progressRate);
+    let vCurrent = getVelocity(fromTexture, uv);
     var velocity = mix(vCurrent, vPast, FACTOR);
     let offset = velocity * 100.0 * controllerUniform.speedFactor;
     let nextCoords = clamp(calculateDisplacedLonLat(x, y, offset.x, offset.y), cExtent.xy, cExtent.zw);
