@@ -57,7 +57,7 @@ export default class SteadyFlowLayer {
         this.currentResourceUrl = 0
         this.maxParticleNum = 262144
         this.progressRate = scr.f32()
-        this.particleNum = scr.u32(262144)
+        this.particleNum = scr.u32(10000)
 
         // Compute
         this.blockSizeX = 16
@@ -311,6 +311,16 @@ export default class SteadyFlowLayer {
             primitive: { topology: 'triangle-strip' },
             colorTargetStates: [ { blend: scr.NormalBlending } ],
         })
+        this.arrowBinding = scr.binding({
+            name: 'Binding (Arrow)',
+            range: () => [ 4, this.particleNum.n ],
+            storages: [ { buffer: this.storageBuffer_particle } ],
+            sharedUniforms: [
+                { buffer: this.uniformBuffer_frame },
+                { buffer: this.uniformBuffer_static },
+                { buffer: this.map.dynamicUniformBuffer },
+            ],
+        })
         this.arrowPipeline = scr.renderPipeline({
             name: 'Render Pipeline (Flow Arrow)',
             shader: { module: scr.shaderLoader.load('Shader (Flow Show)', '/shaders/examples/flow/arrow.wgsl') },
@@ -326,7 +336,7 @@ export default class SteadyFlowLayer {
         this.layerBindings[1].executable = false
 
         // Add to map
-        this.showArrow && this.map.add2RenderPass(this.arrowPipeline, this.particleBinding)
+        this.showArrow && this.map.add2RenderPass(this.arrowPipeline, this.arrowBinding)
         this.showVoronoi && this.map.add2RenderPass(this.showPipeline, this.showBinding)
         .add2RenderPass(this.layerPipeline, this.layerBindings[0])
         .add2RenderPass(this.layerPipeline, this.layerBindings[1])
