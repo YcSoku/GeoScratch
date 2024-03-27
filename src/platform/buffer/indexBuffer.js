@@ -42,6 +42,8 @@ class IndexBuffer extends Buffer {
         }
         super(bufferDesc)
 
+        this.length = description.resource.arrayRef.value.length
+
         this.type = parseArrayType(description.resource.arrayRef.value)
 
         this.length = description.resource.arrayRef.value.length
