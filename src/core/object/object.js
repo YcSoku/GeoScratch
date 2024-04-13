@@ -1,8 +1,11 @@
+import { EventDispatcher } from "../event/dispatcher"
 import { UUID } from "../utils/uuid"
 
-export class ScratchObject {
+export class ScratchObject extends EventDispatcher {
 
     constructor() {
+
+        super()
 
         this.uuid = UUID()
         this.refCount = 0

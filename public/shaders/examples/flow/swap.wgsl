@@ -75,6 +75,7 @@ fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
     let dim = vec2f(textureDimensions(bgTexture, 0).xy);
     let color = textureLoad(bgTexture, vec2i(dim * fsInput.texcoords.xy), 0);
     return vec4f(floor(255.0 * color * 0.996) / 255.0);
+    // return vec4f(0.0);
     // return color;
     // return vec4f(1.0);
 }

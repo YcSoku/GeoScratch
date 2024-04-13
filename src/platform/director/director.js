@@ -1,16 +1,16 @@
 import getDevice from "../context/device.js"
-import { EventDispatcher } from "../../core/event/dispatcher.js"
+import { ScratchObject } from "../../core/object/object.js"
 
 const numMipLevels = (...sizes) => {
     const maxSize = Math.max(...sizes)
     return 1 + Math.log2(maxSize) | 0
 }
 
-export class Director extends EventDispatcher {
+export class Director extends ScratchObject {
 
-    constructor(async = true) {
+    constructor() {
 
-        super(async)
+        super()
 
         /**
          * @type {{[name: string]: {items: Array<any>, visibility: boolean}}}

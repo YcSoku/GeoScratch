@@ -134,6 +134,6 @@ fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
     }
 
     let color = velocityColor(length(velocity) / frameUniform.maxSpeed, rampColors0);
-    // return vec4f(velocity, 0.0, 0.2);
+    // return vec4f(velocity, 0.0, 1.0);
     return vec4f(color, 0.5);
 }

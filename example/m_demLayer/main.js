@@ -1,6 +1,7 @@
 import * as scr from '../../src/scratch.js'
 import TerrainLayer from './terrainLayer.js'
 import SteadyFlowLayer from './steadyFlowLayer.js'
+import UnityLayer from './unityLayer.js'
 
 mapboxgl.accessToken = 'pk.eyJ1IjoieWNzb2t1IiwiYSI6ImNrenozdWdodDAza3EzY3BtdHh4cm5pangifQ.ZigfygDi2bK4HXY1pWh-wg'
 
@@ -18,20 +19,22 @@ document.body.appendChild(mapDiv)
 
 // StartDash //////////////////////////////////////////////////////////////////////////////////////////////////////
 scr.StartDash().then(() => {
-
+    
     const map = new ScratchMap({
         style: "mapbox://styles/ycsoku/cldjl0d2m000501qlpmmex490",
-        center: [ 120.980697, 31.684162 ],
+        center: [ 120.556596, 32.042607 ], //[ 120.53525158459905, 31.94879239156117 ], // 120.980697, 31.684162
         projection: 'mercator',
         GPUFrame: GPUFrame,
         container: 'map',
         antialias: true,
         maxZoom: 18,
-        zoom: 9,
+        zoom: 16//10.496958973488436, // 9
+
     }).on('load', () => {
         
-        map.addLayer(new TerrainLayer(14))
+        // map.addLayer(new TerrainLayer(14))
         map.addLayer(new SteadyFlowLayer())
+        // map.addLayer(new UnityLayer([ 120.556596, 32.042607 ], 12))
     })
 })
 
@@ -146,6 +149,7 @@ class ScratchMap extends mapboxgl.Map {
 }
 
 // Helpers //////////////////////////////////////////////////////////////////////////////////////////////////////
+
 function getMercatorMatrix(t) {
     
     if (!t.height) return;
@@ -311,3 +315,36 @@ function getProjectionInterpolationT(projection, zoom, width, height, maxSize = 
     const t = smoothstep(zoomA, zoomB, zoom);
     return t;
 }
+
+
+
+// /// unity
+
+// /**
+//  * transform: camera
+//  */
+// initialize(transform)
+
+// resize()
+
+// /**
+//  * string
+//  */
+// executeCommand()
+
+// shutDown()
+
+// /////////
+
+// updateCamera()
+
+// /**
+//  * tick render
+//  */
+// tick()
+
+// /**
+//  * rayCast or
+//  * screen {x, y}
+//  */
+// pickUp()

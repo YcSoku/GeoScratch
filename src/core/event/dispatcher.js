@@ -1,9 +1,6 @@
 export class EventDispatcher {
 
-    /**
-     * @param {boolean} [async] 
-     */
-    constructor(async = true) {
+    constructor() {
 
         /**
          * @type {{[type: string]: [Function]}}
@@ -13,11 +10,6 @@ export class EventDispatcher {
          * @type {[any]}
          */
         this.events = []
-        /**
-         * Activate each frame
-         * @type {Function}
-         */
-        this.handleEvents = async ? this.handleEventsAsync : this.handleEventsSync
     }
 
     /**
@@ -59,50 +51,10 @@ export class EventDispatcher {
             return
         }
 
-        if (stack &&  stack.length) {
+        if (stack && stack.length) {
             stack.forEach(callback => {
                 callback.call(this, event)
             })
         }
-
-        // Promise.resolve().then( () => {
-
-        //     // if (stack &&  stack.length) {
-        //     //     stack.forEach(callback => {
-        //     //         callback.call(this, event)
-        //     //     })
-        //     // }
-        // })
-
-        // this.events.push(event)
-    }
-
-    /**
-     * @param {any} event 
-     */
-    handleEvent(event) {
-
-        const stack = this.listeners[event.type]
-        if (stack &&  stack.length) {
-            stack.forEach(callback => {
-                callback.call(this, event)
-            })
-        }
-    }
-
-    handleEventsSync() {
-
-        this.events.forEach(event => {
-            this.handleEvent(event)
-        })
-        this.events = []
-    }
-
-    handleEventsAsync() {
-
-        Promise.resolve().then( () => {
-
-            this.handleEventsSync()
-        })
     }
 }

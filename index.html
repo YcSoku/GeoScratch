@@ -7,12 +7,15 @@
     <title>Hello GeoAnythingWeb</title>
   </head>
   <body>
+    <script src="./example/m_demLayer/unityInteraction.js"></script>
+
     <link href="./style.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf"></script>
     <script src='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css' rel='stylesheet'/>
     <canvas id="GPUFrame"></canvas>
     
+    <script src="./public/unity/collapseBank/build/output.loader.js"></script>
     <script type="module" src="./example/m_demLayer/main.js"></script>
-    <!-- <iframe id="UnityIFrame" src="http://localhost:8080/collapseBank/"></iframe> -->
   </body>
 </html>

@@ -74,4 +74,5 @@ fn fMain(input: VertexOutput) -> @location(0) vec2f {
     //     discard;
     // }
     return input.velocity;
+    // return vec2f(1.0);
 }

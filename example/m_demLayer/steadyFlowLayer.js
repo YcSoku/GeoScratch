@@ -29,6 +29,7 @@ const resourceUrl = [
     '/json/examples/flow/uv_23.bin',
     '/json/examples/flow/uv_24.bin',
     '/json/examples/flow/uv_25.bin',
+    '/json/examples/flow/uv_26.bin',
 ]
 
 export default class SteadyFlowLayer {
@@ -57,7 +58,7 @@ export default class SteadyFlowLayer {
         this.currentResourceUrl = 0
         this.maxParticleNum = 262144
         this.progressRate = scr.f32()
-        this.particleNum = scr.u32(10000)
+        this.particleNum = scr.u32(20000)
 
         // Compute
         this.blockSizeX = 16
@@ -124,7 +125,8 @@ export default class SteadyFlowLayer {
         this.addWorker(new Worker(new URL( './flowJson.worker.js', import.meta.url ), { type: 'module' }))
 
         // this.extent.reset(120.0437360613468201, 31.1739019522094871, 121.9662324011692220, 32.0840108580467813)
-        this.extent.reset(120.04485952099877, 31.757211235652274, 121.00010037560567, 32.08267764177068)
+        // this.extent.reset(120.04485952099877, 31.757211235652274, 121.00010037560567, 32.08267764177068)
+        this.extent.reset(120.04494179338647, 29.434588355382605, 123.05630049897832, 32.26061345004831)
 
         // Buffer-related resource
         this.storageBuffer_particle = scr.storageBuffer({
@@ -177,6 +179,7 @@ export default class SteadyFlowLayer {
         this.voronoiPipeline = scr.renderPipeline({
             name: 'Render Pipeline (Voronoi Flow)',
             shader: { module: scr.shaderLoader.load('Shader (Flow Voronoi)', '/shaders/examples/flow/flowVoronoi.wgsl') },
+            // primitive: { topology: 'line-strip' }
         })
         this.voronoiPass = scr.renderPass({
             name: 'Render Pass (Voronoi Flow From)',
@@ -346,6 +349,7 @@ export default class SteadyFlowLayer {
         .add2PreProcess(this.swapPasses[1])
         .add2PreProcess(this.swapPasses[2])
 
+        // Dispatch idle / restart
         this.map.on('movestart', () => this.idle())
         this.map.on('move', () => this.idle())
         this.map.on('moveend', () => this.restart())
@@ -407,7 +411,6 @@ export default class SteadyFlowLayer {
         this.preheat = 10
         this.isIdling = false
         this.arrowPipeline.executable = true
-        this.swapPasses[2].executable = false
         this.swapPasses[2].executable = false
         this.particleRef.value = this.randomFillData
     }
