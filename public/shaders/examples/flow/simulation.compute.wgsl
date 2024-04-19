@@ -10,6 +10,8 @@ struct FrameUniformBlock {
     zoomLevel: f32,
     progressRate: f32,
     maxSpeed: f32,
+    lastMvp: mat4x4f,
+    lastMvpInverse: mat4x4f,
 };
 
 struct DynamicUniformBlock {
@@ -18,6 +20,7 @@ struct DynamicUniformBlock {
     uMatrix: mat4x4f,
     centerLow: vec3f,
     centerHigh: vec3f,
+    mvpInverse: mat4x4f,
 };
 
 struct ControllerUniformBlock {
@@ -160,6 +163,21 @@ fn getVelocity(texture: texture_2d<f32>, uv: vec2f) -> vec2f {
     return linearSampling(texture, uv * dim, dim).rg;
 }
 
+fn rebirth(seed: vec2f, id: vec2f) -> vec2f {
+
+    return vec2f(rand(seed + id.x), rand(seed + id.y));
+}
+
+fn isWithinExtent(pos: vec2f, extent: vec4f) -> bool {
+
+    if (pos.x <= extent.x || pos.x >= extent.z || pos.y <= extent.y || pos.y >= extent.w) {
+
+        return false;
+    }
+
+    return true;
+}
+
 @compute @workgroup_size(blockSize, blockSize, 1)
 fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
 
@@ -173,13 +191,29 @@ fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
         particles[index * 6 + 0],
         particles[index * 6 + 1],
     );
-    let vPast = vec2f(
+    let lastV = vec2f(
         particles[index * 6 + 4],
         particles[index * 6 + 5],
     );
-    let x = mix(cExtent.x, cExtent.z, lastPos.x);
-    let y = mix(cExtent.y, cExtent.w, lastPos.y);
-    let mercatorPos = calcWebMercatorCoord(vec2f(x, y));
+    let seed = frameUniform.randomSeed * (lastPos + lastV + vec2f(f32(id.x), f32(id.y)));
+    // let x = mix(cExtent.x, cExtent.z, lastPos.x);
+    // let y = mix(cExtent.y, cExtent.w, lastPos.y);
+    // let mercatorPos = calcWebMercatorCoord(vec2f(x, y));
+    if (!isWithinExtent(lastPos, cExtent)) {
+
+        let rebirthPos = rebirth(seed, vec2f(id.xy));
+        let x = mix(cExtent.x, cExtent.z, rebirthPos.x);
+        let y = mix(cExtent.y, cExtent.w, rebirthPos.y);
+
+        particles[index * 6 + 0] = x;
+        particles[index * 6 + 1] = y;
+        particles[index * 6 + 2] = x;
+        particles[index * 6 + 3] = y;
+        particles[index * 6 + 4] = 0.0;
+        particles[index * 6 + 5] = 0.0;
+        return;
+    }
+    let mercatorPos = calcWebMercatorCoord(vec2f(lastPos));
 
     let position_CS = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(mercatorPos, 0.0), vec3f(0.0, 0.0, 0.0)), 1.0);
     let position_SS = position_CS.xy / position_CS.w;
@@ -190,25 +224,29 @@ fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
     // let vNext = getVelocity(toTexture, uv);
     // let vCurrent = mix(vLast, vNext, frameUniform.progressRate);
     let vCurrent = getVelocity(fromTexture, uv);
-    var velocity = mix(vCurrent, vPast, FACTOR);
+    var velocity = mix(vCurrent, lastV, FACTOR);
     let offset = velocity * 100.0 * controllerUniform.speedFactor;
-    let nextCoords = clamp(calculateDisplacedLonLat(x, y, offset.x, offset.y), cExtent.xy, cExtent.zw);
+    // let nextCoords = clamp(calculateDisplacedLonLat(x, y, offset.x, offset.y), cExtent.xy, cExtent.zw);
+    let nextCoords = clamp(calculateDisplacedLonLat(lastPos.x, lastPos.y, offset.x, offset.y), cExtent.xy, cExtent.zw);
 
-    let nextPos = vec2f(
-        (nextCoords.x - cExtent.x) / (cExtent.z - cExtent.x),
-        (nextCoords.y - cExtent.y) / (cExtent.w - cExtent.y),
-    );
+    // let nextPos = vec2f(
+    //     (nextCoords.x - cExtent.x) / (cExtent.z - cExtent.x),
+    //     (nextCoords.y - cExtent.y) / (cExtent.w - cExtent.y),
+    // );
+    let nextPos = nextCoords;
 
-    let seed = frameUniform.randomSeed * (nextPos - uv + vec2f(f32(id.x), f32(id.y)));
-    if (drop(velocity, seed) == 1.0 || all(velocity == vec2f(0.0)) || lastPos.x * lastPos.y * uv.x * uv.y * nextPos.x * nextPos.y == 0.0 || any(nextPos <= vec2f(0.0)) || any(nextPos >= vec2f(1.0))) {
+    // let seed = frameUniform.randomSeed * (nextPos - uv + vec2f(f32(id.x), f32(id.y)));
+    // if (drop(velocity, seed) == 1.0 || all(velocity == vec2f(0.0)) || lastPos.x * lastPos.y * uv.x * uv.y * nextPos.x * nextPos.y == 0.0 || any(nextPos <= vec2f(0.0)) || any(nextPos >= vec2f(1.0))) {
+    if (drop(velocity, seed) == 1.0 || all(velocity == vec2f(0.0)) || uv.x * uv.y == 0.0 || !isWithinExtent(nextPos, cExtent)) {
 
-        let rebirth_x = rand(seed + f32(id.x));
-        let rebirth_y = rand(seed + f32(id.y));
+        let rebirthPos = rebirth(seed, vec2f(id.xy));
+        let x = mix(cExtent.x, cExtent.z, rebirthPos.x);
+        let y = mix(cExtent.y, cExtent.w, rebirthPos.y);
 
-        particles[index * 6 + 0] = rebirth_x;
-        particles[index * 6 + 1] = rebirth_y;
-        particles[index * 6 + 2] = rebirth_x;
-        particles[index * 6 + 3] = rebirth_y;
+        particles[index * 6 + 0] = x;
+        particles[index * 6 + 1] = y;
+        particles[index * 6 + 2] = x;
+        particles[index * 6 + 3] = y;
         particles[index * 6 + 4] = 0.0;
         particles[index * 6 + 5] = 0.0;
 

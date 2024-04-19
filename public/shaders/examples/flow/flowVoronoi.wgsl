@@ -18,6 +18,8 @@ struct FrameUniformBlock {
     zoomLevel: f32,
     progressRate: f32,
     maxSpeed: f32,
+    lastMvp: mat4x4f,
+    lastMvpInverse: mat4x4f,
 };
 
 struct StaticUniformBlock {
@@ -31,6 +33,7 @@ struct DynamicUniformBlock {
     uMatrix: mat4x4f,
     centerLow: vec3f,
     centerHigh: vec3f,
+    mvpInverse: mat4x4f,
 };
 
 // Uniform Bindings

@@ -1,5 +1,6 @@
 import getDevice from "../context/device.js"
 import { ScratchObject } from "../../core/object/object.js"
+import { encode } from "punycode"
 
 const numMipLevels = (...sizes) => {
     const maxSize = Math.max(...sizes)
@@ -421,6 +422,22 @@ director.addEventListeners('createTextureBySize', ({_, emitter}) => {
     if (emitter.texture.mipLevelCount > 1) {
         director.dispatchEvent({type: 'generateMips', texture: emitter.texture})
     }
+})
+
+// Copy texture from texture
+director.addEventListeners('copyTextureFromTexture', ({_, emitter, srcTexture}) => {
+
+    const device = director.tryGetDevice()
+    const src = srcTexture.texture
+    const dst = emitter.texture
+    const encoder = device.createCommandEncoder()
+
+    encoder.copyTextureToTexture(
+        { texture: src },
+        { texture: dst },
+        { width: emitter.width, height: emitter.height, depthOrArrayLayers: 1 })
+
+    device.queue.submit([ encoder.finish() ])
 })
 
 // Create pipeline layout

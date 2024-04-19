@@ -44,6 +44,8 @@ export class Mat4f extends Numeric{
     multiply(m: Mat4f): Mat4f;
 
     get array(): Float32Array;
+
+    copyFrom(m: Mat4f): Mat4f;
 }
 
 export function mat4f(): Mat4f;

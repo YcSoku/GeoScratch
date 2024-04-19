@@ -245,6 +245,11 @@ class Texture extends ScratchObject {
         this.texture && this.onChangeHandlers.forEach(handler => handler && handler())
     }
 
+    copyFromTexture(srcTexture) {
+
+        director.dispatchEvent({type: 'copyTextureFromTexture', emitter: this, srcTexture})
+    }
+
     registerCallback(callback) {
         this.onChangeHandlers.push(callback)
 

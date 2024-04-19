@@ -51,6 +51,8 @@ export class Texture {
 
     reset(description?: TextureDescription): void;
 
+    copyFromTexture(srcTexture: Texture): void;
+
     destroy(): void;
 }
 

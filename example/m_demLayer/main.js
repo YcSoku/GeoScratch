@@ -18,27 +18,61 @@ mapDiv.id = 'map'
 document.body.appendChild(mapDiv)
 
 // StartDash //////////////////////////////////////////////////////////////////////////////////////////////////////
+let flowLayer = undefined
 scr.StartDash().then(() => {
     
     const map = new ScratchMap({
         style: "mapbox://styles/ycsoku/cldjl0d2m000501qlpmmex490",
-        center: [ 120.556596, 32.042607 ], //[ 120.53525158459905, 31.94879239156117 ], // 120.980697, 31.684162
+        center: [ 120.980697, 31.684162 ], // [ 120.556596, 32.042607 ], //[ 120.53525158459905, 31.94879239156117 ], // 120.980697, 31.684162
         projection: 'mercator',
         GPUFrame: GPUFrame,
         container: 'map',
         antialias: true,
         maxZoom: 18,
-        zoom: 16//10.496958973488436, // 9
+        zoom: 9 //10.496958973488436, // 16
 
     }).on('load', () => {
         
         // map.addLayer(new TerrainLayer(14))
-        map.addLayer(new SteadyFlowLayer())
+        map.addLayer(flowLayer = new SteadyFlowLayer(
+            '/bin/examples/flow/station.bin',
+            [
+                '/bin/examples/flow/uv_0.bin',
+                '/bin/examples/flow/uv_1.bin',
+                '/bin/examples/flow/uv_2.bin',
+                '/bin/examples/flow/uv_3.bin',
+                '/bin/examples/flow/uv_4.bin',
+                '/bin/examples/flow/uv_5.bin',
+                '/bin/examples/flow/uv_6.bin',
+                '/bin/examples/flow/uv_7.bin',
+                '/bin/examples/flow/uv_8.bin',
+                '/bin/examples/flow/uv_9.bin',
+                '/bin/examples/flow/uv_10.bin',
+                '/bin/examples/flow/uv_11.bin',
+                '/bin/examples/flow/uv_12.bin',
+                '/bin/examples/flow/uv_13.bin',
+                '/bin/examples/flow/uv_14.bin',
+                '/bin/examples/flow/uv_15.bin',
+                '/bin/examples/flow/uv_16.bin',
+                '/bin/examples/flow/uv_17.bin',
+                '/bin/examples/flow/uv_18.bin',
+                '/bin/examples/flow/uv_19.bin',
+                '/bin/examples/flow/uv_20.bin',
+                '/bin/examples/flow/uv_21.bin',
+                '/bin/examples/flow/uv_22.bin',
+                '/bin/examples/flow/uv_23.bin',
+                '/bin/examples/flow/uv_24.bin',
+                '/bin/examples/flow/uv_25.bin',
+                '/bin/examples/flow/uv_26.bin',
+            ],
+            url => url.match(/uv_(\d+)\.bin/)[1]
+        ))
         // map.addLayer(new UnityLayer([ 120.556596, 32.042607 ], 12))
     })
 })
 
 // Map //////////////////////////////////////////////////////////////////////////////////////////////////////
+let frameCount = 0
 class ScratchMap extends mapboxgl.Map {
 
     constructor(options) {
@@ -52,6 +86,7 @@ class ScratchMap extends mapboxgl.Map {
         this.uMatrix = scr.mat4f()
         this.centerLow = scr.vec3f()
         this.centerHigh = scr.vec3f()
+        this.mvpInverse = scr.mat4f()
         this.mercatorCenter = scr.vec3f()
         this.zoom = scr.f32(this.getZoom())
         this.mercatorBounds = new scr.BoundingBox2D()
@@ -70,6 +105,7 @@ class ScratchMap extends mapboxgl.Map {
                         uMatrix: this.uMatrix,
                         centerLow: this.centerLow,
                         centerHigh: this.centerHigh,
+                        mvpInverse: this.mvpInverse,
                     }
                 }),
             ]
@@ -133,6 +169,25 @@ class ScratchMap extends mapboxgl.Map {
         this.near.n = near
         this.uMatrix.data = matrix
         this.uMatrix.translate(scr.vec3f(mercatorCenterX[0], mercatorCenterY[0], mercatorCenterZ[0]))
+        this.mvpInverse.invert(this.uMatrix)
+
+        // if (frameCount++ === 1000) {
+        //     flowLayer.resetResource([
+        //         '/bin/examples/flow/uv_14.bin',
+        //         '/bin/examples/flow/uv_15.bin',
+        //         '/bin/examples/flow/uv_16.bin',
+        //         '/bin/examples/flow/uv_17.bin',
+        //         '/bin/examples/flow/uv_18.bin',
+        //         '/bin/examples/flow/uv_19.bin',
+        //         '/bin/examples/flow/uv_20.bin',
+        //         '/bin/examples/flow/uv_21.bin',
+        //         '/bin/examples/flow/uv_22.bin',
+        //         '/bin/examples/flow/uv_23.bin',
+        //         '/bin/examples/flow/uv_24.bin',
+        //         '/bin/examples/flow/uv_25.bin',
+        //         '/bin/examples/flow/uv_26.bin',
+        //     ])
+        // }
     }
 
     add2PreProcess(prePass) {
