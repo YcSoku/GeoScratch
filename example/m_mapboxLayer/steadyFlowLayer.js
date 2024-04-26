@@ -243,7 +243,7 @@ export default class SteadyFlowLayer {
                     {
                         name: 'staticUniform',
                         map: {
-                            groupSize: scr.asVec2u(this.groupSizeX, this.groupSizeY),
+                            groupSize: scr.vec2u(this.groupSizeX, this.groupSizeY),
                             extent: this.extent.boundary,
                         }
                     })
@@ -264,8 +264,8 @@ export default class SteadyFlowLayer {
                         maxSpeed: this.maxSpeed,
                         lastMvp: this.lastMvp,
                         lastMvpInverse: this.lastMvpInverse,
-                        fillWidth: scr.asF32(1.0),
-                        aaWidth: scr.asF32(2.0),
+                        fillWidth: scr.f32(1.0),
+                        aaWidth: scr.f32(2.0),
                     }
                 })
             ]

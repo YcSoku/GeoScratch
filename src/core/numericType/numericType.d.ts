@@ -14,6 +14,8 @@ export { vec3f, asVec3f, Vec3f } from './vec3f'
 
 export { vec4f, asVec4f, Vec4f } from './vec4f'
 
-export { mat4, Mat4 } from './mat4'
-
 export { mat3f, Mat3f } from './mat3f'
+
+export { vec3, Vec3 } from './vec3'
+
+export { mat4, Mat4 } from './mat4'

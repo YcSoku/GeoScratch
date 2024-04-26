@@ -1,48 +1,58 @@
-import { Mat4 } from "../math/mat4";
-import { Vec3 } from "../math/vec3";
 import { F32 } from "./f32";
-import { Numeric } from "./numeric"
+import { Mat4 } from "../math/mat4";
+import { DataType, Numeric } from "./numeric";
 
-export class Vec3f extends Numeric {
-     
-    constructor(x?: number, y?: number, z?: number): Vec3f;
+export class Vec3 extends Numeric {
 
     get x(): number;
+
     get y(): number;
+
     get z(): number;
-    get xy(): number[]
-    get yz(): number[]
-    get xyz(): number[]
+
+    get xy(): number[];
+
+    get yz(): number[];
+
+    get xyz(): number[];
+
     set x(x: number): void;
+
     set y(y: number): void;
+
     set z(z: number): void;
-    set xy(xy: number[]): void
-    set yz(yz: number[]): void
-    set xyz(xyz: number[]): void
 
-    static create(x?: number, y?: number, z?: number): Vec3f;
+    set xy(xy: number[]): void;
 
-    static CrossProduct(v1: Vec3f, v2: Vec3f): Vec3f;
+    set yz(yz: number[]): void;
 
-    static Subtract(v1: Vec3f, v2: Vec3f): Vec3f;
+    set xyz(xyz: number[]): void;
+     
+    constructor(type: DataType, x?: number, y?: number, z?: number): Vec3;
 
-    subtract(v: Vec3f): Vec3f;
+    static setDefaultComputeType(ctor: Float32Array | Float64Array | Array): void;
 
-    transformFromMat4(m: Mat4): Vec3f;
+    static create(type: DataType, x?: number, y?: number, z?: number): Vec3;
 
-    normalize(): Vec3f;
+    static fromValues(x?: number, y?: number, z?: number, type?: DataType): Vec3;
 
-    scale(s: F32 | number): Vec3f;
+    static crossing(v1: Vec3 | [number], v2: Vec3 | [number], type: DataType): Vec3 | [number];
 
-    dot(v: Vec3f): number;
+    static subtraction(v1: Vec3 | [number], v2: Vec3 | [number], type: DataType): Vec3 | [number];
 
-    cross(v: Vec3f): number;
+    normalize(): Vec3;
 
-    get array(): Float32Array;
+    scale(s: F32 | number): Vec3;
 
-    copy(v: Vec3f): Vec3f;
+    dot(v: Vec3 | [number]): number;
+
+    cross(v: Vec3 | [number]): Vec3;
+
+    clone(v: Vec3 | [number]): Vec3;
+
+    subtract(v: Vec3 | [number]): Vec3;
+
+    transformFromMat4(m: Mat4 | [number]): Vec3;
 }
 
-export function vec3f(x?: number, y?: number, z?: number): Vec3f;
-
-export function asVec3f(x?: number, y?: number, z?: number): { type: string, data: Vec3 }
+export function vec3(type?: DataType, x?: number, y?: number, z?: numbe): Vec3;

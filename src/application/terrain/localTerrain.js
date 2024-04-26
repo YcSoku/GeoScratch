@@ -15,7 +15,7 @@ import { vertexBuffer } from '../../platform/buffer/vertexBuffer.js'
 import { storageBuffer } from '../../platform/buffer/storageBuffer.js'
 import { uniformBuffer } from '../../platform/buffer/uniformBuffer.js'
 import { renderPipeline } from '../../platform/pipeline/renderPipeline.js'
-import { f32, asVec2f, vec2f } from '../../core/numericType/numericType.js'
+import { asVec2f, f32, vec2f } from '../../core/numericType/numericType.js'
 
 export class LocalTerrain {
 
@@ -58,7 +58,6 @@ export class LocalTerrain {
         // Texture-related resource
         this.lSampler = undefined
         this.demTexture = undefined
-        this.fieldTexture = undefined
         this.lodMapTexture = undefined
         this.borderTexture = undefined
         this.paletteTexture = undefined
@@ -176,7 +175,6 @@ export class LocalTerrain {
                 { texture: this.demTexture },
                 { texture: this.lodMapTexture },
                 { texture: this.paletteTexture },
-                // { texture: this.fieldTexture, sampleType: 'unfilterable-float' },
             ],
             storages: [
                 { buffer: this.indexBuffer },

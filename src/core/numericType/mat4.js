@@ -225,10 +225,7 @@ export class Mat4 extends Numeric {
     clone(m) {
 
         const _m = this.purify(m)
-
-        for (let i = 0; i < 16; i++) {
-            this._data[i] = _m[i]
-        }
+        utils.copy(_m, this._data)
 
         return this
     }

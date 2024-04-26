@@ -1,6 +1,6 @@
 import { F32 } from "./f32";
-import { DataType, Numeric } from "./numeric";
 import { Vec3f } from "./vec3f";
+import { DataType, Numeric } from "./numeric";
 
 export class Mat4 extends Numeric{
 

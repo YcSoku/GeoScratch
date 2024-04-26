@@ -16,6 +16,8 @@ export { vec3f, asVec3f, Vec3f } from './vec3f.js'
 
 export { vec4f, asVec4f, Vec4f } from './vec4f.js'
 
-export { mat4, Mat4 } from './mat4.js'
-
 export { mat3f, Mat3f } from './mat3f.js'
+
+export { vec3, Vec3 } from './vec3.js'
+
+export { mat4, Mat4 } from './mat4.js'

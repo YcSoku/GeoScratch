@@ -34,8 +34,14 @@ scr.StartDash().then(() => {
 
     }).on('load', () => {
         
-        terrainLayer = new TerrainLayer(14)
-        flowLayer = new SteadyFlowLayer('/bin/examples/flow/station.bin',
+        
+        
+
+        // terrainLayer.fieldTexture = flowLayer.fieldTexture = map.screen.createScreenDependentTexture('Texture (Field UVPH)', 'rgba32float')
+        
+        map.addLayer(terrainLayer = new TerrainLayer(14))
+        0 && map.addLayer(flowLayer = new SteadyFlowLayer(
+            '/bin/examples/flow/station.bin',
             [
                 '/bin/examples/flow/uvph_0.bin',
                 '/bin/examples/flow/uvph_1.bin',
@@ -63,13 +69,9 @@ scr.StartDash().then(() => {
                 '/bin/examples/flow/uvph_23.bin',
                 '/bin/examples/flow/uvph_24.bin',
                 '/bin/examples/flow/uvph_25.bin',
-                '/bin/examples/flow/uvph_26.bin', ], url => url.match(/uvph_(\d+)\.bin/)[1]
-        )
-
-        // terrainLayer.fieldTexture = flowLayer.fieldTexture = map.screen.createScreenDependentTexture('Texture (Field UVPH)', 'rgba32float')
-        
-        map.addLayer(terrainLayer)
-        map.addLayer(flowLayer)
+                '/bin/examples/flow/uvph_26.bin', ], 
+                url => url.match(/uvph_(\d+)\.bin/)[1]
+        ))
         // map.addLayer(new UnityLayer([ 120.556596, 32.042607 ], 12))
     })
 })
@@ -87,25 +89,25 @@ class ScratchMap extends mapboxgl.Map {
         this.far = scr.f32()
         this.near = scr.f32()
         this.uMatrix = scr.mat4()
-        this.centerLow = scr.vec3f()
+        this.centerLow = scr.vec3()
         this.mvpInverse = scr.mat4()
         this.uMatrixPure = scr.mat4()
-        this.centerHigh = scr.vec3f()
-        this.mercatorCenter = scr.vec3f()
+        this.centerHigh = scr.vec3()
+        this.mercatorCenter = scr.vec3()
         this.zoom = scr.f32(this.getZoom())
         this.mercatorBounds = new scr.BoundingBox2D()
         this.cameraBounds = new scr.BoundingBox2D(...this.getBounds().toArray())
 
         // Frustum data 
-        this.uln = scr.vec3f()
-        this.brf = scr.vec3f()
-        this.nUp = scr.vec3f()
-        this.nFar = scr.vec3f()
-        this.nNear = scr.vec3f()
-        this.nLeft = scr.vec3f()
-        this.nRight = scr.vec3f()
-        this.nBottom = scr.vec3f()
-        /** @type {[ { point: scr.Vec3f, normal: scr.Vec3f, distance: number } ]} */ this.frustumPlanes = []
+        this.uln = scr.vec3()
+        this.brf = scr.vec3()
+        this.nUp = scr.vec3()
+        this.nFar = scr.vec3()
+        this.nNear = scr.vec3()
+        this.nLeft = scr.vec3()
+        this.nRight = scr.vec3()
+        this.nBottom = scr.vec3()
+        /** @type {[ { point: scr.Vec3, normal: scr.Vec3, distance: number } ]} */ this.frustumPlanes = []
         
         // Buffer-related resource (based on map status)
         this.dynamicUniformBuffer = scr.uniformBuffer({
@@ -188,14 +190,14 @@ class ScratchMap extends mapboxgl.Map {
 
         // Frustum
         const points = cameraFrustum.points
-        const v01 = scr.vec3f(points[1][0] - points[0][0], points[1][1] - points[0][1], points[1][2] - points[0][2])
-        const v03 = scr.vec3f(points[3][0] - points[0][0], points[3][1] - points[0][1], points[3][2] - points[0][2])
-        const v04 = scr.vec3f(points[4][0] - points[0][0], points[4][1] - points[0][1], points[4][2] - points[0][2])
-        const v62 = scr.vec3f(points[2][0] - points[6][0], points[2][1] - points[6][1], points[2][2] - points[6][2])
-        const v65 = scr.vec3f(points[5][0] - points[6][0], points[5][1] - points[6][1], points[5][2] - points[6][2])
-        const v67 = scr.vec3f(points[7][0] - points[6][0], points[7][1] - points[6][1], points[7][2] - points[6][2])
-        this.uln.copy(scr.vec3f(...points[0]))
-        this.brf.copy(scr.vec3f(...points[6]))
+        const v01 = scr.Vec3.fromValues(points[1][0] - points[0][0], points[1][1] - points[0][1], points[1][2] - points[0][2])
+        const v03 = scr.Vec3.fromValues(points[3][0] - points[0][0], points[3][1] - points[0][1], points[3][2] - points[0][2])
+        const v04 = scr.Vec3.fromValues(points[4][0] - points[0][0], points[4][1] - points[0][1], points[4][2] - points[0][2])
+        const v62 = scr.Vec3.fromValues(points[2][0] - points[6][0], points[2][1] - points[6][1], points[2][2] - points[6][2])
+        const v65 = scr.Vec3.fromValues(points[5][0] - points[6][0], points[5][1] - points[6][1], points[5][2] - points[6][2])
+        const v67 = scr.Vec3.fromValues(points[7][0] - points[6][0], points[7][1] - points[6][1], points[7][2] - points[6][2])
+        this.uln.clone(scr.Vec3.fromValues(...points[0]))
+        this.brf.clone(scr.Vec3.fromValues(...points[6]))
         this.nNear.xyz = cameraFrustum.planes[0]
         this.nFar.xyz = cameraFrustum.planes[1]
         this.nLeft.xyz = cameraFrustum.planes[2]
@@ -265,65 +267,11 @@ class ScratchMap extends mapboxgl.Map {
 
 // Helpers //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class Plane {
-
-    constructor() {
-        this.normal = scr.vec3f()
-        this.distance = scr.f32()
-    }
-}
-
-class Frustum {
-
-    constructor() {
-        this.top = new Plane()
-        this.bottom = new Plane()
-
-        this.left = new Plane()
-        this.right = new Plane()
-
-        this.far = new Plane()
-        this.near = new Plane()
-    }
-}
-
-function createFrustumFromCamera(transform)
-{
-    const frustum = new Frustum()
-    const fovY = transform.fovY
-    const zNear = transform._nearZ
-    const zFar = transform._farZ
-    const aspect = transform.width / transform.height
-    const halfVSide = zFar * Math.tan(fovY * 0.5)
-    const halfHSide = halfVSide * aspect
-    const cameraFront = scr.vec3.normalize(scr.vec3.transformQuat([0.0, 0.0, -1.0], transform._camera._orientation))
-    const cameraPos = scr.vec4.transformMat4([0.0, 0.0, 0.0, 1.0], transform._camera._transform)
-    const cameraDistance = scr.vec3.length(cameraPos)
-
-
-    const frontMultFar = scr.vec3.scale(cameraFront, zFar)
-
-    frustum.near.distance.n = cameraDistance + (scr.vec3.length(scr.vec3.scale(cameraFront, zNear)))
-    frustum.near.normal.xyz = cameraFront
-    // console.log(transform.cameraFrustum.planes[0], frustum.near.normal.xyz)
-    // frustum.farFace = { cam.Position + frontMultFar, -cam.Front };
-    // frustum.rightFace = { cam.Position,
-    // glm::cross(frontMultFar - cam.Right * halfHSide, cam.Up) };
-    // frustum.leftFace = { cam.Position,
-    // glm::cross(cam.Up,frontMultFar + cam.Right * halfHSide) };
-    // frustum.topFace = { cam.Position,
-    // glm::cross(cam.Right, frontMultFar - cam.Up * halfVSide) };
-    // frustum.bottomFace = { cam.Position,
-    // glm::cross(frontMultFar + cam.Up * halfVSide, cam.Right) };
-
-    // return frustum;
-}
-
 function getMercatorMatrix(t) {
     
     if (!t.height) return;
 
-    scr.vec3.setDefaultType(Float64Array)
+    scr.Vec3.setDefaultComputeType(Float64Array)
     scr.vec4.setDefaultType(Float64Array)
     scr.Mat4.setDefaultComputeType(Float64Array)
 
@@ -416,7 +364,7 @@ function getMercatorMatrix(t) {
 
     // The mercatorMatrix can be used to transform points from mercator coordinates
     // ([0, 0] nw, [1, 1] se) to GL coordinates. / zUnit compensates for scaling done in worldToCamera.
-    t.mercatorMatrix = scr.Mat4.scaling(m, scr.vec3.fromValues(t.worldSize, t.worldSize, t.worldSize / zUnit));
+    t.mercatorMatrix = scr.Mat4.scaling(m, scr.Vec3.fromValues(t.worldSize, t.worldSize, t.worldSize / zUnit));
     t.projMatrix = m;
 
     // For tile cover calculation, use inverted of base (non elevated) matrix

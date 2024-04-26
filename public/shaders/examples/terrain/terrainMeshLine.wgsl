@@ -9,6 +9,7 @@ struct VertexOutput {
     @location(1) depth: f32,
     @location(2) index: f32,
     @location(3) level: f32,
+    @location(4) isEdge: f32,
 };
 
 struct StaticUniformBlock {
@@ -47,7 +48,6 @@ struct TileUniformBlock {
 @group(2) @binding(0) var lsampler: sampler;
 @group(2) @binding(1) var demTexture: texture_2d<f32>;
 @group(2) @binding(2) var lodMap: texture_2d<f32>;
-// @group(2) @binding(4) var fieldTexture: texture_2d<f32>;
 
 const PI = 3.141592653;
 
@@ -257,21 +257,21 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
     //     z = z / a;
     // }
 
-    let tlPos = positionCS(vec2f(nodeBox[0], nodeBox[1]), z);
-    let trPos = positionCS(vec2f(nodeBox[2], nodeBox[1]), z);
-    let blPos = positionCS(vec2f(nodeBox[0], nodeBox[3]), z);
-    let brPos = positionCS(vec2f(nodeBox[2], nodeBox[3]), z);
-    let tlPosE = positionCS(vec2f(nodeBox[0], nodeBox[1]), tileUniform.exaggeration * altitude2Mercator(nodeBox[1], -100.0));
-    let trPosE = positionCS(vec2f(nodeBox[2], nodeBox[1]), tileUniform.exaggeration * altitude2Mercator(nodeBox[1], -100.0));
-    let blPosE = positionCS(vec2f(nodeBox[0], nodeBox[3]), tileUniform.exaggeration * altitude2Mercator(nodeBox[3], -100.0));
-    let brPosE = positionCS(vec2f(nodeBox[2], nodeBox[3]), tileUniform.exaggeration * altitude2Mercator(nodeBox[3], -100.0));
-    let thisPos1 = mix(tlPos, trPos, x);
-    let thisPos2 = mix(blPos, brPos, x);
-    var thisPos = mix(thisPos1, thisPos2, y);
-    let thisPosE1 = mix(tlPosE, trPosE, x);
-    let thisPosE2 = mix(blPosE, brPosE, x);
-    let thisPosE = mix(thisPosE1, thisPosE2, y);
-    let thisPosRight = mix(thisPos, thisPosE, min(elevation, 0.0) / -100.0);
+    // let tlPos = positionCS(vec2f(nodeBox[0], nodeBox[1]), z);
+    // let trPos = positionCS(vec2f(nodeBox[2], nodeBox[1]), z);
+    // let blPos = positionCS(vec2f(nodeBox[0], nodeBox[3]), z);
+    // let brPos = positionCS(vec2f(nodeBox[2], nodeBox[3]), z);
+    // let tlPosE = positionCS(vec2f(nodeBox[0], nodeBox[1]), tileUniform.exaggeration * altitude2Mercator(nodeBox[1], -100.0));
+    // let trPosE = positionCS(vec2f(nodeBox[2], nodeBox[1]), tileUniform.exaggeration * altitude2Mercator(nodeBox[1], -100.0));
+    // let blPosE = positionCS(vec2f(nodeBox[0], nodeBox[3]), tileUniform.exaggeration * altitude2Mercator(nodeBox[3], -100.0));
+    // let brPosE = positionCS(vec2f(nodeBox[2], nodeBox[3]), tileUniform.exaggeration * altitude2Mercator(nodeBox[3], -100.0));
+    // let thisPos1 = mix(tlPos, trPos, x);
+    // let thisPos2 = mix(blPos, brPos, x);
+    // var thisPos = mix(thisPos1, thisPos2, y);
+    // let thisPosE1 = mix(tlPosE, trPosE, x);
+    // let thisPosE2 = mix(blPosE, brPosE, x);
+    // let thisPosE = mix(thisPosE1, thisPosE2, y);
+    // let thisPosRight = mix(thisPos, thisPosE, min(elevation, 0.0) / -100.0);
 
     var output: VertexOutput;
     // output.position = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(calcWebMercatorCoord(coord), z), vec3f(0.0)), 1.0);
@@ -279,6 +279,7 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
     output.depth = (elevation - staticUniform.e.x) / (staticUniform.e.y - staticUniform.e.x);
     // output.index = f32(vsInput.instanceIndex);
     output.index = f32(level[vsInput.instanceIndex]);
+    output.isEdge = mLevel;
     return output;
 }
 

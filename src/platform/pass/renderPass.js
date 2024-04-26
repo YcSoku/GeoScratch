@@ -111,9 +111,9 @@ export class RenderPass extends ScratchObject {
 
     tryMakeUpdate() {
 
-        return this.colorDescription.some(description => description.colorResource.texture !== undefined)
-            && this.depthStencilDescription?.depthStencilResource.texture !== undefined
-        
+        const colorOK = !this.colorDescription.some(description => description.colorResource.texture === undefined)
+        const depthStencilOK = this.depthStencilDescription === undefined ? true : this.depthStencilDescription.depthStencilResource.texture !== undefined
+        return colorOK && depthStencilOK
     }
 
     update() {

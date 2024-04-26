@@ -53,7 +53,7 @@ export { sphere } from './core/geometry/sphere/sphere.js'
 export { plane } from './core/geometry/plane/plane.js'
 export { randomNonZeroBetweenMinusOneAndOne } from './core/math/random.js'
 export {
-	vec2, vec3, vec4, mat3, utils, quat,
+	vec2, vec4, mat3, utils, quat,
 } from './core/math/wgpu-matrix.module.js'
 
 export {
@@ -67,6 +67,7 @@ export {
 	vec3f, asVec3f, Vec3f,
 	vec4f, asVec4f, Vec4f,
 	mat3f, Mat3f,
+	vec3, Vec3,
 	mat4, Mat4,
 } from './core/numericType/numericType'
 
