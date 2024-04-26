@@ -12,19 +12,39 @@ self.addEventListener('message', (event) => {
 async function parseBin(url) {
 
   const res = await axios.get(url, { responseType: 'arraybuffer' })
-  const uvs = new Float32Array(res.data)
+  const attributes = new Float32Array(res.data)
 
   let maxSpeed = -Infinity
-  for (let i = 0; i < uvs.length / 2; i++) {
+  for (let i = 0; i < attributes.length / 4; i++) {
       
-      const u = uvs[2 * i + 0]
-      const v = uvs[2 * i + 1]
+      const u = attributes[4 * i + 0]
+      const v = attributes[4 * i + 1]
 
       const speed = Math.sqrt(u * u + v * v)
       maxSpeed = speed > maxSpeed ? speed : maxSpeed
   }
 
-  self.postMessage({ url, maxSpeed, uvs }) 
+  self.postMessage({ url, maxSpeed, attributes }) 
+}
+
+async function parseUVPHBin(url) {
+
+  const res = await axios.get(url, { responseType: 'arraybuffer' })
+  const attributes = new Float32Array(res.data)
+
+  let maxSpeed = -Infinity
+  for (let i = 0; i < attributes.length / 4; i++) {
+      
+      const u = attributes[4 * i + 0]
+      const v = attributes[4 * i + 1]
+      const p = attributes[4 * i + 2]
+      const h = attributes[4 * i + 3]
+
+      const speed = Math.sqrt(u * u + v * v)
+      maxSpeed = speed > maxSpeed ? speed : maxSpeed
+  }
+
+  self.postMessage({ url, maxSpeed, attributes }) 
 }
 
 async function parseStations(url) {

@@ -6,11 +6,11 @@ export class ScratchObject {
 
     refCount: number;
 
-    constructor(): ScratchObject
+    constructor(): ScratchObject;
     
-    use(): void
+    use(): ScratchObject;
 
-    release(): null
+    release(): null;
 
-    destroy(): void
+    destroy(): void;
 }

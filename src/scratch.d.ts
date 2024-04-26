@@ -56,7 +56,7 @@ export { shaderLoader }
 
 export { sphere } from './core/geometry/sphere/sphere.js'
 export { randomNonZeroBetweenMinusOneAndOne } from './core/math/random'
-export { vec2, vec3, vec4, mat3, mat4, utils, quat } from './core/math/wgpu-matrix'
+export { vec2, vec3, vec4, mat3, utils, quat } from './core/math/wgpu-matrix'
 
 export {
 	Numeric,
@@ -69,8 +69,8 @@ export {
 	vec3f, asVec3f, Vec3f,
 	vec4f, asVec4f, Vec4f,
 	mat3f, Mat3f,
-	mat4f, Mat4f
-} from './core/numericType/numericType.js'
+	mat4, Mat4,
+} from './core/numericType/numericType'
 
 export { MercatorCoordinate } from './core/geo/mercatorCoordinate'
 

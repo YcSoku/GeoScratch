@@ -41,5 +41,5 @@ fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
 
     let dim = vec2f(textureDimensions(layerTexture, 0).xy);
     let color = textureLoad(layerTexture, vec2i(dim * fsInput.texcoords.xy), 0);
-    return color;
+    return vec4f(color.rgb, color.w * 0.8);
 }

@@ -10,6 +10,15 @@ export class Vec2f extends Numeric {
         else super('vec2f', vec2.fromValues(x, y))
     }
 
+    get data() {
+        return this._data
+    }
+
+    set data(data) {
+
+        this._data = data
+    }
+
     static create(x, y) {
 
         return new Vec2f(x, y)

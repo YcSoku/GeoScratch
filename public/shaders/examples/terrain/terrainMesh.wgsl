@@ -49,6 +49,7 @@ struct TileUniformBlock {
 @group(2) @binding(1) var demTexture: texture_2d<f32>;
 @group(2) @binding(2) var lodMap: texture_2d<f32>;
 @group(2) @binding(3) var palette: texture_2d<f32>;
+@group(2) @binding(4) var fieldTexture: texture_2d<f32>;
 
 const PI = 3.141592653;
 

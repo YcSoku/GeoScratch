@@ -1,6 +1,7 @@
 import { Binding } from "../binding/binding";
 import { ComputePass } from "../pass/computePass";
 import { Shader } from "../shader/shader";
+import { ScratchObject } from "../../core/object/object";
 
 /**
  * Description of a ComputableBuilder.
@@ -17,7 +18,7 @@ export interface ComputePipelineDescription {
 /**
  * Represents a ComputableBuilder.
  */
-export class ComputePipeline {
+export class ComputePipeline extends ScratchObject {
     /**
      * Name of the ComputableBuilder.
      */

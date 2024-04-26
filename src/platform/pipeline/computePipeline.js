@@ -1,8 +1,8 @@
-import { UUID } from "../../core/utils/uuid.js"
-import { Binding } from "../binding/binding.js"
-import getDevice from "../context/device.js"
-import { ComputePass } from "../pass/computePass.js"
 import { Shader } from "../shader/shader.js"
+import director from '../director/director.js'
+import { Binding } from "../binding/binding.js"
+import { ComputePass } from "../pass/computePass.js"
+import { ScratchObject } from '../../core/object/object.js'
 
 /**
  * @typedef {Object} ComputePipelineDescription
@@ -11,20 +11,23 @@ import { Shader } from "../shader/shader.js"
  * @property {{[constantName: string]: number}} constants
  */
 
-class ComputePipeline {
+class ComputePipeline extends ScratchObject {
 
     /**
      * @param {ComputePipelineDescription} description 
      */
     constructor(description) {
 
-        this.uuid = UUID()
+        super()
 
-        this.name = description.name ? description.name : 'Computable builder'
         this.shader = description.shader.module.use()
+        this.name = description.name || 'Compute Pipeline'
         this.csEntryPoint = description.shader.csEntryPoint || 'cMain'
 
         this.constants = description.constants
+
+        this.layoutDescriptor = undefined
+        this.descriptor = undefined
         
         /**
          * @type {GPUPipelineLayout}
@@ -32,12 +35,13 @@ class ComputePipeline {
         this.pipelineLayout = undefined
         this.pipeline = undefined
 
-        this.pipelineCreating = false
-
         this.isFinite = false
         this.triggerCount = 0
 
-        this.executable = true
+        this.bindingCase = undefined
+        this.executable = false
+
+        director.addToUpdateList(this)
     }
 
     /**
@@ -47,73 +51,77 @@ class ComputePipeline {
         return new ComputePipeline(description)
     }
 
-    /**
-     * 
-     * @param {Binding} binding 
-     */
-    createPipelineLayout(binding) {
+    exportLayoutDescriptor() {
 
-        const device = getDevice()
-        this.pipelineLayout = device.createPipelineLayout({
-            label: `compute pipline layout (${this.name})`,
-            bindGroupLayouts: binding.getBindGroupLayouts(),
-        })
+        if (this.layoutDescriptor) return this.layoutDescriptor
+
+        this.layoutDescriptor = {
+            label: `Compute Pipline Layout (${this.name})`,
+            bindGroupLayouts: this.bindingCase.getBindGroupLayouts(),
+        }
+
+        this.bindingCase = this.bindingCase.release()
+
+        return this.layoutDescriptor
+    }
+
+    exportDescriptor() {
+
+        if (this.descriptor.layout) return this.layoutDescriptor
+
+        this.descriptor.layout = this.pipelineLayout
+        this.descriptor.compute.module = this.shader.shaderModule
+
+        return this.descriptor
     }
 
     /**
-     * 
+     * @param {ComputePass} pass 
      * @param {Binding} binding 
      */
-    createPipeline(binding) {
-        
-        const device = getDevice()
+    setDependency(pass, binding) {
 
-        this.pipelineCreating = true
+        this.bindingCase = binding.use()
 
-        this.createPipelineLayout(binding)
-
-        device.createComputePipelineAsync({
-            label: `compute pipeline (${this.name})`,
-            layout: this.pipelineLayout,
+        // Set descriptor
+        this.descriptor = {
+            label: `Compute Pipeline (${this.name})`,
+            layout: undefined,
             compute: {
-                module: this.shader.shaderModule,
+                module: undefined,
                 entryPoint: this.csEntryPoint,
                 constants: this.constants
             }
-        })
-        .then(pipeline => {
-            this.pipeline = pipeline
-            this.pipelineCreating = false
-        })
-        .catch(error => {
-            console.error(`Error::Compute Pipeline (${this.name}) Creation FAILED!`, error);
-        });
+        }
     }
 
-    /**
-     * @param {ComputePass} computePass 
-     * @param {Binding} binding 
-     */
-    isComplete(computePass, binding) {
+    createPipeline() {
 
-        if (this.pipeline) return true
-
-        !this.pipelineCreating && this.createPipeline(renderPass, binding)
-        return false
+        director.dispatchEvent({type: 'createPipelineLayout', emitter: this})
+        director.dispatchEvent({type: 'createComputePipelineAsync', emitter: this})
     }
 
-    /**
-     * @param {ComputePass} computePass 
-     * @param {Binding} binding 
-     */
-    tryMakeComplete(computePass, binding) {
+    tryMakeUpdate() {
 
-        if (this.pipeline) return true
+        if (!this.bindingCase?.executable) return false
 
         if (!this.shader.isComplete()) return false
 
-        !this.pipelineCreating && this.createPipeline(binding)
-        return false
+        return true
+    }
+
+    update() {
+
+        this.executable = false
+
+        if (!this.tryMakeUpdate()) {
+
+            director.addToNextUpdateList(this)
+
+        } else {
+
+            this.createPipeline()
+        }
     }
 
     /**
@@ -143,6 +151,31 @@ class ComputePipeline {
         if (binding.isIndirect) computePass.pass.dispatchWorkgroupsIndirect(binding.indirectBinding.buffer.buffer, binding.indirectBinding.byteOffset)
         else computePass.pass.dispatchWorkgroups(...binding.range())
     }
+
+    destroy() {
+
+        this.name = null
+        this.shader = this.shader.release()
+        this.csEntryPoint = null
+
+        this.constants = []
+
+        this.layoutDescriptor = null
+        this.descriptor = null
+
+        this.pipelineLayout = null
+        this.pipeline = null
+
+        this.isFinite = null
+        this.triggerCount = null
+
+        this.bindingCase = null
+        this.executable = false
+
+        super.destroy()
+
+        return null
+    }
 }
 
 /**
@@ -150,7 +183,7 @@ class ComputePipeline {
  */
 function computePipeline(description) {
 
-    return ComputePipeline.create(description)
+    return new ComputePipeline(description)
 }
 
 export {

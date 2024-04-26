@@ -1,6 +1,7 @@
 import { Binding } from "../binding/binding";
 import { RenderPass } from "../pass/renderPass";
 import { Shader } from "../shader/shader";
+import { ScratchObject } from "../../core/object/object";
 
 export interface RenderPipelineDescription {
     name?: string,
@@ -15,7 +16,7 @@ export interface RenderPipelineDescription {
     depthTest?: boolean,
 }
 
-export class RenderPipeline {
+export class RenderPipeline extends ScratchObject {
 
     executable: boolean;
 
@@ -27,7 +28,11 @@ export class RenderPipeline {
     
     setBinding(binding: Binding): void;
 
-    exportLayoutDescriptor(binding: Binding): GPUPipelineLayoutDescriptor
+    exportLayoutDescriptor(): GPUPipelineLayoutDescriptor;
+
+    exportDescriptor(): GPURenderPipelineDescriptor;
+
+    setDependency(renderPass: RenderPass, binding: Binding): boolean;
 
     tryMakeComplete(renderPass: RenderPass, binding: Binding): boolean;
 

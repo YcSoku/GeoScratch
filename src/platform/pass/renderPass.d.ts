@@ -3,11 +3,12 @@
 import { Binding } from "../binding/binding";
 import { RenderPipeline } from "../pipeline/renderPipeline";
 import { Texture } from "../texture/texture";
+import { ScratchObject } from "../../core/object/object";
 
 /**
  * Describes the properties for creating a RenderPass.
  */
-export interface RenderPassDescription {
+export interface RenderPassDescription extends ScratchObject {
     name: string;
     colorAttachments: Array<{
         colorResource: Texture;

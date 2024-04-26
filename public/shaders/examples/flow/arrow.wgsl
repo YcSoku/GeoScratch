@@ -34,6 +34,8 @@ struct FrameUniformBlock {
     maxSpeed: f32,
     lastMvp: mat4x4f,
     lastMvpInverse: mat4x4f,
+    fillWidth: f32,
+    aaWidth: f32,
 };
 
 // Uniform bindings
@@ -95,6 +97,12 @@ fn velocityColor(speed: f32, rampColors: array<u32, 8>) -> vec3f {
     return mix(slowColor, fastColor, interval);
 }
 
+fn get_clip_position(lonLat: vec2f) -> vec4f {
+
+    let mercatorPos = calcWebMercatorCoord(lonLat);
+    return dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(mercatorPos, 0.0), vec3f(0.0, 0.0, 0.0)), 1.0);
+}
+
 @vertex
 fn vMain(input: VertexInput) -> VertexOutput {
 
@@ -111,14 +119,14 @@ fn vMain(input: VertexInput) -> VertexOutput {
     );
 
     let cExtent = currentExtent();
-    let x = mix(cExtent.x, cExtent.z, position.x);
-    let y = mix(cExtent.y, cExtent.w, position.y);
-    let mercatorPos = calcWebMercatorCoord(vec2f(x, y));
-    let position_CS = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(mercatorPos, 0.0), vec3f(0.0, 0.0, 0.0)), 1.0);
+    // let x = mix(cExtent.x, cExtent.z, position.x);
+    // let y = mix(cExtent.y, cExtent.w, position.y);
+    // let mercatorPos = calcWebMercatorCoord(position);
+    let position_CS = get_clip_position(position);
     let position_SS = position_CS.xy / position_CS.w;
     let uv = (position_SS + 1.0) / 2.0;
     let offset = vertices[input.vertexIndex];
-    let vertexPos_SS = position_SS + 8.0 * offset * 2.0 / frameUniform.viewPort;
+    let vertexPos_SS = position_SS + 10.0 * offset * 2.0 / frameUniform.viewPort;
     let vertexPos_CS = vertexPos_SS * position_CS.w;
 
     var output: VertexOutput;
@@ -198,4 +206,5 @@ fn fMain(input: VertexOutput) -> @location(0) vec4f {
     }
 
     return vec4f(color, 0.5);
+    // return vec4f(1.0);
 }

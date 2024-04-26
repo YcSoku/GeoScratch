@@ -18,7 +18,6 @@ export class Director extends ScratchObject {
          */
         this.stages = {}
         this.stageNum = 0
-        this.bindings = []
         this.updateList = {
             currentSet: {}, 
             nextSet: {}, 
@@ -42,6 +41,8 @@ export class Director extends ScratchObject {
          * @type {GPUSupportedLimits}
          */
         this._limits = undefined
+
+        this.executable = false
     }
 
     get limits() {
@@ -54,6 +55,7 @@ export class Director extends ScratchObject {
 
         if (this.device === undefined) {
 
+            this.executable = true
             this.device = getDevice()
             this._limits = this.device.limits
         }
@@ -72,15 +74,14 @@ export class Director extends ScratchObject {
         return this
     }
 
-
-    addBinding(binding) {
-
-        this.bindings.push(binding.use())
-    }
-
     addToUpdateList(item) {
 
         this.updateList.push(item)
+    }
+
+    addToNextUpdateList(item) {
+
+        this.updateList.pushNext(item)
     }
 
     /** 
@@ -90,7 +91,7 @@ export class Director extends ScratchObject {
 
         if (!this.stages[stage.name]) this.stageNum++
         this.stages[stage.name] = {
-            items: stage.items,
+            items: stage.items.map(item => item.use()),
             visibility: stage.visibility !== undefined ? stage.visibility : true,
         }
     }
@@ -125,8 +126,11 @@ export class Director extends ScratchObject {
     tickMemory() {
 
         for (const key in this.updateList.currentSet) {
+
             const item = this.updateList.currentSet[key]
+
             item.update()
+
             if (item.updatePerFrame) this.updateList.pushNext(item)
         }
     }
@@ -134,15 +138,20 @@ export class Director extends ScratchObject {
     tickRender() {
 
         const encoders = []
+
         for (const name in this.stages) {
+
             if (!this.stages[name].visibility) continue
 
             const encoder = this.device.createCommandEncoder({label: `${name}`})
-            this.stages[name].items.forEach(stage => {
-                stage.execute(encoder)
-            })
+
+            this.stages[name].items
+            .filter(stage => stage.executable)
+            .forEach(stage => stage.execute(encoder))
+
             encoders.push(encoder.finish())
         }
+
         this.device.queue.submit(encoders)
     }
 
@@ -153,6 +162,8 @@ export class Director extends ScratchObject {
 
     tick() {
 
+        if (!this.executable) return
+
         this.tryGetDevice()
 
         this.tickMemory()
@@ -160,9 +171,31 @@ export class Director extends ScratchObject {
 
         this.swap()
     }
+
+    destroy() {
+
+        this.executable = false
+
+        for (const key in this.stages) {
+            
+            const stage = this.stages[key]
+            stage.items = stage.items.map(item => item.release())
+            stage.visibility = false
+        }
+        this.stageNum = null
+        this.updateList.nextSet = null
+        this.updateList.currentSet = null
+
+        this._limits = null
+        this.device = this.device.destroy()
+
+        super.destroy()
+
+        return null
+    }
 }
 
-const director = new Director()
+const director = new Director().use()
 export default director
 
 // Event listeners
@@ -441,25 +474,40 @@ director.addEventListeners('copyTextureFromTexture', ({_, emitter, srcTexture}) 
 })
 
 // Create pipeline layout
-director.addEventListeners('createPipelineLayout', ({_, emitter, binding}) => {
+director.addEventListeners('createPipelineLayout', ({_, emitter}) => {
 
     const device = director.tryGetDevice()
 
-    emitter.pipelineLayout = device.createPipelineLayout(emitter.exportLayoutDescriptor(binding))
+    emitter.pipelineLayout = device.createPipelineLayout(emitter.exportLayoutDescriptor())
 })
 
 // Create render pipeline async
-director.addEventListeners('createRenderPipelineAsync', ({_, emitter, binding}) => {
+director.addEventListeners('createRenderPipelineAsync', ({_, emitter}) => {
 
     const device = director.tryGetDevice()
     
-    device.createRenderPipelineAsync(emitter.exportDescriptor(binding))
+    device.createRenderPipelineAsync(emitter.exportDescriptor())
     .then(pipeline => {
+        emitter.executable = true
         emitter.pipeline = pipeline
-        emitter.pipelineCreating = false
     })
     .catch(error => {
-        console.error(`Error::Rendering Pipeline (${emitter.name}) Creation FAILED!`, error);
+        console.error(`Error::Render Pipeline (${emitter.name}) Creation FAILED!`, error);
+    })
+})
+
+// Create compute pipeline async
+director.addEventListeners('createComputePipelineAsync', ({_, emitter}) => {
+
+    const device = director.tryGetDevice()
+    
+    device.createComputePipelineAsync(emitter.exportDescriptor())
+    .then(pipeline => {
+        emitter.executable = true
+        emitter.pipeline = pipeline
+    })
+    .catch(error => {
+        console.error(`Error::Compute Pipeline (${emitter.name}) Creation FAILED!`, error);
     })
 })
 

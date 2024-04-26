@@ -205,6 +205,7 @@ class Binding extends ScratchObject {
         description.vertices && description.vertices.forEach((bindingDesc) => {
             this.addVertexBuffer(bindingDesc)
         })
+        this.createVertexBufferLayout()
 
         let groupOrder = 0
         this.uniformOrder = 0;
@@ -243,12 +244,16 @@ class Binding extends ScratchObject {
 
         this.released = false
 
+        this.executable = false
+
         // this.crteateBindGroupLayouts()
 
-        director.addBinding(this)
+        // director.addBinding(this)
+        director.addToUpdateList(this)
 
-        this.executable = true
-
+        this.texturePrepared = false
+        this.storagePrepared = false
+        this.uniformPrepared = false
     }
 
     /**
@@ -282,13 +287,13 @@ class Binding extends ScratchObject {
          * @type {UniformBuffer}
          * Notation: a binding has only one uniform buffer
          */
-                this.uniformBuffer = UniformBuffer.create({
-                    name: `Uniform buffer (${this.name})`,
-                    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
-                    blocks: blocks
-                }).use()
-        
-                this.uniformBufferReady = true
+        this.uniformBuffer = UniformBuffer.create({
+            name: `Uniform buffer (${this.name})`,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+            blocks: blocks
+        }).use()
+
+        this.uniformBufferReady = true
     }
 
     /**
@@ -338,8 +343,8 @@ class Binding extends ScratchObject {
             texture: bindingDesc.texture.use(),
             callbackIndex: bindingDesc.texture.registerCallback(() => {
                 
-                if (!this.isComplete) return
-                director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'texture', order: this.textureOrder})
+                this.texturePrepared = false
+                director.addToUpdateList(this)
             }),
 
             asStorage: asStorage,
@@ -608,7 +613,7 @@ class Binding extends ScratchObject {
                 })
 
                 return {
-                    label: `Uniform binding group layout (${this.name})`,
+                    label: `Uniform Binding Group Layout (${this.name})`,
                     entries: entries
                 }
             }
@@ -620,12 +625,12 @@ class Binding extends ScratchObject {
                 this.storageBindings.forEach((storageBinding, index) => {
                     entries[index] = {
                         binding: index,
-                        buffer: {type: storageBinding.type}, 
+                        buffer: { type: storageBinding.type }, 
                         visibility: storageBinding.visibility
                     }
                 })
                 return {
-                    label: `Storage binding group layout (${this.name})`,
+                    label: `Storage Binding Group Layout (${this.name})`,
                     entries: entries
                 }
             }
@@ -652,7 +657,7 @@ class Binding extends ScratchObject {
                     }
                 })
                 return {
-                    label: `Texture binding group layout (${this.name})`,
+                    label: `Texture Binding Group Layout (${this.name})`,
                     entries: entries
                 }
             }
@@ -691,7 +696,7 @@ class Binding extends ScratchObject {
                 })
         
                 return {
-                    label: `Uniform binding group (${this.name})`,
+                    label: `Uniform Binding Group (${this.name})`,
                     layout: this.layouts[this.uniformOrder],
                     entries: entries
                 }
@@ -709,7 +714,7 @@ class Binding extends ScratchObject {
                 })
         
                 return {
-                    label: `Storage binding group (${this.name})`,
+                    label: `Storage Binding Group (${this.name})`,
                     layout: this.layouts[this.storageOrder],
                     entries: entries
                 }
@@ -731,9 +736,8 @@ class Binding extends ScratchObject {
                     }
                 })
 
-                // !this.layouts[this.textureOrder] && this.createTextureBindGroupLayout(device)
                 return {
-                    label: `Texture binding group (${this.name})`,
+                    label: `Texture Binding Group (${this.name})`,
                     layout: this.layouts[this.textureOrder],
                     entries: entries
                 }
@@ -755,51 +759,51 @@ class Binding extends ScratchObject {
 
     createBindGroups() {
 
-        this.createVertexBufferLayout()
-
-        if (this.uniforms.length || this.sharedUniforms.length){
+        if (!this.uniformPrepared && (this.uniforms.length || this.sharedUniforms.length)){
             director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'uniform', order: this.uniformOrder})
             director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'uniform', order: this.uniformOrder})
+            this.uniformPrepared = true
         }
 
-        if (this.storageBindings.length) {
+        if (!this.storagePrepared && this.storageBindings.length) {
             director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'storage', order: this.storageOrder})
             director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'storage', order: this.storageOrder})
+            this.storagePrepared = true
         }
 
-        if (this.samplerBindings.length || this.textureBindings.length) {
+        if (!this.texturePrepared && (this.samplerBindings.length || this.textureBindings.length)) {
 
             director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'texture', order: this.textureOrder})
             director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'texture', order: this.textureOrder})
+            this.texturePrepared = true
         }
     }
 
     tryMakeComplete() {
 
-        if (this.isComplete) return true
+        if (this.executable) return true
         if (this.released) return false
 
         for (const textureBinding of this.textureBindings) {
             if (!textureBinding.texture.texture) return false
         }
 
-        this.createBindGroups()
-
-        this.isComplete = true
         return true
     }
     
     update() {
 
-        // Used to be the update method of the binding
-        // {
-        //     this.indirectBinding && this.indirectBinding.buffer.update()
-        //     this.indexBinding && this.indexBinding.buffer.update()
-        //     this.updateStorageBuffer()
-        //     this.updateVertexBuffer()
-        //     this.updateUniformBlock()
-        // }
-        // this.updateTexture()
+        this.executable = false
+
+        if (!this.tryMakeComplete()) {
+
+            director.addToNextUpdateList(this)
+
+        } else {
+
+            this.createBindGroups()
+            this.executable = true
+        }
 
     }
 
@@ -855,7 +859,7 @@ class Binding extends ScratchObject {
 
     destroy() {
 
-        this.isComplete = false
+        this.executable = false
         this.released = true
 
         this.range = null

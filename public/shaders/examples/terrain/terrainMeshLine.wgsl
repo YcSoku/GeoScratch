@@ -8,6 +8,7 @@ struct VertexOutput {
     @location(0) alpha: f32,
     @location(1) depth: f32,
     @location(2) index: f32,
+    @location(3) level: f32,
 };
 
 struct StaticUniformBlock {
@@ -46,6 +47,7 @@ struct TileUniformBlock {
 @group(2) @binding(0) var lsampler: sampler;
 @group(2) @binding(1) var demTexture: texture_2d<f32>;
 @group(2) @binding(2) var lodMap: texture_2d<f32>;
+// @group(2) @binding(4) var fieldTexture: texture_2d<f32>;
 
 const PI = 3.141592653;
 
@@ -230,10 +232,30 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
     let uv = calcUVFromCoord(coord);
     let dim = vec2f(textureDimensions(demTexture, 0).xy);
 
+    //////////////////////////
+
+    // let xy_CS = positionCS(coord, 0.0);
+    // let xy_NDC = xy_CS.xy / xy_CS.w;
+    // var ph_uv = (xy_NDC + 1.0) / 2.0;
+    // ph_uv = vec2f(ph_uv.x, 1.0 - ph_uv.y);
+    // let fieldDim = vec2f(textureDimensions(fieldTexture, 0).xy);
+    // let ph = linearSampling(fieldTexture, ph_uv * fieldDim, fieldDim).zw;
+    // // let p = -mix(staticUniform.e.x, staticUniform.e.y, ph.x);
+    // var elevation = ph.x - ph.y;
+
+
+    //////////////////////////
+
     // let elevation = mix(staticUniform.e.x, staticUniform.e.y, IDW(demTexture, uv * dim, dim, 3, 1).r);
     let elevation = mix(staticUniform.e.x, staticUniform.e.y, linearSampling(demTexture, uv * dim, dim).r);
     var z = tileUniform.exaggeration * altitude2Mercator(coord.y, elevation);
     z = select(z, 0.0, z >= 0.0);
+
+    // let a = 0.0;
+    // let test = positionCS(coord, z);
+    // if (any(test.xyz / test.w < vec3f(-1.0)) || any(test.xyz / test.w > vec3f(1.0))) {
+    //     z = z / a;
+    // }
 
     let tlPos = positionCS(vec2f(nodeBox[0], nodeBox[1]), z);
     let trPos = positionCS(vec2f(nodeBox[2], nodeBox[1]), z);
@@ -255,7 +277,8 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
     // output.position = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(calcWebMercatorCoord(coord), z), vec3f(0.0)), 1.0);
     output.position = positionCS(coord, z);
     output.depth = (elevation - staticUniform.e.x) / (staticUniform.e.y - staticUniform.e.x);
-    output.index = f32(vsInput.instanceIndex);
+    // output.index = f32(vsInput.instanceIndex);
+    output.index = f32(level[vsInput.instanceIndex]);
     return output;
 }
 

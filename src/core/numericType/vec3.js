@@ -2,7 +2,7 @@ import { Numeric } from "./numeric.js"
 import { vec3 } from "../math/wgpu-matrix.module.js"
 import { F32 } from "./f32.js"
 
-export class Vec3f extends Numeric {
+export class Vec3 extends Numeric {
      
     constructor(x, y, z) {
 

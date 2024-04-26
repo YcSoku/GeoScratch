@@ -23,4 +23,20 @@ export class Numeric {
 
         return this._type
     }
+
+    set type(type) {
+
+        this._type = type
+    }
+
+    static purifying(data) {
+        
+        return data._data !== undefined ? data._data : data
+    }
+
+    purify(data) {
+
+        if (data !== undefined) return data._data !== undefined ? data._data : data
+        return this._data
+    }
 }

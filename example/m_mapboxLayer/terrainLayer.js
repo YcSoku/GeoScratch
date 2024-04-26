@@ -25,6 +25,18 @@ export default class TerrainLayer extends scr.LocalTerrain {
             cameraPos: this.map.mercatorCenter.toLngLat().toArray(),
             cameraBounds: this.map.cameraBounds,
             zoomLevel: this.map.zoom.n,
+            uln: this.map.uln,
+            brf: this.map.brf,
+            nUp: this.map.nUp,
+            nFar: this.map.nFar,
+            nNear: this.map.nNear,
+            nLeft: this.map.nLeft,
+            nRight: this.map.nRight,
+            nBottom: this.map.nBottom,
+            matrix: this.map.uMatrixPure,
+            zNear: this.map.near,
+            zFar: this.map.far,
+            planes: this.map.frustumPlanes
         })
     }
 }

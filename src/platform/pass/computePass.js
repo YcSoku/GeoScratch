@@ -1,5 +1,6 @@
-import { UUID } from "../../core/utils/uuid.js"
+import director from "../director/director.js"
 import { Binding } from "../binding/binding.js"
+import { ScratchObject } from '../../core/object/object'
 import { ComputePipeline } from "../pipeline/computePipeline.js"
 
 /**
@@ -7,14 +8,14 @@ import { ComputePipeline } from "../pipeline/computePipeline.js"
  * @property {string} name
  */
 
-export class ComputePass {
+export class ComputePass extends ScratchObject {
 
     /**
      * @param {ComputePassDescription} description 
      */
     constructor(description) {
 
-        this.uuid = UUID()
+        super()
         
         this.name = description.name
 
@@ -24,10 +25,10 @@ export class ComputePass {
         this.computecalls = []
 
         this.pass = undefined
-
-        this.update()
         
-        this.executable = true
+        this.executable = false
+
+        director.addToUpdateList(this)
     }
 
     /**
@@ -41,22 +42,29 @@ export class ComputePass {
     update() {
 
         this.passDescription = {
-            label: `Compute pass (${this.name})`
+            label: `Compute Pass (${this.name})`
         }
     }
 
     /**
-     * 
      * @param {ComputePipeline} pipeline 
      * @param {Binding} binding 
      */
     add(pipeline, binding) {
 
-        this.computecalls.push({ pipeline, binding })
+        // Dependency injection
+        pipeline.setDependency(this, binding)
+
+        this.computecalls.push({ pipeline: pipeline.use(), binding: binding.use() })
         return this
     }
 
     empty() {
+
+        this.computecalls.forEach(computecall => {
+            computecall.binding = computecall.binding.release()
+            computecall.pipeline = computecall.pipeline.release()
+        })
         this.computecalls = []
     }
 
@@ -66,17 +74,32 @@ export class ComputePass {
      */
     execute(encoder) {
 
-        if (!this.executable) return
         this.pass = encoder.beginComputePass(this.passDescription)
-        this.computecalls.forEach(({ binding, pipeline }) => {
 
-            // console.log(this.name, binding, pipeline)
-            if (!binding.tryMakeComplete() || !pipeline.tryMakeComplete(this, binding) || !pipeline.executable || !binding.executable) return
-            
-            pipeline.dispatch(this, binding)
-        })
+        this.computecalls
+        .filter(({ binding, pipeline }) => binding.executable && pipeline.executable)
+        .forEach(({ binding, pipeline }) => pipeline.dispatch(this, binding))
         
         this.pass.end()
+    }
+
+    destroy() {
+
+        this.name = null
+
+        this.computecalls.forEach(computecall => {
+            computecall.binding = computecall.binding.release()
+            computecall.pipeline = computecall.pipeline.release()
+        })
+        this.computecalls = null
+
+        this.pass = null
+    
+        this.executable = false
+
+        super.destroy()
+
+        return null
     }
 }
 
@@ -85,5 +108,5 @@ export class ComputePass {
  */
 export function computePass(description) {
 
-    return ComputePass.create(description)
+    return new ComputePass(description)
 }

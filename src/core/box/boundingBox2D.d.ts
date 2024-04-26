@@ -18,6 +18,11 @@ export class BoundingBox2D {
 
     get boundary(): Vec4f;
 
+    get xMin(): number;
+    get yMin(): number;
+    get xMax(): number;
+    get yMax(): number;
+
     reset(xMin?: number, yMin?: number, xMax?: number, yMax?: number): void;
 
     release(): null;

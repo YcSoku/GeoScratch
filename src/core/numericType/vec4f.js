@@ -100,7 +100,7 @@ export class Vec4f extends Numeric {
 
         this._data[0] = xyz[0]
         this._data[1] = xyz[1]
-        this._data[2] = xyz[1]
+        this._data[2] = xyz[2]
     }
 
     set yzw(yzw) {
@@ -117,7 +117,7 @@ export class Vec4f extends Numeric {
 
     transformFromMat4(m) {
 
-        this._data = vec4.transformMat4(this._data, m.data)
+        vec4.transformMat4(this._data, m.data, this._data)
         return this
     }
 

@@ -4,7 +4,7 @@ import axios from 'axios'
 
 export default class SteadyFlowLayer {
 
-    constructor(stationUrl, uvUrlList, timePointParser) {
+    constructor(stationUrl, uvUrlList, timePointParser, dynamicParticles = false) {
 
         // Layer
         this.type = 'custom'
@@ -16,6 +16,7 @@ export default class SteadyFlowLayer {
         this.preheat = 0
         this.swapPointer = 0
         this.extent = scr.boundingBox2D()
+        this.dynamicParticles = dynamicParticles
 
         // Resource
         this.worker = undefined
@@ -28,21 +29,24 @@ export default class SteadyFlowLayer {
         this.startPoint = ''
         this.framesPerPhase = 300
         this.maxSpeed = scr.f32()
-        this.maxParticleNum = 262144
         this.progressRate = scr.f32()
+        this.dropRate = scr.f32(0.003)
+        this.speedFactor = scr.f32(1.0)
         this.currentResourcePointer = 0
-        this.particleNum = scr.u32(262144)
+        this.dropRateBump = scr.f32(0.001)
+        this.maxParticleNum = scr.u32(262144)
         this.timePointParser = timePointParser
         this.randomSeed = scr.f32(Math.random())
+        this.particleNum = scr.u32(this.maxParticleNum.n)
 
         // Compute
         this.blockSizeX = 16
         this.blockSizeY = 16
-        this.lastMvp = scr.mat4f()
-        this.lastMvpInverse = scr.mat4f()
-        this.groupSizeX = Math.ceil(Math.sqrt(this.maxParticleNum) / this.blockSizeX)
-        this.groupSizeY = Math.ceil(Math.sqrt(this.maxParticleNum) / this.blockSizeY)
-        this.randomFillData = new Float32Array(this.maxParticleNum * 6).map((_, index) => { return (index % 6 == 4 || index % 6 == 5) ? 0 : Math.random() })
+        this.lastMvp = scr.mat4()
+        this.lastMvpInverse = scr.mat4()
+        this.groupSizeX = Math.ceil(Math.sqrt(this.maxParticleNum.n) / this.blockSizeX)
+        this.groupSizeY = Math.ceil(Math.sqrt(this.maxParticleNum.n) / this.blockSizeY)
+        this.randomFillData = new Float32Array(this.maxParticleNum.n * 6).map((_, index) => { return (index % 6 == 4 || index % 6 == 5) ? 0 : Math.random() })
 
         // Buffer-related resource
         this.toRef = undefined
@@ -56,7 +60,7 @@ export default class SteadyFlowLayer {
         this.particleRef = scr.aRef(this.randomFillData)
 
         // Texture-related resource
-        this.flowTexture = undefined
+        this.fieldTexture = undefined
         this.depthTexture = undefined
         this.layerTexture1 = undefined
         this.layerTexture2 = undefined
@@ -88,7 +92,7 @@ export default class SteadyFlowLayer {
         this.isHided = false
         this.isIdling = false
         this.showArrow = false
-        this.showVoronoi = true
+        this.showVoronoi = false
         this.nextPrepared = false
         this.isInitialized = false
         this.nextPreparing = false
@@ -132,21 +136,24 @@ export default class SteadyFlowLayer {
         if (this.isHided) { this.makeVisibility(false); return } else { this.makeVisibility(true) }
 
         // Swap
-        this.showBinding.executable = false
+        // this.showBinding.executable = false
         this.swapPasses[0].executable = this.swapPasses[1].executable = this.layerBindings[0].executable = this.swapPointer
         this.swapPasses[2].executable = this.swapPasses[3].executable = this.layerBindings[1].executable = 1 - this.swapPointer
         this.swapPointer = (this.swapPointer + 1) % 2
 
         // Update
-        let left = 10
-        let right = 16
-        let t = (Math.min(right, Math.max(this.map.getZoom(), left)) - left) / (right - left)
-        this.particleNum.n = Math.ceil((1 - t)  * 20000 + t * 0)
+        if (this.dynamicParticles) {
+
+            let left = 10
+            let right = 16
+            let t = (Math.min(right, Math.max(this.map.getZoom(), left)) - left) / (right - left)
+            this.particleNum.n = Math.ceil((1 - t)  * 20000 + t * 0)
+        }
 
         this.updateVoronoi()
         this.randomSeed.n = Math.random()
-        this.lastMvp.copyFrom(this.map.uMatrix)
-        this.lastMvpInverse.copyFrom(this.map.mvpInverse)
+        this.lastMvp.clone(this.map.uMatrix)
+        this.lastMvpInverse.clone(this.map.mvpInverse)
     }
 
     async resetResource(resourceUrlList) {
@@ -211,16 +218,18 @@ export default class SteadyFlowLayer {
                 vertices.push(y[1])
             }
     
-            this.nextRef = scr.aRef(new Float32Array(meshes.points.length).fill(0.))
-            this.fromRef = scr.aRef(new Float32Array(meshes.points.length).fill(0.))
-            this.toRef = scr.aRef(new Float32Array(meshes.points.length).fill(0.))
+            this.nextRef = scr.aRef(new Float32Array(2 * meshes.points.length).fill(0.))
+            this.fromRef = scr.aRef(new Float32Array(2 * meshes.points.length).fill(0.))
+            this.toRef = scr.aRef(new Float32Array(2 * meshes.points.length).fill(0.))
     
             return { indices, vertices }
         }
 
+        console.log(this.extent.boundary)
+
         // Load resource
         const { indices, vertices } = await getVoronoi(this.stationUrl)
-        await this.resetResource(this.uvUrlList)
+        await this.resetResource_UVPH(this.uvUrlList)
 
         // Global buffer-related resource
         this.storageBuffer_particle = scr.storageBuffer({
@@ -265,7 +274,7 @@ export default class SteadyFlowLayer {
         // Global texture-related resource
         this.layerTexture1 = this.map.screen.createScreenDependentTexture('Texture (Background 1)')
         this.layerTexture2 = this.map.screen.createScreenDependentTexture('Texture (Background 2)')
-        this.flowTexture = this.map.screen.createScreenDependentTexture('Texture (Velocity)', 'rg32float')
+        this.fieldTexture = this.map.screen.createScreenDependentTexture('Texture (Velocity)', 'rgba32float')
 
         // PASS - 1: flow textures (mix(from -> to)) generation ////////////////////////////////////////////////
         this.indexBuffer_voronoi = scr.indexBuffer({
@@ -285,13 +294,13 @@ export default class SteadyFlowLayer {
                 {
                     buffer: scr.vertexBuffer({
                         name: 'VertexBuffer (Station Velocity (From))',
-                        resource: { arrayRef: this.fromRef, structure: [ { components: 2 } ] }
+                        resource: { arrayRef: this.fromRef, structure: [ { components: 4 } ] }
                     })
                 },
                 {
                     buffer: scr.vertexBuffer({
                         name: 'VertexBuffer (Station Velocity (To))',
-                        resource: { arrayRef: this.toRef, structure: [ { components: 2 } ] }
+                        resource: { arrayRef: this.toRef, structure: [ { components: 4 } ] }
                     })
                 }
             ],
@@ -307,7 +316,7 @@ export default class SteadyFlowLayer {
         })
         this.voronoiPass = scr.renderPass({
             name: 'Render Pass (Voronoi Flow From)',
-            colorAttachments: [ { colorResource: this.flowTexture } ],
+            colorAttachments: [ { colorResource: this.fieldTexture } ],
             depthStencilAttachment: { depthStencilResource: this.map.depthTexture }
         }).add(this.voronoiPipeline, this.voronoiBinding)
 
@@ -315,16 +324,17 @@ export default class SteadyFlowLayer {
         this.simulationBinding = scr.binding({
             name: 'Binding (Particle Simulation)',
             range: () => [ this.groupSizeX, this.groupSizeY ],
-            textures: [ { texture: this.flowTexture, sampleType: 'unfilterable-float' } ],
+            textures: [ { texture: this.fieldTexture, sampleType: 'unfilterable-float' } ],
             storages: [ { buffer: this.storageBuffer_particle, writable: true } ],
             uniforms: [
                 {
                     name: 'controllerUniform',
+                    dynamic: true,
                     map: {
-                        particleNum: scr.asU32(this.maxParticleNum),
-                        dropRate: scr.asF32(0.003),
-                        dropRateBump: scr.asF32(0.001),
-                        speedFactor: scr.asF32(1.0),
+                        particleNum: this.maxParticleNum,
+                        dropRate: this.dropRate,
+                        dropRateBump: this.dropRateBump,
+                        speedFactor: this.speedFactor,
                     }
                 }
             ],
@@ -391,7 +401,6 @@ export default class SteadyFlowLayer {
             name: 'Render Pipeline (Segment)',
             shader: { module: scr.shaderLoader.load('Shader (Segment)', '/shaders/examples/flow/segment.wgsl') },
             colorTargetStates: [ { blend: scr.PremultipliedBlending } ],
-            // primitive: { topology: 'line-list' },
             primitive: { topology: 'triangle-strip' },
         })
         this.swapPasses = [
@@ -456,7 +465,7 @@ export default class SteadyFlowLayer {
         this.showBinding = scr.binding({
             name: 'Binding (Flow Show)',
             range: () => [ 4 ],
-            textures: [ { texture: this.flowTexture, sampleType: 'unfilterable-float' } ],
+            textures: [ { texture: this.fieldTexture, sampleType: 'unfilterable-float' } ],
             sharedUniforms: [ { buffer: this.uniformBuffer_frame } ]
         })
         this.showPipeline = scr.renderPipeline({
@@ -479,7 +488,7 @@ export default class SteadyFlowLayer {
             name: 'Render Pipeline (Flow Arrow)',
             shader: { module: scr.shaderLoader.load('Shader (Flow Show)', '/shaders/examples/flow/arrow.wgsl') },
             primitive: { topology: 'triangle-strip' },
-            colorTargetStates: [ { blend: scr.NormalBlending } ],
+            // colorTargetStates: [ { blend: scr.NormalBlending, } ],
         })
 
         // Execution configuration
@@ -492,17 +501,24 @@ export default class SteadyFlowLayer {
         this.layerBindings[1].executable = false
 
         // Add to map
-        this.showArrow && this.map.add2RenderPass(this.arrowPipeline, this.arrowBinding)
-        this.showVoronoi && this.map.add2RenderPass(this.showPipeline, this.showBinding)
-        .add2RenderPass(this.layerPipeline, this.layerBindings[0])
-        .add2RenderPass(this.layerPipeline, this.layerBindings[1])
-        this.map.add2PreProcess(this.voronoiPass)
+        this.map
+        .add2PreProcess(this.voronoiPass)
         .add2PreProcess(this.simulationPass)
         .add2PreProcess(this.swapPasses[0])
         .add2PreProcess(this.swapPasses[1])
         .add2PreProcess(this.swapPasses[2])
         .add2PreProcess(this.swapPasses[3])
         .add2PreProcess(this.swapPasses[4])
+
+
+        // this.showArrow && this.map
+        // .add2RenderPass(this.arrowPipeline, this.arrowBinding)
+        this.map
+        .add2RenderPass(this.layerPipeline, this.layerBindings[0])
+        .add2RenderPass(this.layerPipeline, this.layerBindings[1])
+
+        // this.showVoronoi && this.map
+        // .add2RenderPass(this.showPipeline, this.showBinding)
 
         this.isInitialized = true
     }
@@ -560,7 +576,7 @@ export default class SteadyFlowLayer {
 
         } else {
 
-            this.showPipeline.executable = true
+            // this.showPipeline.executable = true
                 
             this.voronoiPass.executable = true
             this.simulationPass.executable = true
@@ -618,10 +634,9 @@ export default class SteadyFlowLayer {
         this.worker = worker
         this.worker.addEventListener('message', event => {
 
-            const { url, maxSpeed, uvs } = event.data
-            const name = url
+            const { url, maxSpeed, attributes } = event.data
             that.updateMaxSpeed(maxSpeed)
-            that.nextRef.value = uvs
+            that.nextRef.value = attributes
 
             that.nextPrepared = true
             that.nextPreparing = false
@@ -644,6 +659,48 @@ export default class SteadyFlowLayer {
 
         return (this.currentResourcePointer + this.progressRate.n) / this.uvUrlList.length
     }
+
+
+    async resetResource_UVPH(resourceUrlList) {
+
+        let addVoronoiBindingSync = async (url) => {
+            
+            this.nextPreparing = true
+            const res = await axios.get(url, { responseType: 'arraybuffer' })
+            const attributes = new Float32Array(res.data)
+    
+            let maxSpeed = -Infinity
+            for (let i = 0; i < attributes.length; i += 4) {
+                
+                const u = attributes[i + 0]
+                const v = attributes[i + 1]
+                const p = attributes[i + 2]
+                const h = attributes[i + 3]
+    
+                const speed = Math.sqrt(u * u + v * v)
+                maxSpeed = speed > maxSpeed ? speed : maxSpeed
+            }
+    
+            this.nextRef.value = attributes
+            this.updateMaxSpeed(maxSpeed)
+    
+            this.nextPreparing = false
+            this.nextPrepared = true
+        }
+
+        this.progress = 0
+        this.maxSpeed.n = 0.
+        this.progressRate.n = 0
+        this.uvUrlList = resourceUrlList
+        this.startPoint = this.timePointParser(this.uvUrlList[0])
+        this.endPoint = this.timePointParser(this.uvUrlList[this.uvUrlList.length - 1])
+        console.log(`FLOW-TIME: ${this.startPoint} -> ${this.endPoint}`)
+
+        await addVoronoiBindingSync(this.uvUrlList[0]); this.swapVoronoiBinding()
+        await addVoronoiBindingSync(this.uvUrlList[1]); this.swapVoronoiBinding()
+        this.currentResourcePointer = 1; this.nextPrepared = true
+    }
+
 }
 
 // Helpers //////////////////////////////////////////////////////////////////////////////////////////////////////

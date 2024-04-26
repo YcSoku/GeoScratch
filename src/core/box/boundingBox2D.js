@@ -62,6 +62,26 @@ export class BoundingBox2D {
         ]
     }
 
+    get xMin() {
+
+        return this._boundary.x
+    }
+
+    get yMin() {
+
+        return this._boundary.y
+    }
+
+    get xMax() {
+
+        return this._boundary.z
+    }
+
+    get yMax() {
+
+        return this._boundary.w
+    }
+
     reset(xMin, yMin, xMax, yMax) {
         
         this._boundary.x = xMin !== undefined ? xMin : Infinity

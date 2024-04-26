@@ -40,7 +40,7 @@ struct ControllerUniformBlock {
 @group(1) @binding(0) var<storage, read_write> particles: array<f32>;
 
 // Texture bindings
-@group(2) @binding(0) var fromTexture: texture_2d<f32>;
+@group(2) @binding(0) var fieldTexture: texture_2d<f32>;
 // @group(2) @binding(1) var toTexture: texture_2d<f32>;
 
 // Constants
@@ -220,10 +220,10 @@ fn cMain(@builtin(global_invocation_id) id: vec3<u32>) {
     var uv = (position_SS + 1.0) / 2.0;
     uv = vec2f(uv.x, 1.0 - uv.y);
 
-    // let vLast = getVelocity(fromTexture, uv);
+    // let vLast = getVelocity(fieldTexture, uv);
     // let vNext = getVelocity(toTexture, uv);
     // let vCurrent = mix(vLast, vNext, frameUniform.progressRate);
-    let vCurrent = getVelocity(fromTexture, uv);
+    let vCurrent = getVelocity(fieldTexture, uv);
     var velocity = mix(vCurrent, lastV, FACTOR);
     let offset = velocity * 100.0 * controllerUniform.speedFactor;
     // let nextCoords = clamp(calculateDisplacedLonLat(x, y, offset.x, offset.y), cExtent.xy, cExtent.zw);

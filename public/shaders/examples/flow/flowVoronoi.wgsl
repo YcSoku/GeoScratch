@@ -1,14 +1,14 @@
 struct VertexInput {
     @builtin(vertex_index) vertexIndex: u32,
     @location(0) position: vec4f,
-    @location(1) vFrom: vec2f,
-    @location(2) vTo: vec2f,
+    @location(1) uvphFrom: vec4f,
+    @location(2) uvphTo: vec4f,
 };
 
 struct VertexOutput {
     @builtin(position) position: vec4f,
-    @location(0) velocity: vec2f,
-    @location(1) uv: vec2f,
+    @location(0) uv: vec2f,
+    @location(1) ph: vec2f,
 };
 
 struct FrameUniformBlock {
@@ -43,7 +43,7 @@ struct DynamicUniformBlock {
 
 const PI = 3.1415926535;
 
-fn translateRelativeToEye(high: vec3f, low: vec3f) -> vec3f {
+fn translateRelativeuvphToEye(high: vec3f, low: vec3f) -> vec3f {
 
     let highDiff = high - dynamicUniform.centerHigh;
     let lowDiff = low - dynamicUniform.centerLow;
@@ -51,7 +51,7 @@ fn translateRelativeToEye(high: vec3f, low: vec3f) -> vec3f {
     return highDiff + lowDiff;
 }
 
-fn calcWebMercatorCoord(coord: vec2f) -> vec2f {
+fn calcWebMercauvphTorCoord(coord: vec2f) -> vec2f {
 
     let lon = (180.0 + coord.x) / 360.0;
     let lat = (180.0 - (180.0 / PI * log(tan(PI / 4.0 + coord.y * PI / 360.0)))) / 360.0;
@@ -63,19 +63,21 @@ fn vMain(input: VertexInput) -> VertexOutput {
 
     let x = (input.position.x - staticUniform.extent[0]) / (staticUniform.extent[2] - staticUniform.extent[0]);
     let y = (input.position.y - staticUniform.extent[1]) / (staticUniform.extent[3] - staticUniform.extent[1]);
+    let ph = mix(input.uvphFrom.zw, input.uvphTo.zw, frameUniform.progressRate);
 
     var output: VertexOutput;
-    output.position = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(input.position.xy, 0.0), vec3f(input.position.zw, 0.0)), 1.0);
-    output.velocity = mix(input.vFrom, input.vTo, frameUniform.progressRate);
+    output.position = dynamicUniform.uMatrix * vec4f(translateRelativeuvphToEye(vec3f(input.position.xy, 0.0), vec3f(input.position.zw, 0.0)), 1.0);
+    output.uv = mix(input.uvphFrom.xy, input.uvphTo.xy, frameUniform.progressRate);
+    output.ph = ph;
     return output;
 }
 
 @fragment
-fn fMain(input: VertexOutput) -> @location(0) vec2f {
+fn fMain(input: VertexOutput) -> @location(0) vec4f {
 
     // if (input.velocity.x == 0.0 &&  input.velocity.y == 0.0) {
     //     discard;
     // }
-    return input.velocity;
+    return vec4f(input.uv, input.ph);
     // return vec2f(1.0);
 }

@@ -15,14 +15,14 @@ import { vertexBuffer } from '../../platform/buffer/vertexBuffer.js'
 import { storageBuffer } from '../../platform/buffer/storageBuffer.js'
 import { uniformBuffer } from '../../platform/buffer/uniformBuffer.js'
 import { renderPipeline } from '../../platform/pipeline/renderPipeline.js'
-import { asF32, f32, asVec2f, vec2f } from '../../core/numericType/numericType.js'
+import { f32, asVec2f, vec2f } from '../../core/numericType/numericType.js'
 
 export class LocalTerrain {
 
     constructor(maxLevel) {
 
         ///////// Initialize CPU resource /////////
-        this.asLine = 0
+        this.asLine = 1
         this.bindingUsed = 0
         this.maxLevel = maxLevel
         this.maxBindingUsedNum = 5000
@@ -58,6 +58,7 @@ export class LocalTerrain {
         // Texture-related resource
         this.lSampler = undefined
         this.demTexture = undefined
+        this.fieldTexture = undefined
         this.lodMapTexture = undefined
         this.borderTexture = undefined
         this.paletteTexture = undefined
@@ -175,6 +176,7 @@ export class LocalTerrain {
                 { texture: this.demTexture },
                 { texture: this.lodMapTexture },
                 { texture: this.paletteTexture },
+                // { texture: this.fieldTexture, sampleType: 'unfilterable-float' },
             ],
             storages: [
                 { buffer: this.indexBuffer },
@@ -190,17 +192,19 @@ export class LocalTerrain {
             shader: { module: shaderLoader.load('Shader (Terrain Mesh)', '/shaders/examples/terrain/lodMap.wgsl') },
             primitive: { topology: 'triangle-strip' },
         })
-        this.meshRenderPipeline = renderPipeline({
+        this.meshRenderPipeline = 
+        this.asLine
+        ? 
+        renderPipeline({
+            name: 'Render Pipeline (Terrain Mesh Line)',
+            shader: { module: shaderLoader.load('Shader (Terrain Mesh Line)', '/shaders/examples/terrain/terrainMeshLine.wgsl') },
+            primitive: { topology: 'line-list' },
+        })
+        :
+        renderPipeline({
             name: 'Render Pipeline (Terrain Mesh)',
             shader: { module: shaderLoader.load('Shader (Terrain Mesh)', '/shaders/examples/terrain/terrainMesh.wgsl') },
             colorTargetStates: [ { blend: NoBlending } ],
-            // depthTest: true,
-        })
-        this.meshLineRenderPipeline = renderPipeline({
-            name: 'Render Pipeline (Terrain Mesh)',
-            shader: { module: shaderLoader.load('Shader (Terrain Mesh Line)', '/shaders/examples/terrain/terrainMeshLine.wgsl') },
-            // depthTest: true,
-            primitive: { topology: 'line-list' },
         })
 
         // Pass
@@ -235,7 +239,7 @@ export class LocalTerrain {
 
     get pipeline() {
 
-        return this.asLine ? this.meshLineRenderPipeline : this.meshRenderPipeline
+        return this.meshRenderPipeline
     }
 
     get binding() {
@@ -293,7 +297,7 @@ export class LocalTerrain {
         // Give priority to high-level ones ?
         visibleNode./*sort((a, b) => a.level - b.level).*/forEach(node => {
 
-            if (this.bindingUsed < this.maxBindingUsedNum && node.level + 5 >= this.maxVisibleNodeLevel) {
+            if (/* node.isVisible(options) && */this.bindingUsed < this.maxBindingUsedNum && node.level + 5 >= this.maxVisibleNodeLevel) {
 
                 this.minVisibleNodeLevel = node.level < this.minVisibleNodeLevel ? node.level : this.minVisibleNodeLevel
                 this.tileBox.updateByBox(node.bBox)
@@ -309,5 +313,6 @@ export class LocalTerrain {
 
             node.release()
         })
+        console.log(this.bindingUsed)
     }
 }

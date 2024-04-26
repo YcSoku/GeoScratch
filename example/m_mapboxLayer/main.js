@@ -18,7 +18,8 @@ mapDiv.id = 'map'
 document.body.appendChild(mapDiv)
 
 // StartDash //////////////////////////////////////////////////////////////////////////////////////////////////////
-let flowLayer = undefined
+/** @type {TerrainLayer} */     let terrainLayer = undefined
+/** @type {SteadyFlowLayer} */  let flowLayer = undefined
 scr.StartDash().then(() => {
     
     const map = new ScratchMap({
@@ -33,40 +34,42 @@ scr.StartDash().then(() => {
 
     }).on('load', () => {
         
-        // map.addLayer(new TerrainLayer(14))
-        map.addLayer(flowLayer = new SteadyFlowLayer(
-            '/bin/examples/flow/station.bin',
+        terrainLayer = new TerrainLayer(14)
+        flowLayer = new SteadyFlowLayer('/bin/examples/flow/station.bin',
             [
-                '/bin/examples/flow/uv_0.bin',
-                '/bin/examples/flow/uv_1.bin',
-                '/bin/examples/flow/uv_2.bin',
-                '/bin/examples/flow/uv_3.bin',
-                '/bin/examples/flow/uv_4.bin',
-                '/bin/examples/flow/uv_5.bin',
-                '/bin/examples/flow/uv_6.bin',
-                '/bin/examples/flow/uv_7.bin',
-                '/bin/examples/flow/uv_8.bin',
-                '/bin/examples/flow/uv_9.bin',
-                '/bin/examples/flow/uv_10.bin',
-                '/bin/examples/flow/uv_11.bin',
-                '/bin/examples/flow/uv_12.bin',
-                '/bin/examples/flow/uv_13.bin',
-                '/bin/examples/flow/uv_14.bin',
-                '/bin/examples/flow/uv_15.bin',
-                '/bin/examples/flow/uv_16.bin',
-                '/bin/examples/flow/uv_17.bin',
-                '/bin/examples/flow/uv_18.bin',
-                '/bin/examples/flow/uv_19.bin',
-                '/bin/examples/flow/uv_20.bin',
-                '/bin/examples/flow/uv_21.bin',
-                '/bin/examples/flow/uv_22.bin',
-                '/bin/examples/flow/uv_23.bin',
-                '/bin/examples/flow/uv_24.bin',
-                '/bin/examples/flow/uv_25.bin',
-                '/bin/examples/flow/uv_26.bin',
-            ],
-            url => url.match(/uv_(\d+)\.bin/)[1]
-        ))
+                '/bin/examples/flow/uvph_0.bin',
+                '/bin/examples/flow/uvph_1.bin',
+                '/bin/examples/flow/uvph_2.bin',
+                '/bin/examples/flow/uvph_3.bin',
+                '/bin/examples/flow/uvph_4.bin',
+                '/bin/examples/flow/uvph_5.bin',
+                '/bin/examples/flow/uvph_6.bin',
+                '/bin/examples/flow/uvph_7.bin',
+                '/bin/examples/flow/uvph_8.bin',
+                '/bin/examples/flow/uvph_9.bin',
+                '/bin/examples/flow/uvph_10.bin',
+                '/bin/examples/flow/uvph_11.bin',
+                '/bin/examples/flow/uvph_12.bin',
+                '/bin/examples/flow/uvph_13.bin',
+                '/bin/examples/flow/uvph_14.bin',
+                '/bin/examples/flow/uvph_15.bin',
+                '/bin/examples/flow/uvph_16.bin',
+                '/bin/examples/flow/uvph_17.bin',
+                '/bin/examples/flow/uvph_18.bin',
+                '/bin/examples/flow/uvph_19.bin',
+                '/bin/examples/flow/uvph_20.bin',
+                '/bin/examples/flow/uvph_21.bin',
+                '/bin/examples/flow/uvph_22.bin',
+                '/bin/examples/flow/uvph_23.bin',
+                '/bin/examples/flow/uvph_24.bin',
+                '/bin/examples/flow/uvph_25.bin',
+                '/bin/examples/flow/uvph_26.bin', ], url => url.match(/uvph_(\d+)\.bin/)[1]
+        )
+
+        // terrainLayer.fieldTexture = flowLayer.fieldTexture = map.screen.createScreenDependentTexture('Texture (Field UVPH)', 'rgba32float')
+        
+        map.addLayer(terrainLayer)
+        map.addLayer(flowLayer)
         // map.addLayer(new UnityLayer([ 120.556596, 32.042607 ], 12))
     })
 })
@@ -83,14 +86,26 @@ class ScratchMap extends mapboxgl.Map {
         // Attributes
         this.far = scr.f32()
         this.near = scr.f32()
-        this.uMatrix = scr.mat4f()
+        this.uMatrix = scr.mat4()
         this.centerLow = scr.vec3f()
+        this.mvpInverse = scr.mat4()
+        this.uMatrixPure = scr.mat4()
         this.centerHigh = scr.vec3f()
-        this.mvpInverse = scr.mat4f()
         this.mercatorCenter = scr.vec3f()
         this.zoom = scr.f32(this.getZoom())
         this.mercatorBounds = new scr.BoundingBox2D()
         this.cameraBounds = new scr.BoundingBox2D(...this.getBounds().toArray())
+
+        // Frustum data 
+        this.uln = scr.vec3f()
+        this.brf = scr.vec3f()
+        this.nUp = scr.vec3f()
+        this.nFar = scr.vec3f()
+        this.nNear = scr.vec3f()
+        this.nLeft = scr.vec3f()
+        this.nRight = scr.vec3f()
+        this.nBottom = scr.vec3f()
+        /** @type {[ { point: scr.Vec3f, normal: scr.Vec3f, distance: number } ]} */ this.frustumPlanes = []
         
         // Buffer-related resource (based on map status)
         this.dynamicUniformBuffer = scr.uniformBuffer({
@@ -137,7 +152,6 @@ class ScratchMap extends mapboxgl.Map {
         this.on('render', () => {
 
             this.update()
-            scr.director.tick()
         })
     }
 
@@ -146,7 +160,7 @@ class ScratchMap extends mapboxgl.Map {
         this.mercatorCenter = new mapboxgl.MercatorCoordinate(...this.transform._computeCameraPosition().slice(0, 3))
         this.zoom.n = this.getZoom()
         
-        const { far, near, matrix} = getMercatorMatrix(this.transform.clone())
+        const { far, near, matrix, cameraFrustum} = getMercatorMatrix(this.transform.clone())
         const mercatorCenterX = encodeFloatToDouble(this.mercatorCenter.x)
         const mercatorCenterY = encodeFloatToDouble(this.mercatorCenter.y)
         const mercatorCenterZ = encodeFloatToDouble(this.mercatorCenter.z)
@@ -167,9 +181,42 @@ class ScratchMap extends mapboxgl.Map {
 
         this.far.n = far
         this.near.n = near
-        this.uMatrix.data = matrix
-        this.uMatrix.translate(scr.vec3f(mercatorCenterX[0], mercatorCenterY[0], mercatorCenterZ[0]))
+        this.uMatrix.clone(matrix)
+        this.uMatrixPure.clone(matrix)
+        this.uMatrix.translate([ mercatorCenterX[0], mercatorCenterY[0], mercatorCenterZ[0] ])
         this.mvpInverse.invert(this.uMatrix)
+
+        // Frustum
+        const points = cameraFrustum.points
+        const v01 = scr.vec3f(points[1][0] - points[0][0], points[1][1] - points[0][1], points[1][2] - points[0][2])
+        const v03 = scr.vec3f(points[3][0] - points[0][0], points[3][1] - points[0][1], points[3][2] - points[0][2])
+        const v04 = scr.vec3f(points[4][0] - points[0][0], points[4][1] - points[0][1], points[4][2] - points[0][2])
+        const v62 = scr.vec3f(points[2][0] - points[6][0], points[2][1] - points[6][1], points[2][2] - points[6][2])
+        const v65 = scr.vec3f(points[5][0] - points[6][0], points[5][1] - points[6][1], points[5][2] - points[6][2])
+        const v67 = scr.vec3f(points[7][0] - points[6][0], points[7][1] - points[6][1], points[7][2] - points[6][2])
+        this.uln.copy(scr.vec3f(...points[0]))
+        this.brf.copy(scr.vec3f(...points[6]))
+        this.nNear.xyz = cameraFrustum.planes[0]
+        this.nFar.xyz = cameraFrustum.planes[1]
+        this.nLeft.xyz = cameraFrustum.planes[2]
+        this.nRight.xyz = cameraFrustum.planes[3]
+        this.nBottom.xyz = cameraFrustum.planes[4]
+        this.nUp.xyz = cameraFrustum.planes[5]
+        this.frustumPlanes = [
+            { point: this.uln, normal: this.nNear, distance: cameraFrustum.planes[0][3] },
+            { point: this.brf, normal: this.nFar, distance: cameraFrustum.planes[1][3] },
+            { point: this.uln, normal: this.nLeft, distance: cameraFrustum.planes[2][3] },
+            { point: this.brf, normal: this.nRight, distance: cameraFrustum.planes[3][3] },
+            { point: this.brf, normal: this.nBottom, distance: cameraFrustum.planes[4][3] },
+            { point: this.uln, normal: this.nUp, distance: cameraFrustum.planes[5][3] },
+        ]
+
+        // console.log(this.transform.worldSize)
+
+        // console.log(cameraFrustum.planes[0], this.nNear.xyz)
+
+        // console.log(this.transform.cameraFrustum.points, cameraFrustum.points)
+        // console.log(this.transform.cameraFrustum.constructor.fromInvProjectionMatrix)
 
         // if (frameCount++ === 1000) {
         //     flowLayer.resetResource([
@@ -188,6 +235,19 @@ class ScratchMap extends mapboxgl.Map {
         //         '/bin/examples/flow/uv_26.bin',
         //     ])
         // }
+
+        if (!scr.director.executable) return
+
+        if (0 && frameCount++ >= 1000) {
+
+            scr.director.release()
+            console.log('director release')
+
+
+        } else {
+
+            scr.director.tick()
+        }
     }
 
     add2PreProcess(prePass) {
@@ -205,9 +265,67 @@ class ScratchMap extends mapboxgl.Map {
 
 // Helpers //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+class Plane {
+
+    constructor() {
+        this.normal = scr.vec3f()
+        this.distance = scr.f32()
+    }
+}
+
+class Frustum {
+
+    constructor() {
+        this.top = new Plane()
+        this.bottom = new Plane()
+
+        this.left = new Plane()
+        this.right = new Plane()
+
+        this.far = new Plane()
+        this.near = new Plane()
+    }
+}
+
+function createFrustumFromCamera(transform)
+{
+    const frustum = new Frustum()
+    const fovY = transform.fovY
+    const zNear = transform._nearZ
+    const zFar = transform._farZ
+    const aspect = transform.width / transform.height
+    const halfVSide = zFar * Math.tan(fovY * 0.5)
+    const halfHSide = halfVSide * aspect
+    const cameraFront = scr.vec3.normalize(scr.vec3.transformQuat([0.0, 0.0, -1.0], transform._camera._orientation))
+    const cameraPos = scr.vec4.transformMat4([0.0, 0.0, 0.0, 1.0], transform._camera._transform)
+    const cameraDistance = scr.vec3.length(cameraPos)
+
+
+    const frontMultFar = scr.vec3.scale(cameraFront, zFar)
+
+    frustum.near.distance.n = cameraDistance + (scr.vec3.length(scr.vec3.scale(cameraFront, zNear)))
+    frustum.near.normal.xyz = cameraFront
+    // console.log(transform.cameraFrustum.planes[0], frustum.near.normal.xyz)
+    // frustum.farFace = { cam.Position + frontMultFar, -cam.Front };
+    // frustum.rightFace = { cam.Position,
+    // glm::cross(frontMultFar - cam.Right * halfHSide, cam.Up) };
+    // frustum.leftFace = { cam.Position,
+    // glm::cross(cam.Up,frontMultFar + cam.Right * halfHSide) };
+    // frustum.topFace = { cam.Position,
+    // glm::cross(cam.Right, frontMultFar - cam.Up * halfVSide) };
+    // frustum.bottomFace = { cam.Position,
+    // glm::cross(frontMultFar + cam.Up * halfVSide, cam.Right) };
+
+    // return frustum;
+}
+
 function getMercatorMatrix(t) {
     
     if (!t.height) return;
+
+    scr.vec3.setDefaultType(Float64Array)
+    scr.vec4.setDefaultType(Float64Array)
+    scr.Mat4.setDefaultComputeType(Float64Array)
 
     const offset = t.centerOffset;
 
@@ -231,7 +349,6 @@ function getMercatorMatrix(t) {
 
     // t._farZ = t.projection.farthestPixelDistance(t);
     t._farZ = farthestPixelDistanceOnPlane(t, -80.06899999999999 * 30.0, pixelsPerMeter)
-    // console.log(t._farZ, t.projection.farthestPixelDistance(t))
 
     // The larger the value of nearZ is
     // - the more depth precision is available for features (good)
@@ -242,7 +359,7 @@ function getMercatorMatrix(t) {
     // seems to solve z-fighting issues in deckgl while not clipping buildings too close to the camera.
     t._nearZ = t.height / 50;
 
-    let _farZ = Math.max(Math.pow(2, t.tileZoom), 5000000.0)
+    // let _farZ = Math.max(Math.pow(2, t.tileZoom), 5000000.0)
     // let _farZ = Math.min(Math.pow(2, t.tileZoom + 5), 50000.0)
     // let _nearZ = Math.max(Math.pow(2, t.tileZoom - 8), 0.0)
 
@@ -253,8 +370,6 @@ function getMercatorMatrix(t) {
 
     // Projection matrix
     const cameraToClipPerspective = t._camera.getCameraToClipPerspective(t._fov, t.width / t.height, t._nearZ, t._farZ) 
-    // const cameraToClipPerspective = t._camera.getCameraToClipPerspective(t._fov, t.width / t.height, t._nearZ, _farZ) 
-    // const cameraToClipPerspective = scr.mat4.perspective(t._fov, t.width / t.height, t._nearZ, t._farZ)
     // Apply offset/padding
     cameraToClipPerspective[8] = -offset.x * 2 / t.width;
     cameraToClipPerspective[9] = offset.y * 2 / t.height;
@@ -273,46 +388,55 @@ function getMercatorMatrix(t) {
         top += offset.y;
         bottom += offset.y;
 
-        cameraToClip = t._camera.getCameraToClipOrthographic(left, right, bottom, top, t._nearZ, _farZ);
+        cameraToClip = t._camera.getCameraToClipOrthographic(left, right, bottom, top, t._nearZ, t._farZ);
 
-        const mixValue =
-        t.pitch >= OrthographicPitchTranstionValue ? 1.0 : t.pitch / OrthographicPitchTranstionValue;
+        // const mixValue = t.pitch >= OrthographicPitchTranstionValue ? 1.0 : t.pitch / OrthographicPitchTranstionValue;
         // lerpMatrix(cameraToClip, cameraToClip, cameraToClipPerspective, easeIn(mixValue));
     } else {
         cameraToClip = cameraToClipPerspective;
     }
 
-    const worldToClipPerspective = scr.mat4.mul(cameraToClipPerspective, worldToCamera);
-    let m = scr.mat4.mul(cameraToClip, worldToCamera);
+    const worldToClipPerspective = scr.Mat4.multiplication(cameraToClipPerspective, worldToCamera);
+    let m = scr.Mat4.multiplication(cameraToClip, worldToCamera);
 
     if (t.projection.isReprojectedInTileSpace) {
         // Projections undistort as you zoom in (shear, scale, rotate).
         // Apply the undistortion around the center of the map.
-        const mc = t.locationCoordinate(t.center);
-        const adjustments = scr.mat4.identity();
-        scr.mat4.translate(adjustments, scr.vec3.fromValues(mc.x * t.worldSize, mc.y * t.worldSize, 0), adjustments);
-        scr.mat4.multiply(adjustments, getProjectionAdjustments(t), adjustments);
-        scr.mat4.translate(adjustments, [-mc.x * t.worldSize, -mc.y * t.worldSize, 0], adjustments);
-        scr.mat4.multiply(m, adjustments, m);
-        scr.mat4.multiply(worldToClipPerspective, adjustments, worldToClipPerspective);
-        t.inverseAdjustmentMatrix = getProjectionAdjustmentInverted(t);
+        // const mc = t.locationCoordinate(t.center);
+        // const adjustments = scr.Mat4.identity();
+        // scr.mat4.translate(adjustments, scr.vec3.fromValues(mc.x * t.worldSize, mc.y * t.worldSize, 0), adjustments);
+        // scr.mat4.multiply(adjustments, getProjectionAdjustments(t), adjustments);
+        // scr.mat4.translate(adjustments, [-mc.x * t.worldSize, -mc.y * t.worldSize, 0], adjustments);
+        // scr.mat4.multiply(m, adjustments, m);
+        // scr.mat4.multiply(worldToClipPerspective, adjustments, worldToClipPerspective);
+        // t.inverseAdjustmentMatrix = getProjectionAdjustmentInverted(t);
     } else {
         t.inverseAdjustmentMatrix = [1, 0, 0, 1];
     }
 
     // The mercatorMatrix can be used to transform points from mercator coordinates
     // ([0, 0] nw, [1, 1] se) to GL coordinates. / zUnit compensates for scaling done in worldToCamera.
-    t.mercatorMatrix = scr.mat4.scale(m, scr.vec3.fromValues(t.worldSize, t.worldSize, t.worldSize / zUnit));
+    t.mercatorMatrix = scr.Mat4.scaling(m, scr.vec3.fromValues(t.worldSize, t.worldSize, t.worldSize / zUnit));
     t.projMatrix = m;
 
     // For tile cover calculation, use inverted of base (non elevated) matrix
     // as tile elevations are in tile coordinates and relative to center elevation.
-    t.invProjMatrix = scr.mat4.invert(t.projMatrix);
+    t.invProjMatrix = scr.Mat4.inverse(t.projMatrix);
+
+
+    // createFrustumFromCamera(t)
+    
+    // console.log(t.coveringZoomLevel({tileSize: t.tileSize}))
+    // console.log(mm)
+    const Frustum = t.cameraFrustum.constructor
+    // const t1 = t.clone()
 
     return {
         far: t._farZ,
         near: t._nearZ,
         matrix: t.mercatorMatrix,
+        // cameraFrustum: t.cameraFrustum.constructor.fromInvProjectionMatrix(scr.Mat4.inverse(t.mercatorMatrix), t.worldSize, t.zoom, !(t.projection.name === 'globe')),
+        cameraFrustum: Frustum.fromInvProjectionMatrix(t.invProjMatrix, t.worldSize, 0.0, !(t.projection.name === 'globe')),
     }
 }
 function smoothstep(e0, e1, x) {

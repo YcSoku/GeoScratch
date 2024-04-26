@@ -1,7 +1,8 @@
-import { UUID } from "../../core/utils/uuid.js"
+import director from "../director/director.js"
 import { Binding } from "../binding/binding.js"
-import { RenderPipeline } from "../pipeline/renderPipeline.js"
 import { Texture } from "../texture/texture.js"
+import { ScratchObject } from '../../core/object/object'
+import { RenderPipeline } from "../pipeline/renderPipeline.js"
 
 /**
  * @typedef {Object} RenderPassDescription
@@ -10,22 +11,22 @@ import { Texture } from "../texture/texture.js"
  * @property {{depthStencilResource: Texture, depthClearValue?: number, depthLoadOp?: 'clear' | 'load', depthStoreOp?: 'store' | 'discard'}} [depthStencilAttachment]
  */
 
-export class RenderPass {
+export class RenderPass extends ScratchObject {
 
     /**
      * @param {RenderPassDescription} description 
      */
     constructor(description) {
 
-        this.uuid = UUID()
+        super()
         
         this.name = description.name
         this.colorDescription = description.colorAttachments
+        this.depthStencilDescription = description.depthStencilAttachment
         /**
          * @type {Array<GPURenderPassColorAttachment>}
          */
         this.colorAttachments = new Array(this.colorDescription.length)
-        this.depthStencilDescription = description.depthStencilAttachment
         this.depthStencilAttachment = undefined
 
         /**
@@ -35,58 +36,9 @@ export class RenderPass {
 
         this.pass = null
 
-        this.dirty = true
-        this.initialized = false
-        this.completed = false
-        this.executable = true
-    }
-
-    addColorAttachments() {
-
-        this.colorDescription.forEach((description, index) => {
-
-            this.colorAttachments[index] = {
-                view: description.colorResource.view(),
-                clearValue: description.clearValue ? description.clearValue : [0.0, 0.0, 0.0, 1.0],
-                loadOp: description.loadOp ? description.loadOp : 'clear',
-                storeOp: description.storeOp ? description.storeOp : 'store'
-            }
-
-            description.colorResource.registerCallback(() => {
-                this.colorAttachments[index].view = description.colorResource.view()
-            })
-        })
-    }
-
-    addDepthStencilAttachment() {
-
-        if (!this.depthStencilDescription) return
-
-        this.depthStencilAttachment = {
-            view: this.depthStencilDescription.depthStencilResource.view(),
-            depthClearValue: this.depthStencilDescription.depthClearValue ? this.depthStencilDescription.depthClearValue : 1.0,
-            depthLoadOp: this.depthStencilDescription.depthLoadOp ? this.depthStencilDescription.depthLoadOp : 'clear',
-            depthStoreOp: this.depthStencilDescription.depthStoreOp ? this.depthStencilDescription.depthStoreOp : 'store',
-        }
-
-        this.depthStencilDescription.depthStencilResource.registerCallback(() => {
-            this.depthStencilAttachment.view = this.depthStencilDescription.depthStencilResource.view()
-        })
-    }
-
-    makeColorFormats() {
-
-        const colorFormats = new Array(this.colorDescription.length)
-        this.colorDescription.forEach((description, index) => {
-            colorFormats[index] = description.colorResource.format
-        })
-        return colorFormats
-    }
-
-    makeDepthStencilFormat() {
-
-        if (!this.depthStencilDescription) return undefined
-        return this.depthStencilDescription.depthStencilResource.format
+        this.executable = false
+        
+        director.addToUpdateList(this)
     }
 
     /**
@@ -97,81 +49,96 @@ export class RenderPass {
         return new RenderPass(description)
     }
 
+    makeColorFormats() {
+
+        const colorFormats = new Array(this.colorDescription.length)
+        this.colorDescription.forEach((description, index) => {
+            colorFormats[index] = description.colorResource.format
+        })
+        
+        return colorFormats
+    }
+
+    makeDepthStencilFormat() {
+
+        if (!this.depthStencilDescription) return undefined
+        return this.depthStencilDescription.depthStencilResource.format
+    }
+
     updateColorAttachments() {
 
         this.colorDescription.forEach((description, index) => {
 
             this.colorAttachments[index] = {
                 view: description.colorResource.view(),
-                clearValue: description.clearValue ? description.clearValue : [0.0, 0.0, 0.0, 0.0],
                 loadOp: description.loadOp ? description.loadOp : 'clear',
-                storeOp: description.storeOp ? description.storeOp : 'store'
+                storeOp: description.storeOp ? description.storeOp : 'store',
+                clearValue: description.clearValue ? description.clearValue : [0.0, 0.0, 0.0, 0.0],
             }
+        })
+    }
+
+    addColorAttachments() {
+
+        this.updateColorAttachments()
+
+        this.colorDescription.forEach((description, index) => {
+
+            description.colorResource.registerCallback(() => {
+                this.colorAttachments[index].view = description.colorResource.view()
+            })
         })
     }
 
     updateDepthStencilAttachment() {
 
-        if (!this.depthStencilDescription) return
-
         this.depthStencilAttachment = {
             view: this.depthStencilDescription.depthStencilResource.view(),
-            depthClearValue: this.depthStencilDescription.depthClearValue ? this.depthStencilDescription.depthClearValue : 1.0,
             depthLoadOp: this.depthStencilDescription.depthLoadOp ? this.depthStencilDescription.depthLoadOp : 'clear',
             depthStoreOp: this.depthStencilDescription.depthStoreOp ? this.depthStencilDescription.depthStoreOp : 'store',
+            depthClearValue: this.depthStencilDescription.depthClearValue ? this.depthStencilDescription.depthClearValue : 1.0,
         }
     }
 
-    /**
-     * 
-     * @param {number} canvasTextureIndex 
-     */
-    updateSwapChain(canvasTextureIndex = 0) {
+    addDepthStencilAttachment() {
 
-        this.passDescription.colorAttachments[canvasTextureIndex].view = 
-        this.colorDescription[canvasTextureIndex].colorResource.view()
-    }
+        this.updateDepthStencilAttachment()
 
-    initialize() {
-        
-        if (this.initialized) return
-
-        this.addColorAttachments()
-        this.addDepthStencilAttachment()
-        this.initialize = true
-    }
-
-    isComplete() {
-
-        if (this.completed) return true
-
-        this.completed = true
-
-        this.colorDescription.forEach(description => {
-            !description.colorResource.texture && (this.completed = false)
+        this.depthStencilDescription.depthStencilResource.registerCallback(() => {
+            this.depthStencilAttachment.view = this.depthStencilDescription.depthStencilResource.view()
         })
+    }
 
-        this.depthStencilDescription && !this.depthStencilDescription.depthStencilResource.texture && (this.completed = false)
+    tryMakeUpdate() {
 
-        return this.completed
+        return this.colorDescription.some(description => description.colorResource.texture !== undefined)
+            && this.depthStencilDescription?.depthStencilResource.texture !== undefined
+        
     }
 
     update() {
 
-        this.initialize()
+        this.executable = false
 
-        this.updateColorAttachments()
-        this.updateDepthStencilAttachment()
+        if (!this.tryMakeUpdate()) {
 
-        this.passDescription = {
-            label: `Render pass (${this.name})`,
-            colorAttachments: this.colorAttachments,
-            ...(this.depthStencilDescription && {
-                depthStencilAttachment: this.depthStencilAttachment
-            })
+            director.addToNextUpdateList(this)
+
+        } else {
+
+            this.addColorAttachments()
+            this.depthStencilDescription && this.addDepthStencilAttachment()
+    
+            this.passDescription = {
+                label: `Render pass (${this.name})`,
+                colorAttachments: this.colorAttachments,
+                ...(this.depthStencilDescription && {
+                    depthStencilAttachment: this.depthStencilAttachment
+                })
+            }
+
+            this.executable = true
         }
-
-        this.dirty = false
     }
 
     /**
@@ -181,11 +148,19 @@ export class RenderPass {
      */
     add(pipeline, binding) {
 
-        this.drawcalls.push({pipeline, binding})
+        // Dependency injection
+        pipeline.setDependency(this, binding)
+
+        this.drawcalls.push({ pipeline: pipeline.use(), binding: binding.use() })
         return this
     }
 
     empty() {
+
+        this.drawcalls.forEach(drawcall => {
+            drawcall.binding = drawcall.binding.release()
+            drawcall.pipeline = drawcall.pipeline.release()
+        })
         this.drawcalls = []
     }
 
@@ -194,22 +169,61 @@ export class RenderPass {
      */
     execute(encoder) {
 
-        if (!this.isComplete()) return
-
-        this.dirty && this.update()
-
-        if (!this.executable) return
-
         this.pass = encoder.beginRenderPass(this.passDescription)
 
-        this.drawcalls.forEach(({ binding, pipeline }) => {
-            
-            if (!binding.tryMakeComplete() || !pipeline.tryMakeComplete(this, binding) || !pipeline.executable || !binding.executable) return
-
-            pipeline.draw(this, binding)
-        })
+        this.drawcalls
+        .filter(({ binding, pipeline }) => binding.executable && pipeline.executable)
+        .forEach(({ binding, pipeline }) => pipeline.draw(this, binding))
 
         this.pass.end()
+    }
+
+    destroy() {
+
+        this.name = null
+
+        this.colorAttachments.forEach(attachment => {
+            attachment.view = null
+            attachment.loadOp = null
+            attachment.storeOp = null
+            attachment.clearValue = null
+            attachment.depthSlice = null
+            attachment.resolveTarget = null
+        })
+        this.colorAttachments = null
+
+        this.colorDescription.forEach(description => {
+            description.loadOp = null
+            description.storeOp = null
+            description.clearValue = null
+            description.colorResource = description.colorResource.release()
+        })
+        this.colorDescription = null
+
+        this.depthStencilAttachment.view = null
+        this.depthStencilAttachment.depthLoadOp = null
+        this.depthStencilAttachment.depthStoreOp = null
+        this.depthStencilAttachment.depthClearValue = null
+
+        this.depthStencilDescription.depthLoadOp = null
+        this.depthStencilDescription.depthStoreOp = null
+        this.depthStencilDescription.depthClearValue = null
+        this.depthStencilDescription.depthStencilResource = this.depthStencilDescription.depthStencilResource.release()
+        this.depthStencilDescription = null
+
+        this.drawcalls.forEach(drawcall => {
+            drawcall.binding = drawcall.binding.release()
+            drawcall.pipeline = drawcall.pipeline.release()
+        })
+        this.drawcalls = null
+
+        this.pass = null
+        
+        this.executable = null
+
+        super.destroy()
+
+        return null
     }
 }
 
@@ -218,5 +232,5 @@ export class RenderPass {
  */
 export function renderPass(description) {
 
-    return RenderPass.create(description)
+    return new RenderPass(description)
 }
