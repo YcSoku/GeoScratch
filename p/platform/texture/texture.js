@@ -159,16 +159,14 @@ class Texture extends ScratchObject {
             'rg8unorm': 2,
             'r32uint': 4,
             'r32float': 4,
-            'rg16float': 4,
             'rg32float': 4,
-            'rgba8uint': 4,
+            'rg16float': 4,
             'rgba8unorm': 4,
             'bgra8unorm': 4,
             'rgba16float': 8,
+            'rgba32float': 16,
             'depth24plus': 3,
             'depth32float': 4,
-            'rgba32uint': 16,
-            'rgba32float': 16,
         }
     
         if (!(this.format in formatSize)) {

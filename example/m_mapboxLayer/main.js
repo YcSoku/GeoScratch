@@ -18,10 +18,11 @@ mapDiv.id = 'map'
 document.body.appendChild(mapDiv)
 
 // StartDash //////////////////////////////////////////////////////////////////////////////////////////////////////
-/** @type {TerrainLayer} */     let terrainLayer = undefined
-/** @type {SteadyFlowLayer} */  let flowLayer = undefined
 scr.StartDash().then(() => {
     
+    /** @type {TerrainLayer} */     let terrainLayer = undefined
+    /** @type {SteadyFlowLayer} */  let flowLayer = undefined
+
     const map = new ScratchMap({
         style: "mapbox://styles/ycsoku/cldjl0d2m000501qlpmmex490",
         center: [ 120.980697, 31.684162 ], // [ 120.556596, 32.042607 ], //[ 120.53525158459905, 31.94879239156117 ], // 120.980697, 31.684162
@@ -33,11 +34,6 @@ scr.StartDash().then(() => {
         zoom: 9 //10.496958973488436, // 16
 
     }).on('load', () => {
-        
-        
-        
-
-        // terrainLayer.fieldTexture = flowLayer.fieldTexture = map.screen.createScreenDependentTexture('Texture (Field UVPH)', 'rgba32float')
         
         map.addLayer(terrainLayer = new TerrainLayer(14))
         0 && map.addLayer(flowLayer = new SteadyFlowLayer(
@@ -190,12 +186,13 @@ class ScratchMap extends mapboxgl.Map {
 
         // Frustum
         const points = cameraFrustum.points
-        const v01 = scr.Vec3.fromValues(points[1][0] - points[0][0], points[1][1] - points[0][1], points[1][2] - points[0][2])
-        const v03 = scr.Vec3.fromValues(points[3][0] - points[0][0], points[3][1] - points[0][1], points[3][2] - points[0][2])
-        const v04 = scr.Vec3.fromValues(points[4][0] - points[0][0], points[4][1] - points[0][1], points[4][2] - points[0][2])
-        const v62 = scr.Vec3.fromValues(points[2][0] - points[6][0], points[2][1] - points[6][1], points[2][2] - points[6][2])
-        const v65 = scr.Vec3.fromValues(points[5][0] - points[6][0], points[5][1] - points[6][1], points[5][2] - points[6][2])
-        const v67 = scr.Vec3.fromValues(points[7][0] - points[6][0], points[7][1] - points[6][1], points[7][2] - points[6][2])
+        // COOL but not NECESSARY
+        // const v01 = scr.Vec3.fromValues(points[1][0] - points[0][0], points[1][1] - points[0][1], points[1][2] - points[0][2])
+        // const v03 = scr.Vec3.fromValues(points[3][0] - points[0][0], points[3][1] - points[0][1], points[3][2] - points[0][2])
+        // const v04 = scr.Vec3.fromValues(points[4][0] - points[0][0], points[4][1] - points[0][1], points[4][2] - points[0][2])
+        // const v62 = scr.Vec3.fromValues(points[2][0] - points[6][0], points[2][1] - points[6][1], points[2][2] - points[6][2])
+        // const v65 = scr.Vec3.fromValues(points[5][0] - points[6][0], points[5][1] - points[6][1], points[5][2] - points[6][2])
+        // const v67 = scr.Vec3.fromValues(points[7][0] - points[6][0], points[7][1] - points[6][1], points[7][2] - points[6][2])
         this.uln.clone(scr.Vec3.fromValues(...points[0]))
         this.brf.clone(scr.Vec3.fromValues(...points[6]))
         this.nNear.xyz = cameraFrustum.planes[0]
@@ -213,13 +210,7 @@ class ScratchMap extends mapboxgl.Map {
             { point: this.uln, normal: this.nUp, distance: cameraFrustum.planes[5][3] },
         ]
 
-        // console.log(this.transform.worldSize)
-
-        // console.log(cameraFrustum.planes[0], this.nNear.xyz)
-
-        // console.log(this.transform.cameraFrustum.points, cameraFrustum.points)
-        // console.log(this.transform.cameraFrustum.constructor.fromInvProjectionMatrix)
-
+        {
         // if (frameCount++ === 1000) {
         //     flowLayer.resetResource([
         //         '/bin/examples/flow/uv_14.bin',
@@ -237,6 +228,7 @@ class ScratchMap extends mapboxgl.Map {
         //         '/bin/examples/flow/uv_26.bin',
         //     ])
         // }
+        }
 
         if (!scr.director.executable) return
 
@@ -442,36 +434,3 @@ function getProjectionInterpolationT(projection, zoom, width, height, maxSize = 
     const t = smoothstep(zoomA, zoomB, zoom);
     return t;
 }
-
-
-
-// /// unity
-
-// /**
-//  * transform: camera
-//  */
-// initialize(transform)
-
-// resize()
-
-// /**
-//  * string
-//  */
-// executeCommand()
-
-// shutDown()
-
-// /////////
-
-// updateCamera()
-
-// /**
-//  * tick render
-//  */
-// tick()
-
-// /**
-//  * rayCast or
-//  * screen {x, y}
-//  */
-// pickUp()
