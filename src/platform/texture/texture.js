@@ -153,9 +153,11 @@ class Texture extends ScratchObject {
     getByteLength()  {
 
         const formatSize = {
+            'r8uint': 1,
             'r8unorm': 1,
             'r16float': 2,
             'rg8unorm': 2,
+            'r32uint': 4,
             'r32float': 4,
             'rg32float': 4,
             'rg16float': 4,

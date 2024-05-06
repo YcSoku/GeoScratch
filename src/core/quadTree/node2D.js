@@ -73,7 +73,7 @@ export class Node2D {
         const hDistance = Math.ceil(Math.abs(center[0] - options.cameraPos[0]) / this.size)
         const vDistance = Math.ceil(Math.abs(center[1] - options.cameraPos[1]) / this.size)
 
-        if (Math.max(hDistance, vDistance) <= 2) return true
+        if (Math.max(hDistance, vDistance) <= 1) return true
         else return false
     }
 

@@ -15,7 +15,6 @@ struct StaticUniformBlock {
 
 struct TileUniformBlock {
     tileBox: vec4f,
-    levelRange: vec2f,
     sectorRange: vec2f,
     sectorSize: f32,
     exaggeration: f32,
@@ -109,7 +108,6 @@ fn overlap(box: vec4f) -> bool {
 }
 
 
-
 @vertex
 fn vMain(vsInput: VertexInput) -> VertexOutput {
 
@@ -134,7 +132,8 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
 }
 
 @fragment
-fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
+fn fMain(fsInput: VertexOutput) -> @location(0) u32 {
 
-    return vec4f(fsInput.level / 255.0);
+    return u32(fsInput.level);
+    // return vec4f(fsInput.level / 255.0);
 }

@@ -496,7 +496,7 @@ export default class SteadyFlowLayer {
         this.swapPasses[1].executable = true
         this.swapPasses[2].executable = false
         this.swapPasses[3].executable = false
-        this.swapPasses[4].executable = false
+        // this.swapPasses[4].executable = false
         this.layerBindings[0].executable = true
         this.layerBindings[1].executable = false
 
@@ -508,7 +508,7 @@ export default class SteadyFlowLayer {
         .add2PreProcess(this.swapPasses[1])
         .add2PreProcess(this.swapPasses[2])
         .add2PreProcess(this.swapPasses[3])
-        .add2PreProcess(this.swapPasses[4])
+        // .add2PreProcess(this.swapPasses[4])
 
 
         // this.showArrow && this.map

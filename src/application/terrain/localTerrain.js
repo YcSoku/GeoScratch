@@ -10,24 +10,26 @@ import { renderPass } from '../../platform/pass/renderPass.js'
 import { boundingBox2D } from '../../core/box/boundingBox2D.js'
 import shaderLoader from '../../resource/shader/shaderLoader.js'
 import { NoBlending } from '../../platform/blending/blending.js'
+import { computePass } from '../../platform/pass/computePass.js'
+import { f32, vec2f } from '../../core/numericType/numericType.js'
 import { indexBuffer } from '../../platform/buffer/indexBuffer.js'
 import { vertexBuffer } from '../../platform/buffer/vertexBuffer.js'
 import { storageBuffer } from '../../platform/buffer/storageBuffer.js'
 import { uniformBuffer } from '../../platform/buffer/uniformBuffer.js'
 import { renderPipeline } from '../../platform/pipeline/renderPipeline.js'
-import { asVec2f, f32, vec2f } from '../../core/numericType/numericType.js'
+import { computePipeline } from '../../platform/pipeline/computePipeline.js'
 
 export class LocalTerrain {
 
     constructor(maxLevel) {
 
         ///////// Initialize CPU resource /////////
-        this.asLine = 1
-        this.bindingUsed = 0
+        this.asLine = 0
+        this.nodeCount = 0
         this.maxLevel = maxLevel
-        this.maxBindingUsedNum = 5000
+        this.maxBindingUsedNum = 1000
 
-        this.sectorSize = f32(64)
+        this.sectorSize = f32(32)
         this.sectorRange = vec2f()
         this.exaggeration = f32(50.)
         this.tileBox = boundingBox2D()
@@ -36,9 +38,9 @@ export class LocalTerrain {
         this.elevationRange = vec2f(-80.06899999999999, 4.3745)
         this.boundaryCondition = boundingBox2D(
             120.0437360613468201,
-            31.1739019522094871,
+            31.17390195220948710,
             121.9662324011692220,
-            32.0840108580467813,
+            32.08401085804678130,
         )
 
         this.nodeLevelArray = aRef(new Uint32Array(this.maxBindingUsedNum), 'Storage (Node level)')
@@ -46,39 +48,48 @@ export class LocalTerrain {
 
         ///////// Initialize GPU resource /////////
 
-        // Buffer-released resource
+        // Attributes
         this.indexNum = 0
-        this.tileBuffer = undefined
-        this.indexBuffer = undefined
-        this.nodeBoxBuffer = undefined
-        this.gStaticBuffer = undefined
-        this.positionBuffer = undefined
-        this.nodeLevelBuffer = undefined
+        this.blockSizeX = 16
+        this.blockSizeY = 16
+        this.groupSizeX = Math.ceil(this.lodMapSize.x / this.blockSizeX)
+        this.groupSizeY = Math.ceil(this.lodMapSize.y / this.blockSizeY)
+
+        // Buffer-released resource
+        this.tileBuffer
+        this.indexBuffer
+        this.staticBuffer
+        this.nodeBoxBuffer
+        this.positionBuffer
+        this.nodeLevelBuffer
 
         // Texture-related resource
-        this.lSampler = undefined
-        this.demTexture = undefined
-        this.lodMapTexture = undefined
-        this.borderTexture = undefined
-        this.paletteTexture = undefined
+        this.lSampler
+        this.demTexture
+        this.borderTexture
+        this.lodMapTexture
+        this.dLodMapTexture
 
         // Binding
-        this.meshBinding = undefined
-        this.lodMapBinding = undefined
+        this.meshBinding
+        this.lodMapBinding
+        this.dLodMapBinding
 
         // Pipeline
-        this.lodMapPipeline = undefined
-        this.meshRenderPipeline = undefined
-        this.meshLineRenderPipeline = undefined
+        this.lodMapPipeline
+        this.dLodMapPipeline
+        this.meshRenderPipeline
 
         // Pass
-        this.lodMapPass = undefined
+        this.lodMapPass
+        this.dLodMapPass
     }
 
     setResource(gDynamicBuffer) {
 
         // Buffer-related resource
         const { positions, indices } = plane(Math.log2(this.sectorSize.n))
+        console.log(indices.length)
         this.indexNum = indices.length
         this.positionBuffer = vertexBuffer({
             name: 'Vertex Buffer (Terrain Position)',
@@ -106,7 +117,6 @@ export class LocalTerrain {
                     dynamic: true,
                     map: {
                         tileBox: this.tileBox.boundary,
-                        levelRange: this.visibleNodeLevel,
                         sectorRange: this.sectorRange,
                         sectorSize: this.sectorSize,
                         exaggeration: this.exaggeration,
@@ -114,7 +124,7 @@ export class LocalTerrain {
                 }),
             ]
         })
-        this.gStaticBuffer = uniformBuffer({
+        this.staticBuffer = uniformBuffer({
             name: 'Uniform Buffer (Terrain global static status)',
             blocks: [
                 bRef({
@@ -135,46 +145,66 @@ export class LocalTerrain {
         })
         this.demTexture = imageLoader.load('Texture (DEM)', '/images/examples/terrain/dem.png')
         this.borderTexture = imageLoader.load('Texture (DEM Border)', '/images/examples/terrain/border.png')
-        this.paletteTexture = imageLoader.load('Texture (DEM Palette)', '/images/examples/terrain/demPalette10.png')
         this.lodMapTexture = texture({
-            name: 'Texture (LOD Map)',
+            name: 'Texture (LoD Map)',
+            format: 'r8uint',
+            resource: { size: () => this.lodMapSize.array }
+        })
+        this.dLodMapTexture = texture({
+            name: 'Texture (Delta LoD Level Map)',
+            computable: true,
+            format: 'r32uint',
             resource: { size: () => this.lodMapSize.array }
         })
 
         // Binding
         this.lodMapBinding = binding({
             name: `Binding (Terrain LoDMap)`,
-            range: () => [ 4, this.bindingUsed ],
+            range: () => [ 4, this.nodeCount ],
             uniforms: [
                 {
                     name: 'mapUniform',
                     map: {
-                        dimensions: asVec2f(this.lodMapTexture.width, this.lodMapTexture.height),
+                        dimensions: this.lodMapSize,
                     }
                 }
             ],
             sharedUniforms: [
                 { buffer: this.tileBuffer },
-                { buffer: this.gStaticBuffer },
+                { buffer: this.staticBuffer },
             ],
             storages: [
                 { buffer: this.nodeLevelBuffer },
                 { buffer: this.nodeBoxBuffer },
             ],
         })
+        this.dLodMapBinding = binding({
+            name: 'Binding (Terrain LoD Level Delta Map)',
+            range: () => [ this.blockSizeX, this.blockSizeY ],
+            textures: [
+                { texture: this.lodMapTexture, sampleType: 'uint' },
+                { texture: this.dLodMapTexture, asStorage: true, sampleType: 'uint' }
+            ],
+        })
+        this.showBinding = binding({
+            name: 'Binding (Texture Shower)',
+            range: () => [ 4 ],
+            textures: [
+                { texture: this.dLodMapTexture, sampleType: 'uint' },
+            ],
+        })
         this.meshBinding = binding({
             name: `Binding (Terrain Node)`,
-            range: () => [ this.indexNum / 3 * (this.asLine ? 6 : 3), this.bindingUsed ],
+            range: () => [ this.indexNum / 3 * (this.asLine ? 6 : 3), this.nodeCount ],
             sharedUniforms: [
                 { buffer: this.tileBuffer },
-                { buffer: this.gStaticBuffer },
+                { buffer: this.staticBuffer },
                 { buffer: gDynamicBuffer }
             ],
-            samplers: [ {sampler: this.lSampler} ],
             textures: [
                 { texture: this.demTexture },
-                { texture: this.lodMapTexture },
-                { texture: this.paletteTexture },
+                { texture: this.lodMapTexture, sampleType: 'uint' },
+                { texture: this.dLodMapTexture, sampleType: 'uint' },
             ],
             storages: [
                 { buffer: this.indexBuffer },
@@ -186,9 +216,14 @@ export class LocalTerrain {
 
         // Pipeline
         this.lodMapPipeline = renderPipeline({
-            name: 'Render Pipeline (LOD Map)',
-            shader: { module: shaderLoader.load('Shader (Terrain Mesh)', '/shaders/examples/terrain/lodMap.wgsl') },
+            name: 'Render Pipeline (LoD Mapping)',
+            shader: { module: shaderLoader.load('Shader (LoD Mapping)', '/shaders/examples/terrain/lodMap.wgsl') },
             primitive: { topology: 'triangle-strip' },
+        })
+        this.dLodMapPipeline = computePipeline({
+            name: 'Compute Pipeline (LoD Level Delta Mapping)',
+            shader: { module: shaderLoader.load('Shader (LoD Level Delta Mapping)', '/shaders/examples/terrain/dLodmap.compute.wgsl') },
+            constants: { blockSize: 16 },
         })
         this.meshRenderPipeline = 
         this.asLine
@@ -204,12 +239,20 @@ export class LocalTerrain {
             shader: { module: shaderLoader.load('Shader (Terrain Mesh)', '/shaders/examples/terrain/terrainMesh.wgsl') },
             colorTargetStates: [ { blend: NoBlending } ],
         })
+        this.showerPipeline = renderPipeline({
+            name: 'Render Pipelien (Texture Shower)',
+            shader: { module: shaderLoader.load('Shader (Texture Shower)', '/shaders/examples/terrain/textureShower.wgsl') },
+            primitive: { topology: 'triangle-strip' },
+        })
 
         // Pass
         this.lodMapPass = renderPass({
-            name: 'Render Pass (LOD Map)',
+            name: 'Render Pass (LoD Map)',
             colorAttachments: [ { colorResource: this.lodMapTexture } ]
         }).add(this.lodMapPipeline, this.lodMapBinding)
+        this.dLodMapPass = computePass({
+            name: 'Compute Pass (Lod Delta Level Map)',
+        }).add(this.dLodMapPipeline, this.dLodMapBinding)
 
         return this
     }
@@ -230,11 +273,6 @@ export class LocalTerrain {
         return this.visibleNodeLevel.y
     }
 
-    get prePass() {
-        
-        return this.lodMapPass
-    }
-
     get pipeline() {
 
         return this.meshRenderPipeline
@@ -253,7 +291,7 @@ export class LocalTerrain {
         // Reset uiform-related member per frame
         this.tileBox.reset()
         this.sectorRange.reset()
-        this.bindingUsed = 0
+        this.nodeCount = 0
         this.maxVisibleNodeLevel = 0
         this.minVisibleNodeLevel = this.maxLevel
 
@@ -295,22 +333,22 @@ export class LocalTerrain {
         // Give priority to high-level ones ?
         visibleNode./*sort((a, b) => a.level - b.level).*/forEach(node => {
 
-            if (/* node.isVisible(options) && */this.bindingUsed < this.maxBindingUsedNum && node.level + 5 >= this.maxVisibleNodeLevel) {
+            if (/* node.isVisible(options) && */this.nodeCount < this.maxBindingUsedNum && node.level + 5 >= this.maxVisibleNodeLevel) {
 
                 this.minVisibleNodeLevel = node.level < this.minVisibleNodeLevel ? node.level : this.minVisibleNodeLevel
                 this.tileBox.updateByBox(node.bBox)
     
-                this.nodeLevelArray.element(this.bindingUsed, node.level)
-                this.nodeBoxArray.element(this.bindingUsed * 4 + 0, node.bBox.boundary.x)
-                this.nodeBoxArray.element(this.bindingUsed * 4 + 1, node.bBox.boundary.y)
-                this.nodeBoxArray.element(this.bindingUsed * 4 + 2, node.bBox.boundary.z)
-                this.nodeBoxArray.element(this.bindingUsed * 4 + 3, node.bBox.boundary.w)
+                this.nodeLevelArray.element(this.nodeCount, node.level)
+                this.nodeBoxArray.element(this.nodeCount * 4 + 0, node.bBox.boundary.x)
+                this.nodeBoxArray.element(this.nodeCount * 4 + 1, node.bBox.boundary.y)
+                this.nodeBoxArray.element(this.nodeCount * 4 + 2, node.bBox.boundary.z)
+                this.nodeBoxArray.element(this.nodeCount * 4 + 3, node.bBox.boundary.w)
     
-                this.bindingUsed++
+                this.nodeCount++
             }
 
             node.release()
         })
-        console.log(this.bindingUsed)
+        console.log(this.nodeCount)
     }
 }

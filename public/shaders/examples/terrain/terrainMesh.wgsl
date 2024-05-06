@@ -27,7 +27,6 @@ struct DynamicUniformBlock {
 
 struct TileUniformBlock {
     tileBox: vec4f,
-    levelRange: vec2f,
     sectorRange: vec2f,
     sectorSize: f32,
     exaggeration: f32,
@@ -45,11 +44,9 @@ struct TileUniformBlock {
 @group(1) @binding(3) var<storage> box: array<f32>;
 
 // Texture Bindings
-@group(2) @binding(0) var lSampler: sampler;
-@group(2) @binding(1) var demTexture: texture_2d<f32>;
-@group(2) @binding(2) var lodMap: texture_2d<f32>;
-@group(2) @binding(3) var palette: texture_2d<f32>;
-@group(2) @binding(4) var fieldTexture: texture_2d<f32>;
+@group(2) @binding(0) var demTexture: texture_2d<f32>;
+@group(2) @binding(1) var lodMap: texture_2d<u32>;
+@group(2) @binding(2) var dLodMap: texture_2d<u32>;
 
 const PI = 3.141592653;
 
@@ -167,11 +164,15 @@ fn colorMap(index: u32) -> vec3f {
 fn positionCS(coord: vec2f, z: f32) -> vec4f {
 
     var position_CS = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(calcWebMercatorCoord(coord), z), vec3f(0.0)), 1.0);
-    // let logZ = log(position_CS.w + 1.0) * log2(dynamicUniform.far + 1.0);
-    // position_CS.z = (logZ - dynamicUniform.near) / (dynamicUniform.far - dynamicUniform.near);
-    // position_CS.z = logZ;
 
     return position_CS;
+}
+
+fn stitching(coord: f32, min: f32, delta: f32, edge: f32) -> f32 {
+
+    let order = floor((coord - min) / delta) % pow(2.0, edge);
+    let distance = -order * delta;
+    return distance;
 }
 
 @vertex
@@ -179,6 +180,7 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
 
     let triangleID = vsInput.vertexIndex / 3;
     let index = indices[vsInput.vertexIndex];
+
     let x = positions[index * 2 + 0];
     let y = positions[index * 2 + 1];
     let center = centroid(triangleID);
@@ -201,7 +203,7 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
     //////////////////
 
     var z: f32; var uvs: vec2f; var depth: f32;
-    if ((coord.x >= staticUniform.terrainBox[0] && coord.x <= staticUniform.terrainBox[2]) && (coord.y >= staticUniform.terrainBox[1] && coord.y <= staticUniform.terrainBox[3])) {
+    if (all(coord >= staticUniform.terrainBox.xy) && all(coord <= staticUniform.terrainBox.zw)) {
 
         var lodUV: vec2f;
         let lodDim = vec2f(textureDimensions(lodMap, 0).xy) - vec2f(1.0);
@@ -209,50 +211,52 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
         lodUV.y = 255.0 - floor((centeroidCoord.y - tileUniform.tileBox[1]) / tileUniform.sectorRange.y);
 
         let mLodUV = clamp(lodUV.xy, vec2f(0.0, 0.0), lodDim);
-        let lLodUV = clamp(lodUV + vec2f(-1.0, 0.0), vec2f(0.0, 0.0), lodDim);
-        let rLodUV = clamp(lodUV + vec2f(1.0, 0.0), vec2f(0.0, 0.0), lodDim);
-        let tLodUV = clamp(lodUV + vec2f(0.0, -1.0), vec2f(0.0, 0.0), lodDim);
-        let bLodUV = clamp(lodUV + vec2f(0.0, 1.0), vec2f(0.0, 0.0), lodDim);
+    
+        let deltaXY = vec2f(nodeBox[2] - nodeBox[0], nodeBox[3] - nodeBox[1]) / tileUniform.sectorSize;
 
-        let mLevel = textureLoad(lodMap, vec2i(mLodUV.xy), 0).r;
-        let lLevel = textureLoad(lodMap, vec2i(lLodUV.xy), 0).r;
-        let rLevel = textureLoad(lodMap, vec2i(rLodUV.xy), 0).r;
-        let tLevel = textureLoad(lodMap, vec2i(tLodUV.xy), 0).r;
-        let bLevel = textureLoad(lodMap, vec2i(bLodUV.xy), 0).r;
-
-        let deltaX = (nodeBox[2] - nodeBox[0]) / tileUniform.sectorSize;
-        let deltaY = (nodeBox[3] - nodeBox[1]) / tileUniform.sectorSize;
+        let dLevels = textureLoad(dLodMap, vec2i(mLodUV.xy), 0).r; //N-E-S-W
+        let N = f32((dLevels >> 24) & 0xFFu);
+        let E = f32((dLevels >> 16) & 0xFFu);
+        let S = f32((dLevels >> 8) & 0xFFu);
+        let W = f32(dLevels & 0xFFu);
 
         var offset = vec2f(0.0);
-        if ((coord.x == nodeBox[0] && lLevel < mLevel) || (coord.x == nodeBox[2] && rLevel < mLevel)) {
 
-            offset.y = select(0.0, deltaY, floor((coord.y - nodeBox[1]) / deltaY) % 2.0 == 1.0);
-        }
-        if ((coord.y == nodeBox[1] && bLevel < mLevel) || (coord.y == nodeBox[3] && tLevel < mLevel)) {
+        // Vertical stitching
+        if ((coord.x == nodeBox.x || coord.x == nodeBox.z)) {
 
-            offset.x = select(0.0, deltaX, floor((coord.x - nodeBox[0]) / deltaX) % 2.0 == 1.0);
-        }
+            let dVertical = f32(select(E, W, coord.x == nodeBox.x));
+            offset.y = stitching(coord.y, nodeBox.y, deltaXY.y, dVertical);
+        } 
+        // Horizontal stitching
+        if ((coord.y == nodeBox.y || coord.y == nodeBox.w)) {
+
+            let dHorizontal = f32(select(N, S, coord.y == nodeBox.y));
+            offset.x = stitching(coord.x, nodeBox.x, deltaXY.x, dHorizontal);
+        } 
+
         coord += offset;
+
         let uv = calcUVFromCoord(coord);
         let dim = vec2f(textureDimensions(demTexture, 0).xy);
-
         let elevation = mix(staticUniform.e.x, staticUniform.e.y, linearSampling(demTexture, uv * dim, dim).r);
+
+        depth = (elevation - staticUniform.e.x) / (staticUniform.e.y - staticUniform.e.x);
         z = tileUniform.exaggeration * altitude2Mercator(coord.y, elevation);
         z = select(z, 0.0, z >= 0.0);
-        depth = (elevation - staticUniform.e.x) / (staticUniform.e.y - staticUniform.e.x);
         uvs = uv;
+
     } else {
 
-        z = nan();
         uvs = vec2f(nan());
         depth = nan();
+        z = nan();
     }
 
     var output: VertexOutput;
-    // output.position = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(calcWebMercatorCoord(coord), z), vec3f(0.0)), 1.0);
-    output.position = positionCS(coord, z);
     output.level = f32(level[vsInput.instanceIndex]);
     output.index = f32(vsInput.instanceIndex);
+    output.position = positionCS(coord, z);
     output.depth = depth;
     output.uv = uvs;
     return output;
@@ -260,15 +264,6 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
 
 @fragment
 fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
-    
-    // let level = clamp(14 - u32(fsInput.level), 0, 10);
-    // let dim = vec2f(textureDimensions(lodMap, 0).xy);
-    // let texcoords = fsInput.uv * dim;
-    // let levelColor = textureLoad(lodMap, vec2i(texcoords.xy), 0).rgb;
-
-    // let paletteLength = f32(textureDimensions(palette).x);
-    // let elevationLevel = fract(paletteLength * fsInput.depth) / paletteLength;
-    // let paletteColor = textureSample(palette, lSampler, vec2f(elevationLevel + 0.2, 0.5));
     
     return vec4f(1.0 - fsInput.depth) * 0.5;
     // return vec4f(vec3f(0.0, 0.5, 0.5) * fsInput.depth, 1.0);

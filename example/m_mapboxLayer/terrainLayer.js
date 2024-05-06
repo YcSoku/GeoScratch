@@ -16,7 +16,9 @@ export default class TerrainLayer extends scr.LocalTerrain {
 
         this.map = map
         this.setResource(map.dynamicUniformBuffer)
-        map.add2PreProcess(this.prePass).add2RenderPass(this.pipeline, this.binding)
+        map.add2PreProcess(this.lodMapPass).add2PreProcess(this.dLodMapPass)
+        // .add2RenderPass(this.showerPipeline, this.showBinding)
+        .add2RenderPass(this.pipeline, this.binding)
     }
 
     render(gl, matrix) {

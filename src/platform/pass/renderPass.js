@@ -169,7 +169,7 @@ export class RenderPass extends ScratchObject {
      */
     execute(encoder) {
 
-        this.pass = encoder.beginRenderPass(this.passDescription)
+        this.pass = encoder.beginRenderPass(this.passDescription)  
 
         this.drawcalls
         .filter(({ binding, pipeline }) => binding.executable && pipeline.executable)

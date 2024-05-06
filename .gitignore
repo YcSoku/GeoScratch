@@ -40,5 +40,6 @@ Thumbs.db
 # Directories #
 ######################
 node_modules/
+public/unity/*
 public/json/examples/*
 public/bin/examples/*

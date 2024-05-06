@@ -44,6 +44,8 @@ export class ComputePass extends ScratchObject {
         this.passDescription = {
             label: `Compute Pass (${this.name})`
         }
+
+        this.executable = true
     }
 
     /**

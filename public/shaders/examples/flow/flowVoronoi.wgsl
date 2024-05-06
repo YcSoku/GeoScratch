@@ -20,6 +20,8 @@ struct FrameUniformBlock {
     maxSpeed: f32,
     lastMvp: mat4x4f,
     lastMvpInverse: mat4x4f,
+    fillWidth: f32,
+    aaWidth: f32,
 };
 
 struct StaticUniformBlock {
