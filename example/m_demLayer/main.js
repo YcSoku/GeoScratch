@@ -21,7 +21,7 @@ scr.StartDash().then(() => {
 
     const map = new ScratchMap({
         style: "mapbox://styles/ycsoku/cldjl0d2m000501qlpmmex490",
-        center: [ 120.980697, 31.684162 ],
+        center: [120.980697, 31.684162],
         projection: 'mercator',
         GPUFrame: GPUFrame,
         container: 'map',
@@ -29,9 +29,9 @@ scr.StartDash().then(() => {
         maxZoom: 18,
         zoom: 9,
     }).on('load', () => {
-        
+
         map.addLayer(new TerrainLayer(14))
-        map.addLayer(new SteadyFlowLayer())
+        // map.addLayer(new SteadyFlowLayer())
     })
 })
 
@@ -53,7 +53,7 @@ class ScratchMap extends mapboxgl.Map {
         this.zoom = scr.f32(this.getZoom())
         this.mercatorBounds = new scr.BoundingBox2D()
         this.cameraBounds = new scr.BoundingBox2D(...this.getBounds().toArray())
-        
+
         // Buffer-related resource (based on map status)
         this.dynamicUniformBuffer = scr.uniformBuffer({
             name: 'Uniform Buffer (Scratch map dynamic status)',
@@ -73,16 +73,16 @@ class ScratchMap extends mapboxgl.Map {
         })
 
         // Texture-related resource
-        this.screen = scr.screen({ canvas: options.GPUFrame, alphaMode: 'premultiplied'})
+        this.screen = scr.screen({ canvas: options.GPUFrame, alphaMode: 'premultiplied' })
         this.depthTexture = this.screen.createScreenDependentTexture('Texture (Map Common Depth)', 'depth32float')
 
         // Pass
         this.outputPass = scr.renderPass({
             name: 'Render Pass (Scratch map)',
-            colorAttachments: [ { colorResource: this.screen } ],
+            colorAttachments: [{ colorResource: this.screen }],
             depthStencilAttachment: { depthStencilResource: this.depthTexture }
         })
-        
+
         // Make stages
         this.preProcessStageName = 'PreRendering'
         this.renderStageName = 'Rendering'
@@ -92,7 +92,7 @@ class ScratchMap extends mapboxgl.Map {
         })
         scr.director.addStage({
             name: this.renderStageName,
-            items: [ this.outputPass ],
+            items: [this.outputPass],
         })
 
         this.on('render', () => {
@@ -106,8 +106,8 @@ class ScratchMap extends mapboxgl.Map {
 
         this.mercatorCenter = new mapboxgl.MercatorCoordinate(...this.transform._computeCameraPosition().slice(0, 3))
         this.zoom.n = this.getZoom()
-        
-        const { far, near, matrix} = getMercatorMatrix(this.transform.clone())
+
+        const { far, near, matrix } = getMercatorMatrix(this.transform.clone())
         const mercatorCenterX = encodeFloatToDouble(this.mercatorCenter.x)
         const mercatorCenterY = encodeFloatToDouble(this.mercatorCenter.y)
         const mercatorCenterZ = encodeFloatToDouble(this.mercatorCenter.z)
@@ -126,6 +126,8 @@ class ScratchMap extends mapboxgl.Map {
         this.mercatorBounds.reset(...m_sw, ...m_ne)
         this.cameraBounds.reset(...this.getBounds().toArray().flat())
 
+        // console.log(this.mercatorCenter, this.mercatorBounds, this.cameraBounds)
+
         this.far.n = far
         this.near.n = near
         this.uMatrix.data = matrix
@@ -133,7 +135,7 @@ class ScratchMap extends mapboxgl.Map {
     }
 
     add2PreProcess(prePass) {
-        
+
         scr.director.addItem(this.preProcessStageName, prePass)
         return this
     }
@@ -147,7 +149,7 @@ class ScratchMap extends mapboxgl.Map {
 
 // Helpers //////////////////////////////////////////////////////////////////////////////////////////////////////
 function getMercatorMatrix(t) {
-    
+
     if (!t.height) return;
 
     const offset = t.centerOffset;
@@ -193,7 +195,7 @@ function getMercatorMatrix(t) {
     let cameraToClip;
 
     // Projection matrix
-    const cameraToClipPerspective = t._camera.getCameraToClipPerspective(t._fov, t.width / t.height, t._nearZ, t._farZ) 
+    const cameraToClipPerspective = t._camera.getCameraToClipPerspective(t._fov, t.width / t.height, t._nearZ, t._farZ)
     // const cameraToClipPerspective = t._camera.getCameraToClipPerspective(t._fov, t.width / t.height, t._nearZ, _farZ) 
     // const cameraToClipPerspective = scr.mat4.perspective(t._fov, t.width / t.height, t._nearZ, t._farZ)
     // Apply offset/padding
@@ -201,7 +203,7 @@ function getMercatorMatrix(t) {
     cameraToClipPerspective[9] = offset.y * 2 / t.height;
 
     if (t.isOrthographic) {
-        const cameraToCenterDistance =  0.5 * t.height / Math.tan(t._fov / 2.0) * 1.0;
+        const cameraToCenterDistance = 0.5 * t.height / Math.tan(t._fov / 2.0) * 1.0;
 
         // Calculate bounds for orthographic view
         let top = cameraToCenterDistance * Math.tan(t._fov * 0.5);
@@ -217,7 +219,7 @@ function getMercatorMatrix(t) {
         cameraToClip = t._camera.getCameraToClipOrthographic(left, right, bottom, top, t._nearZ, _farZ);
 
         const mixValue =
-        t.pitch >= OrthographicPitchTranstionValue ? 1.0 : t.pitch / OrthographicPitchTranstionValue;
+            t.pitch >= OrthographicPitchTranstionValue ? 1.0 : t.pitch / OrthographicPitchTranstionValue;
         // lerpMatrix(cameraToClip, cameraToClip, cameraToClipPerspective, easeIn(mixValue));
     } else {
         cameraToClip = cameraToClipPerspective;
@@ -263,7 +265,7 @@ function smoothstep(e0, e1, x) {
 function encodeFloatToDouble(value) {
     const result = new Float32Array(2);
     result[0] = value;
-    
+
     const delta = value - result[0];
     result[1] = delta;
     return result;

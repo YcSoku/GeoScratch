@@ -253,7 +253,8 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
 
     var output: VertexOutput;
     // output.position = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(calcWebMercatorCoord(coord), z), vec3f(0.0)), 1.0);
-    output.position = positionCS(coord, z);
+    // output.position = positionCS(coord, z);
+    output.position = positionCS(coord, 0.0);
     output.depth = (elevation - staticUniform.e.x) / (staticUniform.e.y - staticUniform.e.x);
     output.index = f32(vsInput.instanceIndex);
     return output;
