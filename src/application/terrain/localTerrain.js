@@ -22,7 +22,7 @@ export class LocalTerrain {
     constructor(maxLevel) {
 
         ///////// Initialize CPU resource /////////
-        this.asLine = 1
+        this.asLine = 0
         this.bindingUsed = 0
         this.maxLevel = maxLevel
         this.maxBindingUsedNum = 5000
@@ -162,9 +162,16 @@ export class LocalTerrain {
                 { buffer: this.nodeBoxBuffer },
             ],
         })
+        window.addEventListener('keydown', e => {
+            if (e.key === '1') {
+                this.asLine = 1
+            } else if (e.key == '2') {
+                this.asLine = 0
+            }
+        })
         this.meshBinding = binding({
             name: `Binding (Terrain Node)`,
-            range: () => [this.indexNum / 3 * (this.asLine ? 6 : 3), this.bindingUsed],
+            range: () => [this.indexNum * (this.asLine ? 2 : 1), this.bindingUsed],
             sharedUniforms: [
                 { buffer: this.tileBuffer },
                 { buffer: this.gStaticBuffer },
@@ -293,7 +300,7 @@ export class LocalTerrain {
         visibleNode./*sort((a, b) => a.level - b.level).*/forEach(node => {
 
             if (this.bindingUsed < this.maxBindingUsedNum) {
-            // if (this.bindingUsed < this.maxBindingUsedNum && node.level >= this.maxVisibleNodeLevel - 5) {
+                // if (this.bindingUsed < this.maxBindingUsedNum && node.level >= this.maxVisibleNodeLevel - 5) {
 
                 this.minVisibleNodeLevel = node.level < this.minVisibleNodeLevel ? node.level : this.minVisibleNodeLevel
                 this.tileBox.updateByBox(node.bBox)
@@ -309,6 +316,5 @@ export class LocalTerrain {
 
             node.release()
         })
-        // console.log(options)
     }
 }

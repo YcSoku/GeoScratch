@@ -30,7 +30,15 @@ scr.StartDash().then(() => {
         zoom: 9,
     }).on('load', () => {
 
-        map.addLayer(new TerrainLayer(14))
+        // const layer1 = new TerrainLayer(14)
+        // layer1.id = 'layer1'
+        // layer1.asLine = 0
+        
+        const layer2 = new TerrainLayer(14)
+        layer2.id = 'layer2'
+        layer2.asLine = 1
+        // map.addLayer(layer1)
+        map.addLayer(layer2)
         // map.addLayer(new SteadyFlowLayer())
     })
 })
