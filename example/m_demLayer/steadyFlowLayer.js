@@ -123,8 +123,8 @@ export default class SteadyFlowLayer {
 
         this.addWorker(new Worker(new URL( './flowJson.worker.js', import.meta.url ), { type: 'module' }))
 
-        // this.extent.reset(120.0437360613468201, 31.1739019522094871, 121.9662324011692220, 32.0840108580467813)
-        this.extent.reset(120.04485952099877, 31.757211235652274, 121.00010037560567, 32.08267764177068)
+        this.extent.reset(120.0437360613468201, 31.1739019522094871, 121.9662324011692220, 32.0840108580467813)
+        // this.extent.reset(120.04485952099877, 31.757211235652274, 121.00010037560567, 32.08267764177068)
 
         // Buffer-related resource
         this.storageBuffer_particle = scr.storageBuffer({
@@ -253,6 +253,15 @@ export default class SteadyFlowLayer {
             primitive: { topology: 'line-list' },
         })
         this.swapPasses = [
+
+            scr.renderPass({
+                name: 'Render Pass (Trajectory Empty)',
+                colorAttachments: [ 
+                    { colorResource: this.layerTexture1 },
+                    { colorResource: this.layerTexture2 }
+                ],
+            }) /* Pass 3.3* Trajectory Clear */,
+
             scr.renderPass({
                 name: 'Render Pass (Past Trajectory 1)',
                 colorAttachments: [ { colorResource: this.layerTexture1 } ],
@@ -268,14 +277,6 @@ export default class SteadyFlowLayer {
             })
             /* Pass 3.1 */.add(this.trajectoryPipeline, this.trajectoryBindings[1])
             /* Pass 3.2 */.add(this.particlePipeline, this.particleBinding),
-
-            scr.renderPass({
-                name: 'Render Pass (Trajectory Empty)',
-                colorAttachments: [ 
-                    { colorResource: this.layerTexture1 },
-                    { colorResource: this.layerTexture2 }
-                ],
-            }) /* Pass 3.3* Trajectory Clear */,
         ]
 
         // PASS - 4: flow layer rendering ////////////////////////////////////////////////
@@ -319,14 +320,14 @@ export default class SteadyFlowLayer {
         })
 
         // Execution configuration
-        this.swapPasses[0].executable = true
-        this.swapPasses[1].executable = false
+        this.swapPasses[1].executable = true
         this.swapPasses[2].executable = false
+        this.swapPasses[0].executable = false
         this.layerBindings[0].executable = true
         this.layerBindings[1].executable = false
 
         // Add to map
-        this.showArrow && this.map.add2RenderPass(this.arrowPipeline, this.particleBinding)
+        // this.showArrow && this.map.add2RenderPass(this.arrowPipeline, this.particleBinding)
         this.showVoronoi && this.map.add2RenderPass(this.showPipeline, this.showBinding)
         .add2RenderPass(this.layerPipeline, this.layerBindings[0])
         .add2RenderPass(this.layerPipeline, this.layerBindings[1])
@@ -336,21 +337,21 @@ export default class SteadyFlowLayer {
         .add2PreProcess(this.swapPasses[1])
         .add2PreProcess(this.swapPasses[2])
 
-        this.map.on('movestart', () => this.idle())
-        this.map.on('move', () => this.idle())
-        this.map.on('moveend', () => this.restart())
-        this.map.on('dragstart', () => this.idle())
-        this.map.on('drag', () => this.idle())
-        this.map.on('dragend', () => this.restart())
-        this.map.on('zoomstart', () => this.idle())
-        this.map.on('zoom', () => this.idle())
-        this.map.on('zoomend', () => this.restart())
-        this.map.on('rotatestart', () => this.idle())
-        this.map.on('rotate', () => this.idle())
-        this.map.on('rotateend', () => this.restart())
-        this.map.on('pitchstart', () => this.idle())
-        this.map.on('pitch', () => this.idle())
-        this.map.on('pitchend', () => this.restart())
+        // this.map.on('movestart', () => this.idle())
+        // this.map.on('move', () => this.idle())
+        // this.map.on('moveend', () => this.restart())
+        // this.map.on('dragstart', () => this.idle())
+        // this.map.on('drag', () => this.idle())
+        // this.map.on('dragend', () => this.restart())
+        // this.map.on('zoomstart', () => this.idle())
+        // this.map.on('zoom', () => this.idle())
+        // this.map.on('zoomend', () => this.restart())
+        // this.map.on('rotatestart', () => this.idle())
+        // this.map.on('rotate', () => this.idle())
+        // this.map.on('rotateend', () => this.restart())
+        // this.map.on('pitchstart', () => this.idle())
+        // this.map.on('pitch', () => this.idle())
+        // this.map.on('pitchend', () => this.restart())
 
         this.isInitialized = true
     }
@@ -367,9 +368,11 @@ export default class SteadyFlowLayer {
         // Swap
         this.showBinding.executable = false
 
-        this.swapPasses[0].executable = this.swapPointer
+        // this.swapPasses[0].executable = true
+        // this.swapPasses[1].executable = false
+        this.swapPasses[1].executable = this.swapPointer
+        this.swapPasses[2].executable = 1 - this.swapPointer
         this.layerBindings[0].executable = this.swapPointer
-        this.swapPasses[1].executable = 1 - this.swapPointer
         this.layerBindings[1].executable = 1 - this.swapPointer
 
         // Update
@@ -381,24 +384,25 @@ export default class SteadyFlowLayer {
     idle() {
 
         this.isIdling = true
+
+        this.swapPasses[0].executable = true
         
-        this.showBinding.executable = true
-        this.swapPasses[2].executable = true
-        this.arrowPipeline.executable = false
+        // this.showBinding.executable = true
+        // this.swapPasses[2].executable = true
+        // this.arrowPipeline.executable = false
         
-        this.swapPasses[0].executable = false
-        this.swapPasses[1].executable = false
-        this.layerBindings[0].executable = false
-        this.layerBindings[1].executable = false
+        // this.swapPasses[0].executable = false
+        // this.swapPasses[1].executable = false
+        // this.layerBindings[0].executable = false
+        // this.layerBindings[1].executable = false
     }
 
     restart() {
 
         this.preheat = 10
         this.isIdling = false
-        this.arrowPipeline.executable = true
-        this.swapPasses[2].executable = false
-        this.swapPasses[2].executable = false
+        // this.arrowPipeline.executable = true
+        this.swapPasses[0].executable = false
         this.particleRef.value = this.randomFillData
     }
 
