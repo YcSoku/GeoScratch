@@ -1,5 +1,4 @@
-import { UUID } from "../util/uuid"
-import ScratchObject from "../object/object"
+import RegistrableObject from "../object/registrableObject"
 
 ////// Helper ////////////////////////////////
 type SupportedArrayBufferView = Uint8Array | Uint16Array | Uint32Array | Float32Array
@@ -42,23 +41,20 @@ function ensureByteLengthMultipleOfFour(data: SupportedArrayBufferView) {
 
 
 ////// ArrayRef ////////////////////////////////
-type AnyCallBack = (...args: any[]) => any
 
-class ArrayRef extends ScratchObject {
+
+class ArrayRef extends RegistrableObject {
 
     length: number
     private _data: SupportedArrayBufferView
 
     structure: unknown[]
     stride: number
-    onChanges: Array<AnyCallBack | null>
-
     constructor(name: string, data: SupportedArrayBufferView) {
 
         super(name)
         this.length = data.length
         this._data = ensureByteLengthMultipleOfFour(data)
-        this.onChanges = []
         this.structure = []
         this.stride = 0
     }
@@ -85,7 +81,6 @@ class ArrayRef extends ScratchObject {
         return this._data[index]
     }
 
-
     fill(num: number) {
 
         this._data.fill(num)
@@ -98,31 +93,11 @@ class ArrayRef extends ScratchObject {
         return this.setIndexed(index, data)
     }
 
-    registerCallback(callback: AnyCallBack) {
-
-        this.onChanges.push(callback)
-        return this.onChanges.length - 1
-    }
-
-    removeCallback(indexOrFunction: number | AnyCallBack) {
-
-        if (typeof indexOrFunction === 'number') {
-            this.onChanges[indexOrFunction] = null
-        } else {
-            const index = this.onChanges.indexOf(indexOrFunction)
-            if (index === -1) {
-                throw 'Callback not registered ' + indexOrFunction.toString()
-            }
-            this.onChanges[index] = null
-        }
-    }
-
     destroy(): void {
-        super.destroy()
-        this.onChanges = []
         this.structure = []
         // @ts-ignore
         this._data = null; this.stride = null
+        super.destroy()
     }
 }
 

@@ -1,4 +1,4 @@
-import { UUID } from "../util/uuid"
+import { UUID } from "../util/util"
 
 export default class ScratchObject {
 
@@ -21,7 +21,6 @@ export default class ScratchObject {
     release() {
 
         if (--this.refCount === 0) this.destroy()
-
         return null
     }
 
