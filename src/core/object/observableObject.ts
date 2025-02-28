@@ -1,7 +1,7 @@
 import ScratchObject from "./object"
 import { AnyCallBack } from "../util/types"
 
-export default class RegistrableObject extends ScratchObject {
+export default class ObservableObject extends ScratchObject {
 
     protected onChanges: Array<AnyCallBack | null>
     constructor(name?: string) {
@@ -26,6 +26,10 @@ export default class RegistrableObject extends ScratchObject {
             if (index === -1) throw 'Callback not registered ' + indexOrFunction.toString()
             this.onChanges[index] = null
         }
+    }
+
+    invokeCallbacks(data?: unknown) {
+        this.onChanges.forEach(callback => callback && callback(data))
     }
 
     destroy() {

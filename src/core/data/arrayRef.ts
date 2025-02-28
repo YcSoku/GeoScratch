@@ -1,4 +1,4 @@
-import RegistrableObject from "../object/registrableObject"
+import ObservableObject from "../object/observableObject"
 
 ////// Helper ////////////////////////////////
 type SupportedArrayBufferView = Uint8Array | Uint16Array | Uint32Array | Float32Array
@@ -37,7 +37,7 @@ function ensureByteLengthMultipleOfFour(data: SupportedArrayBufferView) {
 
 
 ////// ArrayRef ////////////////////////////////
-class ArrayRef extends RegistrableObject {
+class ArrayRef extends ObservableObject {
 
     length: number
     private _data: SupportedArrayBufferView
@@ -61,13 +61,13 @@ class ArrayRef extends RegistrableObject {
     set value(data) {
 
         this._data = data
-        this.onChanges.forEach(callback => callback && callback())
+        super.invokeCallbacks(this._data)
     }
 
     setIndexed(index: number, data: number) {
 
         this._data[index] = data
-        this.onChanges.forEach(callback => callback && callback())
+        super.invokeCallbacks(this._data)
         return this._data[index]
     }
 
@@ -79,7 +79,7 @@ class ArrayRef extends RegistrableObject {
     fill(num: number) {
 
         this._data.fill(num)
-        this.onChanges.forEach(callback => callback && callback())
+        super.invokeCallbacks(this._data)
     }
 
     element(index: number, data?: number) {

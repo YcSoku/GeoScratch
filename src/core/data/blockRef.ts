@@ -1,5 +1,5 @@
 import { makeShaderDataDefinitions, makeStructuredView, StructuredView } from "webgpu-utils"
-import RegistrableObject from "../object/registrableObject"
+import ObservableObject from "../object/observableObject"
 import { NumericInterface } from "../numeric/numeric"
 
 /////// Types //////////////////////////////////
@@ -12,7 +12,7 @@ type BlockRefDescription = {
 
 
 /////// BlockRef //////////////////////////////////
-class BlockRef extends RegistrableObject {
+class BlockRef extends ObservableObject {
 
     map: Record<string, NumericInterface> = {}
     code: string
@@ -28,8 +28,8 @@ class BlockRef extends RegistrableObject {
 
         // Make structured view of block
         let typeDeclaration = ``
-        Object.keys(this.map).forEach(k => { 
-            typeDeclaration += `${k}: ${this.map[k].type},\n` 
+        Object.keys(this.map).forEach(k => {
+            typeDeclaration += `${k}: ${this.map[k].type},\n`
             this.map[k]
         })
         this.code = `struct Block {
@@ -64,7 +64,7 @@ class BlockRef extends RegistrableObject {
         }
         this._view.set(data)
 
-        this.onChanges.forEach(callback => callback && callback())
+        super.invokeCallbacks()
     }
 
     destroy() {
