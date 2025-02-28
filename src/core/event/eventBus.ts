@@ -1,51 +1,52 @@
 import Event from "./event"
-import { EventCallBack } from "../util/types"
+import { EventCallBack, EventDescription } from "../util/types"
 
-class EventBus {
+export default class EventBus {
 
-    private listeners: Map<string, Array<EventCallBack>> = new Map()
+    events: Map<string, Event>
     private static instance: EventBus | null = null
     constructor() {
+
+        this.events = new Map()
     }
-    public static getInstance(): EventBus {
+
+    static getInstance(): EventBus {
+
         if (!EventBus.instance) EventBus.instance = new EventBus()
         return EventBus.instance
     }
 
-    on(eventType: string, callback: EventCallBack): void {
+    register(eventDescription: EventDescription) {
 
-        if (!this.listeners.has(eventType)) {
-            this.listeners.set(eventType, [])
+        if (this.events.has(eventDescription.id)) {
+            console.warn(`Event *${eventDescription.id}* has already registered`); return
         }
-        this.listeners.get(eventType)!.push(callback)
+        this.events.set(eventDescription.id, new Event(eventDescription))
     }
 
-    off(eventType: string, callback: EventCallBack): void {
+    on(eventName: string, callback: EventCallBack): void {
 
-        if (!this.listeners.has(eventType)) {
-            console.warn(`Event *${eventType}* not Found`); return
-        }
-
-        const callbacks = this.listeners.get(eventType)!
-        const index = callbacks.indexOf(callback)
-        if (index > -1)
-            this.listeners.get(eventType)!.splice(index, 1)
-
-        if (this.listeners.get(eventType)!.length === 0) {
-            this.listeners.delete(eventType)
-        }
+        if (!this.check(eventName)) return
+        this.events.get(eventName)!.addListener(callback)
     }
 
-    emit(eventType: string, data: unknown, async: boolean = false) {
+    off(eventName: string, callback: EventCallBack): void {
 
-        if (!this.listeners.has(eventType)) {
-            console.warn(`Event *${eventType}* not Found`); return
-        }
+        if (!this.check(eventName)) return
+        this.events.get(eventName)!.removeListener(callback)
+    }
 
-        const callbacks = this.listeners.get(eventType)!
-        if (!async) {
-            // Call synchronously
-            callbacks.forEach(cb => cb(data))
+    emit(eventName: string, data: unknown, async: boolean = false) {
+
+        if (!this.check(eventName)) return
+        this.events.get(eventName)!.emit(data, async)
+    }
+
+    private check(eventName: string) {
+
+        if (this.events.has(eventName) === false) {
+            console.warn(`Event *${eventName}* is not registered`); return false
         }
+        return true
     }
 }

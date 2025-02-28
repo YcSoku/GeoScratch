@@ -11,7 +11,6 @@ export class Vec3f extends Numeric<Vec3> {
         else super('vec3f', vec3.fromValues(x, y, z))
     }
 
-
     get x() {
 
         return this._data[0]

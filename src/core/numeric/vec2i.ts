@@ -18,19 +18,32 @@ export class Vec2i extends Numeric<Vec2> {
         return new Vec2i(x, y);
     }
 
-    get array() {
+    get x() {
 
-        return this._data
+        return this._data[0]
+    }
+    set x(x) {
+
+        this._data[0] = x
     }
 
+    get y() {
+
+        return this._data[1]
+    }
+
+    set y(y) {
+
+        this._data[1] = y
+    }
 }
 
-export function vec2i(x: number | undefined, y: number | undefined) {
+export function vec2i(x?: number, y?: number) {
 
     return Vec2i.create(x, y)
 }
 
-export function asVec2i(x: number | undefined, y: number | undefined) {
+export function asVec2i(x?: number, y?: number) {
 
     const v = [0, 0]
 

@@ -3,7 +3,7 @@ import { AnyCallBack } from "../util/types"
 
 export default class RegistrableObject extends ScratchObject {
 
-    onChanges: Array<AnyCallBack | null>
+    protected onChanges: Array<AnyCallBack | null>
     constructor(name?: string) {
 
         super(name)

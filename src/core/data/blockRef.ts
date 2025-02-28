@@ -28,7 +28,10 @@ class BlockRef extends RegistrableObject {
 
         // Make structured view of block
         let typeDeclaration = ``
-        Object.keys(this.map).forEach(k => { typeDeclaration += `${k}: ${this.map[k].type},\n` })
+        Object.keys(this.map).forEach(k => { 
+            typeDeclaration += `${k}: ${this.map[k].type},\n` 
+            this.map[k]
+        })
         this.code = `struct Block {
             ${typeDeclaration}
         }`

@@ -31,18 +31,12 @@ function ensureByteLengthMultipleOfFour(data: SupportedArrayBufferView) {
         }
         return paddedArray
     }
-
     return data
 }
 
 
 
-
-
-
 ////// ArrayRef ////////////////////////////////
-
-
 class ArrayRef extends RegistrableObject {
 
     length: number
@@ -74,6 +68,7 @@ class ArrayRef extends RegistrableObject {
 
         this._data[index] = data
         this.onChanges.forEach(callback => callback && callback())
+        return this._data[index]
     }
 
     getIndexed(index: number) {
@@ -104,10 +99,6 @@ class ArrayRef extends RegistrableObject {
 function aRef(typedArray: SupportedArrayBufferView, name: string = 'arrayRef') {
     return new ArrayRef(name, typedArray)
 }
-
-
-
-
 
 export {
     ArrayRef, aRef

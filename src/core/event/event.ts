@@ -1,25 +1,30 @@
-import { EventCallBack } from "../util/types"
-import MicroThrottledInvoker from "./MicroThrottledInvoker"
+import { EventCallBack, EventDescription } from "../util/types"
+import MicroThrottledInvoker from "./microThrottledInvoker"
 
 export default class Event {
 
     id: string
+    meta: Record<string, unknown>
     data: unknown
     invoker: MicroThrottledInvoker
     listeners: Array<EventCallBack>
     taskQueue!: Array<EventCallBack>
-    constructor(id: string) {
-        this.id = id
+    constructor(eventDescription: EventDescription) {
+
+        this.id = eventDescription.id
+        this.meta = eventDescription.meta ?? {}
         this.data = null
         this.listeners = []
         this.invoker = new MicroThrottledInvoker()
     }
 
     addListener(callback: EventCallBack) {
+
         this.listeners.push(callback)
     }
 
     removeListener(callback: EventCallBack) {
+
         const index = this.listeners.indexOf(callback)
         if (index === -1) {
             console.warn(`Event listener not found`, callback); return
@@ -37,13 +42,13 @@ export default class Event {
             })
         } else {
 
-            // Async one by one
-            const process = this.processTask.bind(this)
-            this.taskQueue = this.listeners.slice()
-            this.invoker.setCallback(process)
-            this.invoker.trigger()
+            // // Option 1: Async one by one
+            // const process = this.processTask.bind(this)
+            // this.taskQueue = this.listeners.slice()
+            // this.invoker.setCallback(process)
+            // this.invoker.trigger()
 
-            // Async all
+            // Option 2: Async all in once
             this.invoker.setCallback(() => {
                 this.listeners.forEach(cb => {
                     cb(data)
@@ -53,10 +58,17 @@ export default class Event {
         }
     }
 
-    // ？ 真的有这种需要吗？一个事件的监听器要异步接异步地调用？
-    // ？ 如需异步，是否是大家一起在一次异步后同步执行？
-    // When asynchronous invoking
-    processTask() {
+    destroy() {
+
+        this.meta = {}
+        this.data = null
+        this.taskQueue = []
+        this.listeners = []
+        this.invoker.remove()
+    }
+
+    // ？ When asynchronous invoking one by one
+    private processTask() {
 
         if (this.taskQueue.length === 0) return;
 
@@ -69,5 +81,5 @@ export default class Event {
         const task = this.taskQueue.shift()!
         task && task(this.data)
     }
-
+    
 }

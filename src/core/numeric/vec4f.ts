@@ -113,11 +113,6 @@ export class Vec4f extends Numeric<Vec4> {
 
         return new Vec4f(x, y, z, w)
     }
-
-    get array() {
-
-        return this._data
-    }
 }
 
 export function vec4f(x?: number, y?: number, z?: number, w?: number) {

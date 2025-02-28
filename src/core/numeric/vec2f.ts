@@ -2,7 +2,7 @@ import Numeric from './numeric'
 import { Vec2, vec2 } from 'wgpu-matrix'
 
 export class Vec2f extends Numeric<Vec2> {
-    constructor(x: number | undefined, y: number | undefined = x) {
+    constructor(x?: number, y?: number) {
         super(
             'vec2f',
             (x === undefined && y === undefined)
@@ -13,24 +13,37 @@ export class Vec2f extends Numeric<Vec2> {
         );
     }
 
-    static create(x: number | undefined, y: number | undefined) {
+    static create(x?: number, y?: number) {
 
         return new Vec2f(x, y);
     }
 
-    get array() {
+    get x() {
 
-        return this._data
+        return this._data[0]
+    }
+    set x(x) {
+
+        this._data[0] = x
     }
 
+    get y() {
+
+        return this._data[1]
+    }
+
+    set y(y) {
+
+        this._data[1] = y
+    }
 }
 
-export function vec2f(x: number | undefined, y: number | undefined) {
+export function vec2f(x?: number, y?: number) {
 
     return Vec2f.create(x, y)
 }
 
-export function asVec2f(x: number | undefined, y: number | undefined) {
+export function asVec2f(x?: number, y?: number) {
 
     const v = [0, 0]
 
