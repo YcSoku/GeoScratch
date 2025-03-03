@@ -1,5 +1,5 @@
 import { ArrayRef } from "../../core/data/arrayRef";
-import { Buffer } from "./buffer";
+import { Buffer } from "./buffer.js";
 
 /**
  * @typedef {Object} StorageResourceDescription

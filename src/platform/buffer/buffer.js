@@ -1,8 +1,8 @@
 import { ArrayRef } from "../../core/data/arrayRef"
 import { BlockRef } from "../../core/data/blockRef"
-import director from "../director/director"
+import { director } from "../director/director"
 import { monitor } from "../monitor/monitor"
-import { ScratchObject } from "../../core/object/object"
+import ScratchObject from "../../core/object/object"
 
 /**
  * @typedef {Object} BufferDescription

@@ -1,4 +1,4 @@
-import { Buffer } from './../buffer/buffer';
+import { Buffer } from '../buffer/buffer';
 import { Binding } from "../binding/binding";
 import { Texture } from '../texture/texture';
 import { EventDispatcher } from '../../core/event/dispatcher';

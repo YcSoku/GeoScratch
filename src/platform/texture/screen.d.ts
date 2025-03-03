@@ -1,5 +1,5 @@
 import { Vec2f, Vec2i, Vec2u } from '../../core/numeric/index'
-import { Texture } from "../texture/texture";
+import { Texture } from "./texture";
 
 /**
  * Information about the canvas and its GPU context.

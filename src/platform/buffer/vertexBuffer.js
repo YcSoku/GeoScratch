@@ -1,4 +1,4 @@
-import { Buffer } from "./buffer";
+import { Buffer } from "./buffer.js";
 import { ArrayRef } from "../../core/data/arrayRef";
 
 function parseArrayType(typedArray) {

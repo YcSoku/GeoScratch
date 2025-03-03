@@ -1,6 +1,6 @@
-import { UUID } from "../../core/utils/uuid.js"
-import { Binding } from "../binding/binding.js"
-import { ComputePipeline } from "../pipeline/computePipeline.js"
+import { UUID } from "../../core/util/util"
+import { Binding } from "../binding/binding"
+import { ComputePipeline } from "../pipeline/computePipeline"
 
 /**
  * @typedef {Object} ComputePassDescription

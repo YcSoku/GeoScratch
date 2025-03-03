@@ -1,5 +1,5 @@
-import { ScratchObject } from '../../core/object/object.js'
-import { director } from '../director/director.js'
+import ScratchObject from '../../core/object/object'
+import { director } from '../director/director'
 import { monitor } from "../monitor/monitor"
 
 /**

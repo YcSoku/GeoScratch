@@ -1,9 +1,9 @@
-import { UUID } from '../../core/utils/uuid.js'
-import { Binding } from '../binding/binding.js'
-import { NoBlending } from '../blending/blending.js'
-import { director } from '../director/director.js'
-import { RenderPass } from '../pass/renderPass.js'
-import { Shader } from '../shader/shader.js'
+import { UUID } from '../../core/util/util'
+import { Binding } from '../binding/binding'
+import { NoBlending } from '../blending/blending'
+import { director } from '../director/director'
+import { RenderPass } from '../pass/renderPass'
+import { Shader } from '../shader/shader'
 
 /**
  * @typedef {Object} RenderPipelineDescription

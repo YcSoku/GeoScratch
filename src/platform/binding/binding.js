@@ -1,13 +1,13 @@
-import { UniformBuffer } from '../buffer/uniformBuffer.js'
-import { StorageBuffer } from '../buffer/storageBuffer.js'
-import { Texture } from '../texture/texture.js'
-import { VertexBuffer } from '../buffer/vertexBuffer.js'
-import { IndirectBuffer } from '../buffer/indirectBuffer.js'
-import { IndexBuffer } from '../buffer/indexBuffer.js'
-import { BlockRef } from '../../core/data/blockRef.js'
-import { Sampler } from '../sampler/sampler.js'
-import { director } from '../director/director.js'
-import { ScratchObject } from '../../core/object/object'
+import { UniformBuffer } from '../buffer/uniformBuffer'
+import { StorageBuffer } from '../buffer/storageBuffer'
+import { Texture } from '../texture/texture'
+import { VertexBuffer } from '../buffer/vertexBuffer'
+import { IndirectBuffer } from '../buffer/indirectBuffer'
+import { IndexBuffer } from '../buffer/indexBuffer'
+import { BlockRef } from '../../core/data/blockRef'
+import { Sampler } from '../sampler/sampler'
+import { director } from '../director/director'
+import ScratchObject from '../../core/object/object'
 
 /**
  * @typedef {Object} VertexBindingDescription
@@ -58,7 +58,7 @@ import { ScratchObject } from '../../core/object/object'
  * @property {string} name
  * @property {number} [visibility]
  * @property {{[dataName: string]: Function}} map
- * @property {import('./webgpu-utils.module.js').StructuredView} view
+ * @property {import('./webgpu-utils.module').StructuredView} view
  * @property {BlockRef} ref
  */
 

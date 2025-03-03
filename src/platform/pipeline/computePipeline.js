@@ -1,8 +1,8 @@
-import { UUID } from "../../core/utils/uuid.js"
-import { Binding } from "../binding/binding.js"
+import { UUID } from "../../core/util/util"
+import { Binding } from "../binding/binding"
 import { device } from "../context/singletonDevice"
-import { ComputePass } from "../pass/computePass.js"
-import { Shader } from "../shader/shader.js"
+import { ComputePass } from "../pass/computePass"
+import { Shader } from "../shader/shader"
 
 /**
  * @typedef {Object} ComputePipelineDescription

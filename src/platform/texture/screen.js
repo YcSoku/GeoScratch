@@ -1,6 +1,6 @@
-import director from "../director/director.js"
-import { vec2f, vec2i, vec2u } from '../../core/numericType/numericType.js'
-import { Texture } from "./texture.js"
+import { director } from "../director/director"
+import { vec2f, vec2i, vec2u } from '../../core/numeric/index'
+import { Texture } from "./texture"
 
 /**
  * Information about the canvas and its GPU context.
@@ -12,7 +12,7 @@ import { Texture } from "./texture.js"
  */
 
 class Screen extends Texture {
-    
+
     /**
      * @param {ScreenDescription} description 
      */
@@ -36,7 +36,7 @@ class Screen extends Texture {
         this.alphaMode = description.alphaMode
 
         this.presentationFormat = navigator.gpu.getPreferredCanvasFormat()
-        
+
         /**
          * @type {Array<{texture: Texture, multiplier: number[]}>}
          */
@@ -80,7 +80,7 @@ class Screen extends Texture {
 
         if (this.context === undefined) {
 
-            director.dispatchEvent({type: 'createContext', emitter: this})
+            director.dispatchEvent({ type: 'createContext', emitter: this })
             this.resource.canvasTexture = () => this.context.getCurrentTexture()
             this.onWindowResize()
         }
@@ -98,18 +98,18 @@ class Screen extends Texture {
      * @param {number[]} [multiplier = [1, 1]]
      */
     createScreenDependentTexture(name, format, computable, mipMapped, usage, multiplier = [1, 1]) {
-        
+
         const texture = Texture.create({
             name,
             usage,
             format,
             mipMapped,
             computable,
-            resource: { size: () => [ this.canvas.width * multiplier[0], this.canvas.height * multiplier[1] ] }
+            resource: { size: () => [this.canvas.width * multiplier[0], this.canvas.height * multiplier[1]] }
         })
 
         this.addScreenDependentTexture(texture, multiplier)
-        
+
         return texture
     }
 
@@ -121,7 +121,7 @@ class Screen extends Texture {
      */
     addScreenDependentTexture(texture, multiplier = [1, 1]) {
 
-        this.screenDependentTextures.push({texture, multiplier})
+        this.screenDependentTextures.push({ texture, multiplier })
 
         return this
     }
@@ -141,9 +141,9 @@ class Screen extends Texture {
 
         this.canvas.width = width
         this.canvas.height = height
-        this._sizeI.data = [ this.canvas.width, this.canvas.height ]
-        this._sizeU.data = [ this.canvas.width, this.canvas.height ]
-        this._sizeF.data = [ this.canvas.width, this.canvas.height ]
+        this._sizeI.data = [this.canvas.width, this.canvas.height]
+        this._sizeU.data = [this.canvas.width, this.canvas.height]
+        this._sizeF.data = [this.canvas.width, this.canvas.height]
 
         if (this.sampleCount > 1) {
         }
@@ -151,12 +151,12 @@ class Screen extends Texture {
         this.screenDependentTextures.forEach(textureContent => {
 
             textureContent.texture.texture && textureContent.texture.reset({
-                resource: { size: () => [ width * textureContent.multiplier[0], height * textureContent.multiplier[1] ] }
+                resource: { size: () => [width * textureContent.multiplier[0], height * textureContent.multiplier[1]] }
             })
         })
 
         this.screenDependentElements.forEach(element => {
-            
+
             element.onWindowResize & element.onWindowResize()
         })
     }

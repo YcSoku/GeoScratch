@@ -1,5 +1,5 @@
-import { ScratchObject } from "../../core/object/object.js";
-import director from "../director/director.js";
+import ScratchObject from "../../core/object/object";
+import { director } from "../director/director";
 /**
  * @typedef {Object} ShaderDescription
  * @property {string} name
@@ -49,7 +49,7 @@ class Shader extends ScratchObject {
 
     update() {
 
-        director.dispatchEvent({type: 'createShader', emitter: this})
+        director.dispatchEvent({ type: 'createShader', emitter: this })
     }
 
     isComplete() {

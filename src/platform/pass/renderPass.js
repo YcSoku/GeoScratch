@@ -1,7 +1,7 @@
-import { UUID } from "../../core/utils/uuid.js"
-import { Binding } from "../binding/binding.js"
-import { RenderPipeline } from "../pipeline/renderPipeline.js"
-import { Texture } from "../texture/texture.js"
+import { UUID } from "../../core/util/util"
+import { Binding } from "../binding/binding"
+import { RenderPipeline } from "../pipeline/renderPipeline"
+import { Texture } from "../texture/texture"
 
 /**
  * @typedef {Object} RenderPassDescription

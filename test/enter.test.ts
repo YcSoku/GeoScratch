@@ -4,3 +4,5 @@
 // eventTest()
 // dataTest()
 
+import moduleTest from "./module/module.test";
+moduleTest()

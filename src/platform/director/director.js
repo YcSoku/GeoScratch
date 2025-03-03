@@ -1,5 +1,5 @@
 import { device } from "../context/singletonDevice"
-import { EventDispatcher } from "../../core/event/dispatcher.js"
+import { EventDispatcher } from "../../core/event/dispatcher"
 
 const numMipLevels = (...sizes) => {
     const maxSize = Math.max(...sizes)
