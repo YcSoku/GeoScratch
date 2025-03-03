@@ -49,11 +49,13 @@ class Device {
     }
 }
 
+let device: Device
 async function StartDash() {
-    return await Device.instance()
+    device = await Device.instance()
+    return device
 }
 
 export {
     StartDash,
-    Device
+    device
 }
