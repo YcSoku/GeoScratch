@@ -1,6 +1,6 @@
 class Device {
 
-    gpuDevice: GPUDevice | undefined
+    gpuDevice: GPUDevice
     private static _instance: Device | undefined
     private retryCount: number = 0
     private maxRetries: number = 3
@@ -57,5 +57,6 @@ async function StartDash() {
 
 export {
     StartDash,
-    device
+    device,
+    Device
 }

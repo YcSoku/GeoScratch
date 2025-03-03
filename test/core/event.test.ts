@@ -36,15 +36,15 @@ export default () => {
     /////// emit //////////////////////////////////
     eventBus.emit('init', {
         emitter: "Mike",
-        data: " **hello everybody** "
+        data: " **Hello everybody** "
     }, true)
     eventBus.emit('init', {
         emitter: "Jack",
-        data: " **fake everybody** "
+        data: " **Hit everybody** "
     })
     eventBus.emit('init', {
         emitter: "John",
-        data: " **Hi everybody** "
+        data: " **Push everybody** "
     })
 
 

@@ -34,10 +34,19 @@ class StorageBuffer extends Buffer {
 
         super(bufferDesc)
 
+        this.length = description.resource.arrayRef.value.length
+
+        this.struct = [{ offset: 0, length: this.length }]
+
         this.componetsPerElement = description.resource.components ? description.resource.components : 0
 
         this.registerStrutureMap(description.resource.arrayRef, description.resource.dataOffset, description.resource.size)
     }
+
+    registerRange() {
+
+    }
+
 
     /**
      * @param {StorageBufferDescription} description 

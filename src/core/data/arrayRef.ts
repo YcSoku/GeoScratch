@@ -1,4 +1,5 @@
 import ObservableObject from "../object/observableObject"
+import { StorageBuffer } from "../../platform/buffer/storageBuffer"
 
 ////// Helper ////////////////////////////////
 type SupportedArrayBufferView = Uint8Array | Uint16Array | Uint32Array | Float32Array
@@ -42,15 +43,19 @@ class ArrayRef extends ObservableObject {
     length: number
     private _data: SupportedArrayBufferView
 
-    structure: unknown[]
-    stride: number
+    /**
+     * Each ArrayRef maps the `specified range` of the Target-StorageBuffer,
+     * which determined by `Global Offset` and `Global Length`
+     */
+    private targetBuffer: StorageBuffer
+    private gOffset: number
+    private gLength: number
+
     constructor(name: string, data: SupportedArrayBufferView) {
 
         super(name)
         this.length = data.length
         this._data = ensureByteLengthMultipleOfFour(data)
-        this.structure = []
-        this.stride = 0
     }
 
     get value() {
@@ -89,9 +94,9 @@ class ArrayRef extends ObservableObject {
     }
 
     destroy(): void {
-        this.structure = []
         // @ts-ignore
-        this._data = null; this.stride = null
+        this._data = null;
+
         super.destroy()
     }
 }

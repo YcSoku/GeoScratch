@@ -14,6 +14,8 @@ export class Buffer {
 
     buffer: GPUBuffer;
 
+    size: number;
+
     updatePerFrame: boolean;
 
     areaMap: { [mapName: string]: { start: number, length: number, arrayRef: ArrayRef, dataOffset?: number, size?: number } };

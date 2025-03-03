@@ -2,7 +2,7 @@ export interface NumericInterface {
     data: unknown,
     type: NumericType
 }
-export type NumericType = 'f32' | 'i32' | 'u32' | 'vec2f' | 'vec2i' | 'vec2u' | 'vec3f' | 'vec3i' | 'vec3u' | 'vec4f' | 'mat4x4f'
+export type NumericType = 'f32' | 'i32' | 'u32' | 'vec2f' | 'vec2i' | 'vec2u' | 'vec3f' | 'vec3i' | 'vec3u' | 'vec4f' | 'mat4x4f' | 'mat3x3f'
 
 
 export default class Numeric<T> implements NumericInterface {

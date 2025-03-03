@@ -61,7 +61,7 @@ class Buffer extends ScratchObject {
 
     /**
      * 
-     * @param {Ref} ref
+     * @param {Ref} ArrayRef
      * @param {number} [dataOffset]
      * @param {number} [size]
      * @param {number} alignment

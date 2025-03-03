@@ -9,5 +9,6 @@ export * from './vec2u'
 export * from './vec3f'
 export * from './vec3i'
 export * from './vec4f'
+export * from './mat3f'
 export * from './mat4f'
 
