@@ -8,13 +8,13 @@ import { SamplerDescription } from "../binding/binding";
 //  * @property {Array<GPUAddressMode>} addressModeUVW
 //  */
 
-// export interface SamplerDescription {
-//     name: string,
-//     mipmap?: number,
-//     maxAnisotropy?: number,
-//     filterMinMag: [GPUFilterMode],
-//     addressModeUVW: [GPUAddressMode],
-// }
+export interface SamplerCreateDescription {
+    name: string,
+    mipmap?: number,
+    maxAnisotropy?: number,
+    filterMinMag: [GPUFilterMode, GPUFilterMode],
+    addressModeUVW: [GPUAddressMode, GPUAddressMode],
+}
 
 export class Sampler {
 
@@ -27,4 +27,4 @@ export class Sampler {
     exportDescriptor(): GPUSamplerDescriptor;
 }
 
-export function sampler(description: SamplerDescription): Sampler;
+export function sampler(description: SamplerCreateDescription): Sampler;

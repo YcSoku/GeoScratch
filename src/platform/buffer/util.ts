@@ -17,6 +17,3 @@ export const TypeConstructor = {
     "U16": Uint16Array,
     "U8": Uint8Array
 }
-
-
-

@@ -36,7 +36,7 @@ export interface IndirectBindingDescription {
 }
 
 export interface SamplerDescription {
-    sampler: Sampler
+    sampler: Sampler,
     visibility?: number,
     bindingType?: GPUSamplerBindingType,
 }

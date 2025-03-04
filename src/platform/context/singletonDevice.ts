@@ -49,9 +49,9 @@ class Device {
     }
 }
 
-let device: Device
+let device: GPUDevice
 async function StartDash() {
-    device = await Device.instance()
+    device = (await Device.instance()).gpuDevice
     return device
 }
 

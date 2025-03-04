@@ -43,7 +43,7 @@ export function vec2u(x?: number, y?: number) {
     return Vec2u.create(x, y)
 }
 
-export function asVec2u(x: number, y: number) {
+export function asVec2u(x?: number, y?: number) {
 
     const v = [0, 0]
 

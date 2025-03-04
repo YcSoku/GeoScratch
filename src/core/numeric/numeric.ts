@@ -7,8 +7,8 @@ export type NumericType = 'f32' | 'i32' | 'u32' | 'vec2f' | 'vec2i' | 'vec2u' | 
 
 export default class Numeric<T> implements NumericInterface {
 
-    _type: NumericType
-    _data: T
+    protected _type: NumericType
+    protected _data: T
     constructor(type: NumericType, data: T) {
         this._type = type
         this._data = data

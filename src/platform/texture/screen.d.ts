@@ -14,7 +14,7 @@ export interface ScreenDescription {
 /**
  * Represents information about the canvas and its GPU context.
  */
-export class Screen {
+export class Screen{
     canvas: HTMLCanvasElement;
     context: GPUCanvasContext;
     presentationFormat: GPUTextureFormat;

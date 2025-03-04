@@ -4,5 +4,8 @@
 // eventTest()
 // dataTest()
 
-import moduleTest from "./module/module.test";
-moduleTest()
+// import moduleTest from "./module/module.test";
+// moduleTest()
+
+import triangle from "./platform/renderpass";
+triangle()

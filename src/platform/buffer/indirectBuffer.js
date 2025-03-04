@@ -28,7 +28,7 @@ class IndirectBuffer extends Buffer {
         randomAccessible && (defaultUsage |= GPUBufferUsage.STORAGE)
 
         /**
-         *  @type {import("./buffer.js").BufferDescription}
+         *  @type {import("./buffer").BufferDescription}
          */
         const bufferDesc = {
             name: description.name,
