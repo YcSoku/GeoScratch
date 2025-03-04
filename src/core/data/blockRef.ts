@@ -58,7 +58,7 @@ class BlockRef extends ObservableObject {
 
     update() {
 
-        const data = {}
+        const data: Record<string, unknown> = {}
         for (const key in this.map) {
             data[key] = this.map[key].data
         }

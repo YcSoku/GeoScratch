@@ -5,7 +5,8 @@ export { Device, StartDash, device } from './platform/context/singletonDevice'
 
 export { Buffer } from './platform/buffer/buffer'
 export { vertexBuffer, VertexBuffer } from './platform/buffer/vertexBuffer'
-export { storageBuffer, StorageBuffer } from './platform/buffer/storageBuffer'
+// export { storageBuffer, StorageBuffer } from './platform/buffer/storageBuffer'
+export { storageBuffer, StorageBuffer } from './platform/buffer/sstorageBuffer'
 export { uniformBuffer, UniformBuffer } from './platform/buffer/uniformBuffer'
 export { indexBuffer, IndexBuffer } from './platform/buffer/indexBuffer'
 export { indirectBuffer, IndirectBuffer } from './platform/buffer/indirectBuffer'
@@ -14,6 +15,7 @@ export { mapBuffer, MapBuffer } from './platform/buffer/mapBuffer'
 
 export { ArrayRef, aRef } from './core/data/arrayRef'
 export { BlockRef, bRef } from './core/data/blockRef'
+export { MapRef, mRef } from './core/data/mapRef'
 export { boundingBox2D, BoundingBox2D } from './core/box/boundingBox2D'
 export { Node2D } from './core/quad/node2D'
 

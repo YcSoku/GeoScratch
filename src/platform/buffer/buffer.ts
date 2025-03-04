@@ -24,7 +24,7 @@ type AreaItem = {
 class Buffer extends ScratchObject {
 
     size: number
-    buffer: Buffer | undefined
+    buffer: GPUBuffer | undefined
     usage: GPUBufferUsageFlags
 
     areaMap: Record<string, AreaItem>

@@ -76,10 +76,10 @@ class StorageBuffer extends Buffer {
         }
     }
 
-    private _writeBuffer(offset: number, size: number, data: ArrayBuffer) {
+    private _writeBuffer(offset: number, size: number, data: ArrayBuffer | ArrayBufferLike) {
 
-        const gpuDevice = device.gpuDevice
-        gpuDevice.queue.writeBuffer(this.buffer, offset, data, 0, size)
+
+        device.queue.writeBuffer(this.buffer!, offset, data, 0, size)
     }
 
     private async _readBuffer(offset: number, size: number, elementType: ElementType): Promise<ArrayBufferView> {

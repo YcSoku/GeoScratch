@@ -23,6 +23,7 @@ class MapRef extends ObservableObject {
     rangeRead: Function
 
     constructor(name: string, description: MapRefDescription) {
+
         super(name)
         this.offset = description.range.offset
         this.length = description.range.lenght
@@ -33,8 +34,15 @@ class MapRef extends ObservableObject {
         const res = this.sourceBuffer.registerMapRange(this.offset, this.size, description.elementType)
         this.rangeRead = res.R
         this.rangeWrite = res.W
-
     }
+}
 
 
+function mRef(description: MapRefDescription, name: string = 'arrayRef') {
+    return new MapRef(name, description)
+}
+
+export {
+    MapRef,
+    mRef
 }

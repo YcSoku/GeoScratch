@@ -43,14 +43,6 @@ class ArrayRef extends ObservableObject {
     length: number
     private _data: SupportedArrayBufferView
 
-    /**
-     * Each ArrayRef maps the `specified range` of the Target-StorageBuffer,
-     * which determined by `Global Offset` and `Global Length`
-     */
-    private targetBuffer: StorageBuffer
-    private gOffset: number
-    private gLength: number
-
     constructor(name: string, data: SupportedArrayBufferView) {
 
         super(name)
