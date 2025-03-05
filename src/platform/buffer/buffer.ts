@@ -5,7 +5,7 @@ import { monitor } from "../monitor/monitor";
 import ScratchObject from "../../core/object/object";
 
 /////// Types //////////////////////////////////
-type BufferDescription = {
+export type BufferDescription = {
     name: string
     size: number
     usage: GPUBufferUsageFlags

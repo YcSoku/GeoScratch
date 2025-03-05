@@ -1,6 +1,6 @@
 class Device {
 
-    gpuDevice: GPUDevice
+    gpuDevice!: GPUDevice
     private static _instance: Device | undefined
     private retryCount: number = 0
     private maxRetries: number = 3
@@ -36,7 +36,9 @@ class Device {
             console.log(value)
         }
 
-        this.gpuDevice = await adapter.requestDevice()
+        this.gpuDevice = await adapter.requestDevice({
+            requiredFeatures: adapter.features.has('timestamp-query') ? ['timestamp-query'] : [],
+        })
         this.gpuDevice.lost.then((info) => {
             console.error(`ERROR:: WebGPU device was lost: ${info.message}`)
             if (info.reason !== "destroyed" && this.retryCount < this.maxRetries) {

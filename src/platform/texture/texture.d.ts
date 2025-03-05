@@ -19,6 +19,8 @@ export interface TextureDescription {
 export class Texture {
 
     name: string;
+    uuid: string; // ! 
+    updatePerFrame: boolean;
     texture: GPUTexture;
     resource: TextureResourceDescription;
     format: GPUTextureFormat;
@@ -28,7 +30,7 @@ export class Texture {
      * @param {TextureDescription} description 
      */
     constructor(description: TextureDescription);
-    
+
     /**
      * @param {TextureDescription} description 
      */

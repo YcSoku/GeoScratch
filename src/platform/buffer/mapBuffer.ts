@@ -35,27 +35,28 @@ class MapBuffer extends Buffer {
 
         return new Promise(async (resolve, reject) => {
 
-            if (size < this.fullSize || offset + size / elBytes > this.fullSize || offset < 0 || size < 0) {
+            if (!this.buffer || !this.mapTarget.buffer) {
+                reject(new Error("Buffer not ready.")); return
+            }
+            if (size > this.fullSize || offset + size / elBytes > this.fullSize || offset < 0 || size < 0) {
                 reject(new Error("Invalide mappinrg range."));
             }
-
             if (!(this.buffer.mapState === 'unmapped')) {
                 reject(new Error("Buffer is not in 'unmapped' state."));
             }
 
             try {
 
-                const mapEncoder = device.gpuDevice.createCommandEncoder({ label: `Map encoder (map buffer ${this.name})` })
+                const mapEncoder = device.createCommandEncoder({ label: `Map encoder (map buffer ${this.name})` })
                 mapEncoder.copyBufferToBuffer(this.mapTarget.buffer, offset, this.buffer, 0, size)
-                device.gpuDevice.queue.submit([mapEncoder.finish()])
+                device.queue.submit([mapEncoder.finish()])
 
                 await this.buffer.mapAsync(GPUMapMode.READ)
-                const result = new TypeConstructor[elementType](this.buffer.getMappedRange())
+                const result = new TypeConstructor[elementType](this.buffer.getMappedRange(offset, size))
                 const copiedData = new TypeConstructor[elementType](result.length)
                 copiedData.set(result)
                 this.buffer.unmap()
                 resolve(copiedData)
-
             } catch (err) {
 
                 reject(err)

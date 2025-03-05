@@ -5,11 +5,14 @@ import { ElementType, TypeBytes } from "./util";
 import { device } from "../context/singletonDevice";
 
 type StorageBufferDescription = {
-    name: string,
-    usage: GPUBufferUsageFlags,
-    resource: { size?: number; arrayRefs?: Array<ArrayRef> },
-    willMap?: boolean
-}
+    name: string;
+    usage?: GPUBufferUsageFlags;
+    resource: (
+        { size: number; arrayRefs?: never } |
+        { arrayRefs: Array<ArrayRef>; size?: never }
+    );
+    willMap?: boolean;
+};
 
 class StorageBuffer extends Buffer {
 
@@ -17,13 +20,16 @@ class StorageBuffer extends Buffer {
     willMap: boolean
     constructor(description: StorageBufferDescription) {
 
+        const size = description.resource.size ? description.resource.size :
+            description.resource.arrayRefs!.reduce((acc, cur) => acc + cur.value.byteLength, 0)
+
+        const usage = (description.usage ?? (GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC))
+            | (description.willMap ? GPUBufferUsage.COPY_SRC : 0);
+
         // Create buffer
-        let size: number // in bytes
-        if (description.resource.size) size = description.resource.size
-        else size = description.resource.arrayRefs!.reduce((acc, cur) => acc + cur.value.byteLength, 0)
         const baseBufferDesc = {
             name: description.name,
-            usage: description.usage ?? (GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC),
+            usage: usage,
             size: size
         }
         super(baseBufferDesc)
@@ -52,26 +58,26 @@ class StorageBuffer extends Buffer {
 
     registerMapRange(offset: number, size: number, elementType: ElementType) {
 
-        if (size < this.size || offset + size > this.size || offset < 0 || size < 0) {
+        if (size > this.size || offset + size > this.size || offset < 0 || size < 0) {
             console.error("Invalide mappinrg range.");
         }
 
         return {
-            "W": (localOffset: number, localSize: number, data: ArrayBufferView) => {
+            "W": (localOffset: number, localLength: number, data: ArrayBufferView) => {
 
                 // localOffset + localSize / TypeBytes[elementType] in range [ 0 , size ]
-                if (size < localOffset || localOffset + localSize / TypeBytes[elementType] > size || localOffset < 0 || localSize < 0) {
+                if (size < localOffset || localOffset + localLength > size || localOffset < 0 || localLength < 0) {
                     console.error(new Error("Invalide mappinrg range."));
                 }
-                this._writeBuffer(offset + localOffset, localSize, data.buffer)
+                this._writeBuffer(offset + localOffset, localLength * TypeBytes[elementType], data.buffer)
             },
-            "R": async (localOffset: number, localSize: number, elementType: ElementType) => {
+            "R": async (localOffset: number, localLength: number, elementType: ElementType) => {
 
                 // localOffset + localSize / TypeBytes[elementType] in range [ 0 , size ]
-                if (size < localOffset || localOffset + localSize / TypeBytes[elementType] > size || localOffset < 0 || localSize < 0) {
+                if (size < localOffset || localOffset + localLength > size || localOffset < 0 || localLength < 0) {
                     console.error(new Error("Invalide mappinrg range."));
                 }
-                await this._readBuffer(offset + localOffset, localSize, elementType)
+                return await this._readBuffer(offset + localOffset, localLength * TypeBytes[elementType], elementType)
             }
         }
     }

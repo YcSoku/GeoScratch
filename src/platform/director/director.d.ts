@@ -20,4 +20,4 @@ export class Director extends EventDispatcher{
     init(): Promise<void>;
 }
 
-export const director: Director;
+export const director: Director
