@@ -110,7 +110,7 @@ class RenderPipeline {
                 stripIndexFormat: binding.indexBinding.buffer.type
             })
         }
-
+        console.log(this.depthStencilState)
         return {
             label: `Rendering pipeline (${this.name})`,
             layout: this.pipelineLayout,
@@ -145,7 +145,7 @@ class RenderPipeline {
         })
 
         const depthStencilFormat = pass.makeDepthStencilFormat()
-        if (depthStencilFormat !== undefined) {
+        if (depthStencilFormat) {
             this.depthTest === undefined && (this.depthTest = true)
 
             this.depthStencilState = {

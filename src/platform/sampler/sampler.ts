@@ -1,6 +1,5 @@
 import ScratchObject from '../../core/object/object'
 import { director } from '../director/director'
-import { SamplerDescription } from '../binding/binding'
 
 export interface SamplerCreateDescription {
     name: string,
@@ -29,7 +28,7 @@ export class Sampler extends ScratchObject {
         this.magFilter = description.filterMinMag.length > 1 ? description.filterMinMag[1] : 'linear'
         this.addressModeU = description.addressModeUVW.length > 0 ? description.addressModeUVW[0] : 'repeat'
         this.addressModeV = description.addressModeUVW.length > 1 ? description.addressModeUVW[1]! : 'repeat'
-        this.addressModeW = description.addressModeUVW.length > 2 ? description.addressModeUVW[2]！ : 'repeat'
+        this.addressModeW = description.addressModeUVW.length > 2 ? description.addressModeUVW[2]! : 'repeat'
         this.mipmapFilter = description.mipmap
         this.maxAnisotropy = description.maxAnisotropy
         this.refCount = 0

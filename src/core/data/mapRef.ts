@@ -1,6 +1,6 @@
 import ObservableObject from "../object/observableObject";
 import { ElementType, TypeBytes } from "../../platform/buffer/util";
-import { StorageBuffer } from "../../platform/buffer/sstorageBuffer";
+import { StorageBuffer } from "../../platform/buffer/storageBuffer";
 
 type MapRefDescription = {
     mapTarget: StorageBuffer,

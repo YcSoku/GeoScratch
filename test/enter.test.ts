@@ -10,8 +10,8 @@
 // import moduleTest from "./module/module.test";
 // moduleTest()
 
-// import triangle from "./platform/renderpass";
-// triangle()
+import triangle from "./platform/renderpass";
+triangle()
 
-import computepass from "./platform/computepass";
-computepass()
+// import computepass from "./platform/computepass";
+// computepass()
