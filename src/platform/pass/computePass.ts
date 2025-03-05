@@ -50,7 +50,6 @@ export class ComputePass {
     execute(encoder: GPUCommandEncoder): void {
         if (!this.executable) return;
         this.pass = encoder.beginComputePass(this.passDescription);
-        console.log(this.pass)
         this.computecalls.forEach(({ binding, pipeline }) => {
             if (!binding.tryMakeComplete() || !pipeline.tryMakeComplete(this, binding) || !pipeline.executable || !binding.executable) return;
             pipeline.dispatch(this, binding);

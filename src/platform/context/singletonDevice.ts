@@ -53,7 +53,10 @@ class Device {
 
 let device: GPUDevice
 async function StartDash() {
-    device = (await Device.instance()).gpuDevice
+    if (!device) {
+        console.log('await device')
+        device = (await Device.instance()).gpuDevice
+    }
     return device
 }
 

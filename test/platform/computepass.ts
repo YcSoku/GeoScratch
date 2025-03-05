@@ -145,9 +145,7 @@ const main = function () {
 }
 
 export default () => {
-    scr.StartDash().then(() => {
-        main()
-    })
+    main()
 }
 
 /////// helpers //////////////////////////////////

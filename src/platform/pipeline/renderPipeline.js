@@ -110,7 +110,6 @@ class RenderPipeline {
                 stripIndexFormat: binding.indexBinding.buffer.type
             })
         }
-        console.log(this.depthStencilState)
         return {
             label: `Rendering pipeline (${this.name})`,
             layout: this.pipelineLayout,

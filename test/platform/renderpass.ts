@@ -62,7 +62,7 @@ const triangle = function (canvas: HTMLCanvasElement) {
 }
 
 
-const vertexBuffer = function (canvas: HTMLCanvasElement) {
+const triangleVertexBuffer = function (canvas: HTMLCanvasElement) {
     const shaderCode = `
     struct VertexInput {
         @builtin(vertex_index) vertexIndex: u32,
@@ -178,9 +178,7 @@ const vertexBuffer = function (canvas: HTMLCanvasElement) {
 
 
 export default () => {
+    
     const canvas = document.getElementById('GPUFrame') as HTMLCanvasElement
-    scr.StartDash().then(
-        // () => triangle(canvas)
-        () => vertexBuffer(canvas)
-    )
+    triangleVertexBuffer(canvas)
 }
