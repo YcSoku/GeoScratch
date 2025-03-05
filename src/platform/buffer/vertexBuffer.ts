@@ -42,7 +42,6 @@ export interface VertexBufferDescription {
 }
 
 export class VertexBuffer extends Buffer {
-    // stepMode: GPUVertexStepMode;
     attributes: Array<{format: GPUVertexFormat, offset: number}>;
     stride: number;
     private bytesPerComponent: number;
