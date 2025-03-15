@@ -5,42 +5,41 @@ import { Shader } from "../shader/shader";
 import { Texture } from "../texture/texture";
 import { UniformBuffer } from '../buffer/uniformBuffer';
 import { StorageBuffer } from '../buffer/storageBuffer';
-import { BlockValueType } from '../../core/data/blockRef';
 import { Sampler } from "../sampler/sampler";
-import { ScratchObject } from "../../core/object/object";
-import { Numeric } from '../../core/numericType/numericType.js';
+import ScratchObject from "../../core/object/object";
+import { NumericInterface as Numeric } from "../../core/numeric/numeric";
 
 export interface UniformBindingDescription {
     name: string,
     dynamic?: boolean,
     visibility?: number,
     map: { [varName: string]: Numeric | { type: string, data: any } },
-};
+}
 
 export interface SharedUniformBindingDescription {
     buffer: UniformBuffer,
     visibility?: number,
-};
+}
 
 export interface StorageBindingDescription {
     buffer: StorageBuffer | VertexBuffer | IndexBuffer | IndirectBuffer,
     writable?: boolean
-};
+}
 
 export interface IndexBindingDescription {
     buffer: IndexBuffer
-};
+}
 
 export interface IndirectBindingDescription {
     buffer: IndirectBuffer
     byteOffset?: number
-};
+}
 
 export interface SamplerDescription {
-    sampler: Sampler
+    sampler: Sampler,
     visibility?: number,
     bindingType?: GPUSamplerBindingType,
-};
+}
 
 export interface VertexBindingDescription {
     buffer: VertexBuffer,
@@ -53,9 +52,9 @@ export interface TextureBindingDescription {
     visibility?: number,
     sampleType?: GPUTextureSampleType,
     viewDimension?: GPUTextureViewDimension,
-    multisampled? : boolean,
+    multisampled?: boolean,
     asStorage?: boolean,
-};
+}
 
 export interface BindingsDescription {
     name?: string,
@@ -68,11 +67,11 @@ export interface BindingsDescription {
     storages?: Array<StorageBindingDescription>,
     textures?: Array<TextureBindingDescription>,
     sharedUniforms?: Array<SharedUniformBindingDescription>,
-};
+}
 
 export class Binding extends ScratchObject {
 
-    indirectBinding: {buffer: GPUBuffer | undefined, byteOffset: number};
+    indirectBinding: { buffer: GPUBuffer | undefined, byteOffset: number };
     isComplete: boolean;
     executable: boolean;
 

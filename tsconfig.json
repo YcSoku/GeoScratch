@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "types": [
+            "@webgpu/types"
+        ]
+    },
+    "include": [
+        "**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

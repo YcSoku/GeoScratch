@@ -1,4 +1,4 @@
-import { ScratchObject } from "../../core/object/object";
+import ScratchObject from "../../core/object/object";
 
 export interface ShaderDescription {
     name: string,

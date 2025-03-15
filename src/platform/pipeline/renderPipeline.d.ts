@@ -21,7 +21,7 @@ export class RenderPipeline {
 
     constructor(description: RenderPipelineDescription);
 
-    static create(ddescription: RenderPipelineDescription): DrawCommand;
+    static create(ddescription: RenderPipelineDescription): RenderPipeline;
 
     draw(rednerPass: RenderPass, binding: Binding): void;
     

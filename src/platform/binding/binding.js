@@ -1,13 +1,13 @@
-import { UniformBuffer } from '../buffer/uniformBuffer.js'
-import { StorageBuffer } from '../buffer/storageBuffer.js'
-import { Texture } from '../texture/texture.js'
-import { VertexBuffer } from '../buffer/vertexBuffer.js'
-import { IndirectBuffer } from '../buffer/indirectBuffer.js'
-import { IndexBuffer } from '../buffer/indexBuffer.js'
-import { BlockRef } from '../../core/data/blockRef.js'
-import { Sampler } from '../sampler/sampler.js'
-import director from '../director/director.js'
-import { ScratchObject } from '../../core/object/object.js'
+import { UniformBuffer } from '../buffer/uniformBuffer'
+import { StorageBuffer } from '../buffer/storageBuffer'
+import { Texture } from '../texture/texture'
+import { VertexBuffer } from '../buffer/vertexBuffer'
+import { IndirectBuffer } from '../buffer/indirectBuffer'
+import { IndexBuffer } from '../buffer/indexBuffer'
+import { BlockRef } from '../../core/data/blockRef'
+import { Sampler } from '../sampler/sampler'
+import { director } from '../director/director'
+import ScratchObject from '../../core/object/object'
 
 /**
  * @typedef {Object} VertexBindingDescription
@@ -58,7 +58,7 @@ import { ScratchObject } from '../../core/object/object.js'
  * @property {string} name
  * @property {number} [visibility]
  * @property {{[dataName: string]: Function}} map
- * @property {import('./webgpu-utils.module.js').StructuredView} view
+ * @property {import('./webgpu-utils.module').StructuredView} view
  * @property {BlockRef} ref
  */
 
@@ -184,7 +184,7 @@ class Binding extends ScratchObject {
          * @type {[SamplerBinding]}
          */
         this.samplerBindings = []
-        
+
         /**
          * @type {[GPUBindGroupLayout]}
          */
@@ -211,24 +211,24 @@ class Binding extends ScratchObject {
         if (description.uniforms || description.sharedUniforms) {
 
             this.uniformOrder = groupOrder++
-            description.uniforms?.forEach(uniformDesc => this.addUniformBlock(uniformDesc)) 
+            description.uniforms?.forEach(uniformDesc => this.addUniformBlock(uniformDesc))
             description.sharedUniforms?.forEach(description => this.sharedUniforms.push({
                 buffer: description.buffer.use(),
                 visibility: description.visibility || (GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE)
-            })) 
+            }))
         }
 
         this.storageOrder = 0;
         description.storages && (this.storageOrder = groupOrder++)
         description.storages && description.storages.forEach((bindingDesc) => {
             this.addStorageBuffer(bindingDesc)
-        }) 
+        })
 
         this.textureOrder = 0;
         description.textures && (this.textureOrder = groupOrder++)
         description.textures && description.textures.forEach((bindingDesc) => {
             this.addTexture(bindingDesc)
-        }) 
+        })
 
         description.samplers && description.samplers.forEach((samplerDesc, index) => {
             this.addSampler(index, samplerDesc)
@@ -282,13 +282,13 @@ class Binding extends ScratchObject {
          * @type {UniformBuffer}
          * Notation: a binding has only one uniform buffer
          */
-                this.uniformBuffer = UniformBuffer.create({
-                    name: `Uniform buffer (${this.name})`,
-                    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
-                    blocks: blocks
-                }).use()
-        
-                this.uniformBufferReady = true
+        this.uniformBuffer = UniformBuffer.create({
+            name: `Uniform buffer (${this.name})`,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+            blocks: blocks
+        }).use()
+
+        this.uniformBufferReady = true
     }
 
     /**
@@ -337,9 +337,9 @@ class Binding extends ScratchObject {
         this.textureBindings.push({
             texture: bindingDesc.texture.use(),
             callbackIndex: bindingDesc.texture.registerCallback(() => {
-                
+
                 if (!this.isComplete) return
-                director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'texture', order: this.textureOrder})
+                director.dispatchEvent({ type: 'createBindGroup', emitter: this, bindGroupType: 'texture', order: this.textureOrder })
             }),
 
             asStorage: asStorage,
@@ -374,7 +374,7 @@ class Binding extends ScratchObject {
 
         if (!this.uniforms.length && !this.sharedUniforms.length) return
 
-        // const device = getDevice()
+
 
         /**
          * @type {Array<GPUBindGroupLayoutEntry>}
@@ -402,9 +402,9 @@ class Binding extends ScratchObject {
     createUniformBindGroup(device) {
 
         if (!this.uniforms.length && !this.sharedUniforms.length) return
-        
-        // const device = getDevice()
-        
+
+
+
         /**
          * @type {Array<GPUBindGroupEntry>}
          */
@@ -415,7 +415,7 @@ class Binding extends ScratchObject {
             entries[index] = {
                 binding: index++,
                 resource: {
-                    buffer: this.uniformBuffer.buffer, 
+                    buffer: this.uniformBuffer.buffer,
                     offset: area.start,
                     size: area.length
                 }
@@ -442,8 +442,8 @@ class Binding extends ScratchObject {
     createStorageBindGroupLayout(device) {
 
         if (!this.storageBindings.length) return
-        
-        // const device = getDevice()
+
+
 
         /**
          * @type {Array<GPUBindGroupLayoutEntry>}
@@ -452,7 +452,7 @@ class Binding extends ScratchObject {
         this.storageBindings.forEach((storageBinding, index) => {
             entries[index] = {
                 binding: index,
-                buffer: {type: storageBinding.type}, 
+                buffer: { type: storageBinding.type },
                 visibility: storageBinding.visibility
             }
         })
@@ -470,8 +470,8 @@ class Binding extends ScratchObject {
     createStorageBindGroup(device) {
 
         if (!this.storageBindings.length) return
-        
-        // const device = getDevice()
+
+
 
         /**
          * @type {Array<GPUBindGroupEntry>}
@@ -480,7 +480,7 @@ class Binding extends ScratchObject {
         this.storageBindings.forEach((storageBinding, index) => {
             entries[index] = {
                 binding: index,
-                resource: {buffer: storageBinding.buffer.buffer}
+                resource: { buffer: storageBinding.buffer.buffer }
             }
         })
 
@@ -522,26 +522,26 @@ class Binding extends ScratchObject {
     createTextureBindGroupLayout(device) {
 
         if (!this.samplerBindings.length && !this.textureBindings.length) return
-        
-        // const device = getDevice()
+
+
 
         /**
          * @type {Array<GPUBindGroupLayoutEntry>}
          */
         const entries = new Array(this.samplerBindings.length + this.textureBindings.length)
         this.samplerBindings.concat(this.textureBindings).forEach((binding, index) => {
-            
+
             entries[index] = {
                 binding: index,
                 visibility: binding.visibility,
                 ...(binding.sampler && {
-                    sampler: {type: binding.bindingType}
+                    sampler: { type: binding.bindingType }
                 }),
                 ...(binding.texture && (!binding.asStorage) && {
-                    texture: {sampleType: binding.sampleType, viewDimension: binding.viewDimension, multisampled: binding.multisampled}
+                    texture: { sampleType: binding.sampleType, viewDimension: binding.viewDimension, multisampled: binding.multisampled }
                 }),
                 ...(binding.texture && binding.asStorage && {
-                    storageTexture: {access: binding.accessibility, format: binding.texture.format}
+                    storageTexture: { access: binding.accessibility, format: binding.texture.format }
                 })
             }
         })
@@ -559,13 +559,12 @@ class Binding extends ScratchObject {
     createTextureBindGroup(device) {
 
         if (!this.samplerBindings.length && !this.textureBindings.length) return
-        
-        // const device = getDevice()
-        
+
+
         /**
          * @type {Array<GPUBindGroupEntry>}
          */
-        const entries= new Array(this.samplerBindings.length + this.textureBindings.length)
+        const entries = new Array(this.samplerBindings.length + this.textureBindings.length)
         this.samplerBindings.concat(this.textureBindings).forEach((binding, index) => {
             entries[index] = {
                 binding: index,
@@ -620,7 +619,7 @@ class Binding extends ScratchObject {
                 this.storageBindings.forEach((storageBinding, index) => {
                     entries[index] = {
                         binding: index,
-                        buffer: {type: storageBinding.type}, 
+                        buffer: { type: storageBinding.type },
                         visibility: storageBinding.visibility
                     }
                 })
@@ -636,18 +635,18 @@ class Binding extends ScratchObject {
                  */
                 const entries = new Array(this.samplerBindings.length + this.textureBindings.length)
                 this.samplerBindings.concat(this.textureBindings).forEach((binding, index) => {
-                    
+
                     entries[index] = {
                         binding: index,
                         visibility: binding.visibility,
                         ...(binding.sampler && {
-                            sampler: {type: binding.bindingType}
+                            sampler: { type: binding.bindingType }
                         }),
                         ...(binding.texture && (!binding.asStorage) && {
-                            texture: {sampleType: binding.sampleType, viewDimension: binding.viewDimension, multisampled: binding.multisampled}
+                            texture: { sampleType: binding.sampleType, viewDimension: binding.viewDimension, multisampled: binding.multisampled }
                         }),
                         ...(binding.texture && binding.asStorage && {
-                            storageTexture: {access: binding.accessibility, format: binding.texture.format}
+                            storageTexture: { access: binding.accessibility, format: binding.texture.format }
                         })
                     }
                 })
@@ -677,7 +676,7 @@ class Binding extends ScratchObject {
                     entries[index] = {
                         binding: index++,
                         resource: {
-                            buffer: this.uniformBuffer.buffer, 
+                            buffer: this.uniformBuffer.buffer,
                             offset: area.start,
                             size: area.length
                         }
@@ -689,7 +688,7 @@ class Binding extends ScratchObject {
                         resource: { buffer: sharedUniform.buffer.buffer }
                     }
                 })
-        
+
                 return {
                     label: `Uniform binding group (${this.name})`,
                     layout: this.layouts[this.uniformOrder],
@@ -704,10 +703,10 @@ class Binding extends ScratchObject {
                 this.storageBindings.forEach((storageBinding, index) => {
                     entries[index] = {
                         binding: index,
-                        resource: {buffer: storageBinding.buffer.buffer}
+                        resource: { buffer: storageBinding.buffer.buffer }
                     }
                 })
-        
+
                 return {
                     label: `Storage binding group (${this.name})`,
                     layout: this.layouts[this.storageOrder],
@@ -718,7 +717,7 @@ class Binding extends ScratchObject {
                 /**
                  * @type {Array<GPUBindGroupEntry>}
                  */
-                const entries= new Array(this.samplerBindings.length + this.textureBindings.length)
+                const entries = new Array(this.samplerBindings.length + this.textureBindings.length)
                 this.samplerBindings.concat(this.textureBindings).forEach((binding, index) => {
                     entries[index] = {
                         binding: index,
@@ -744,33 +743,33 @@ class Binding extends ScratchObject {
     crteateBindGroupLayouts() {
 
         if (this.uniforms.length || this.sharedUniforms.length)
-            director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'uniform', order: this.uniformOrder})
+            director.dispatchEvent({ type: 'createBindGroupLayout', emitter: this, bindGroupType: 'uniform', order: this.uniformOrder })
 
         if (this.storageBindings.length)
-            director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'storage', order: this.storageOrder})
+            director.dispatchEvent({ type: 'createBindGroupLayout', emitter: this, bindGroupType: 'storage', order: this.storageOrder })
 
         if (this.samplerBindings.length || this.textureBindings.length)
-            director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'texture', order: this.textureOrder})
+            director.dispatchEvent({ type: 'createBindGroupLayout', emitter: this, bindGroupType: 'texture', order: this.textureOrder })
     }
 
     createBindGroups() {
 
         this.createVertexBufferLayout()
 
-        if (this.uniforms.length || this.sharedUniforms.length){
-            director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'uniform', order: this.uniformOrder})
-            director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'uniform', order: this.uniformOrder})
+        if (this.uniforms.length || this.sharedUniforms.length) {
+            director.dispatchEvent({ type: 'createBindGroupLayout', emitter: this, bindGroupType: 'uniform', order: this.uniformOrder })
+            director.dispatchEvent({ type: 'createBindGroup', emitter: this, bindGroupType: 'uniform', order: this.uniformOrder })
         }
 
         if (this.storageBindings.length) {
-            director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'storage', order: this.storageOrder})
-            director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'storage', order: this.storageOrder})
+            director.dispatchEvent({ type: 'createBindGroupLayout', emitter: this, bindGroupType: 'storage', order: this.storageOrder })
+            director.dispatchEvent({ type: 'createBindGroup', emitter: this, bindGroupType: 'storage', order: this.storageOrder })
         }
 
         if (this.samplerBindings.length || this.textureBindings.length) {
 
-            director.dispatchEvent({type: 'createBindGroupLayout', emitter: this, bindGroupType: 'texture', order: this.textureOrder})
-            director.dispatchEvent({type: 'createBindGroup', emitter: this, bindGroupType: 'texture', order: this.textureOrder})
+            director.dispatchEvent({ type: 'createBindGroupLayout', emitter: this, bindGroupType: 'texture', order: this.textureOrder })
+            director.dispatchEvent({ type: 'createBindGroup', emitter: this, bindGroupType: 'texture', order: this.textureOrder })
         }
     }
 
@@ -788,7 +787,7 @@ class Binding extends ScratchObject {
         this.isComplete = true
         return true
     }
-    
+
     update() {
 
         // Used to be the update method of the binding
@@ -879,19 +878,19 @@ class Binding extends ScratchObject {
             this.indexBinding.buffer = this.indexBinding.buffer.release()
             this.indexBinding = null
         }
-    
+
         if (this.indirectBinding) {
             this.indirectBinding.buffer = this.indirectBinding.buffer.release()
             this.indirectBinding = null
         }
-    
+
         this.vertexBindings.forEach(binding => {
             binding.buffer = binding.buffer.release()
             binding.visibility = null
             binding.stepMode = null
         })
         this.vertexBindings = null
-    
+
         this.storageBindings.forEach(binding => {
             binding.buffer = binding.buffer.release()
             binding.visibility = null
@@ -910,21 +909,21 @@ class Binding extends ScratchObject {
             binding.asStorage = null
         })
         this.textureBindings = null
-    
+
         this.samplerBindings.forEach(binding => {
             binding.sampler = binding.sampler.release()
             binding.bindingType = null
             binding.visibility = null
         })
         this.samplerBindings = null
-    
+
         this.vertexLayouts = null
         this.layouts = null
         this.groups = null
         this.vertexLayouts = null
         this.layouts = null
         this.groups = null
-    
+
         this.uniformBuffer = this.uniformBuffer?.release()
         this.refCount = null
         this.name = null

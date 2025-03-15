@@ -1,9 +1,9 @@
-import { UUID } from '../../core/utils/uuid.js'
-import { Binding } from '../binding/binding.js'
-import { NoBlending } from '../blending/blending.js'
-import director from '../director/director.js'
-import { RenderPass } from '../pass/renderPass.js'
-import { Shader } from '../shader/shader.js'
+import { UUID } from '../../core/util/util'
+import { Binding } from '../binding/binding'
+import { NoBlending } from '../blending/blending'
+import { director } from '../director/director'
+import { RenderPass } from '../pass/renderPass'
+import { Shader } from '../shader/shader'
 
 /**
  * @typedef {Object} RenderPipelineDescription
@@ -46,7 +46,7 @@ class RenderPipeline {
             cullMode: 'none',
             topology: 'triangle-list',
         }
-        
+
         this.depthTest = description.depthTest
 
         this.pipelineLayout = undefined
@@ -78,7 +78,6 @@ class RenderPipeline {
      */
     createPipelineLayout(device, binding) {
 
-        // const device = getDevice()
         this.pipelineLayout = device.createPipelineLayout({
             label: `Rendering pipline layout (${this.name})`,
             bindGroupLayouts: binding.getBindGroupLayouts(),
@@ -111,7 +110,6 @@ class RenderPipeline {
                 stripIndexFormat: binding.indexBinding.buffer.type
             })
         }
-
         return {
             label: `Rendering pipeline (${this.name})`,
             layout: this.pipelineLayout,
@@ -141,12 +139,12 @@ class RenderPipeline {
             this.colorTargetStates[index] = {
                 format: format,
                 blend: this.colorTargetStateDescriptions !== undefined ? this.colorTargetStateDescriptions[index].blend : undefined,
-                writeMask: this.colorTargetStateDescriptions !== undefined ? this.colorTargetStateDescriptions[index].writeMask: undefined,
+                writeMask: this.colorTargetStateDescriptions !== undefined ? this.colorTargetStateDescriptions[index].writeMask : undefined,
             }
         })
 
         const depthStencilFormat = pass.makeDepthStencilFormat()
-        if (depthStencilFormat !== undefined) {
+        if (depthStencilFormat) {
             this.depthTest === undefined && (this.depthTest = true)
 
             this.depthStencilState = {
@@ -163,15 +161,13 @@ class RenderPipeline {
      */
     createPipeline(renderPass, binding) {
 
-        // const device = getDevice()
-
         this.pipelineCreating = true
 
         // this.createPipelineLayout(device, binding)
 
-        director.dispatchEvent({type: 'createPipelineLayout', emitter: this, binding})
+        director.dispatchEvent({ type: 'createPipelineLayout', emitter: this, binding })
         this.createTargetState(renderPass)
-        director.dispatchEvent({type: 'createRenderPipelineAsync', emitter: this, binding})
+        director.dispatchEvent({ type: 'createRenderPipelineAsync', emitter: this, binding })
 
 
         // /**
@@ -224,9 +220,7 @@ class RenderPipeline {
      */
     makeRenderBundle(renderPass, binding) {
 
-        // const device = getDevice()
-
-        director.dispatchEvent({type: 'createRenderBundle', emitter: this, renderPass, binding})
+        director.dispatchEvent({ type: 'createRenderBundle', emitter: this, renderPass, binding })
         // const renderBundleEncoder = device.createRenderBundleEncoder({
         //     colorFormats: renderPass.makeColorFormats(),
         //     depthStencilFormat: renderPass.makeDepthStencilFormat(),
@@ -242,7 +236,7 @@ class RenderPipeline {
      * @param {Binding} binding 
      */
     executeRenderPass(renderPass, binding) {
-        
+
         binding.setBindGroups(renderPass)
         binding.setVertexBuffers(renderPass)
         renderPass.setPipeline(this.pipeline)
@@ -279,11 +273,11 @@ class RenderPipeline {
         else this.triggerCount = Math.max(this.triggerCount - 1, 0)
 
         if (!this.executable) return
-        
+
         if (this.asBundle) {
             if (this.bundleDirty) this.makeRenderBundle(renderPass, binding)
             renderPass.pass.executeBundles([this.renderBundle])
-        } 
+        }
         else this.executeRenderPass(renderPass.pass, binding)
     }
 }

@@ -1,5 +1,5 @@
-import { Vec2f, Vec2i, Vec2u } from "../../core/numericType/numericType";
-import { Texture } from "../texture/texture";
+import { Vec2f, Vec2i, Vec2u } from '../../core/numeric/index'
+import { Texture } from "./texture";
 
 /**
  * Information about the canvas and its GPU context.
@@ -9,12 +9,12 @@ export interface ScreenDescription {
     sampleCount?: number,
     depthTest?: boolean,
     alphaMode?: GPUCanvasAlphaMode,
-};
+}
 
 /**
  * Represents information about the canvas and its GPU context.
  */
-export class Screen {
+export class Screen{
     canvas: HTMLCanvasElement;
     context: GPUCanvasContext;
     presentationFormat: GPUTextureFormat;
@@ -33,7 +33,7 @@ export class Screen {
      */
     onWindowResize(): void;
 
-    createScreenDependentTexture(name?: string, format?: GPUTextureFormat, computable?: boolean, mipMapped?: boolean, usage?: number, multiplier = [1, 1], multiplier?: number[]): Texture;
+    createScreenDependentTexture(name?: string, format?: GPUTextureFormat, computable?: boolean, mipMapped?: boolean, usage?: number, multiplier?: [number, number]): Texture;
 
     getCurrentCanvasTexture(): Texture;
 

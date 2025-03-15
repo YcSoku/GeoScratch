@@ -39,5 +39,6 @@ interface ImageLoaderDescription {
 
 declare const imageLoader: ImageLoader;
 
-export default imageLoader;
-export { ImageLoader, ImageLoaderDescription };
+export {
+    ImageLoader, ImageLoaderDescription, imageLoader
+};

@@ -27,7 +27,7 @@ export class LocalTerrain {
         this.maxLevel = maxLevel
         this.maxBindingUsedNum = 5000
 
-        this.sectorSize = f32(64)
+        this.sectorSize = f32(4) // 每块地形瓦片是64*64的网格
         this.sectorRange = vec2f()
         this.exaggeration = f32(50.)
         this.tileBox = boundingBox2D()
@@ -46,7 +46,7 @@ export class LocalTerrain {
 
         ///////// Initialize GPU resource /////////
 
-        // Buffer-released resource
+        // Buffer-related resource
         this.indexNum = 0
         this.tileBuffer = undefined
         this.indexBuffer = undefined
@@ -83,7 +83,7 @@ export class LocalTerrain {
         this.positionBuffer = vertexBuffer({
             name: 'Vertex Buffer (Terrain Position)',
             randomAccessible: true,
-            resource: { arrayRef: aRef(new Float32Array(positions)), structure: [ { components: 2 } ] }
+            resource: { arrayRef: aRef(new Float32Array(positions)), structure: [{ components: 2 }] }
         })
         this.indexBuffer = indexBuffer({
             name: 'Index Buffer (Terrain Index)',
@@ -144,7 +144,7 @@ export class LocalTerrain {
         // Binding
         this.lodMapBinding = binding({
             name: `Binding (Terrain LoDMap)`,
-            range: () => [ 4, this.bindingUsed ],
+            range: () => [4, this.bindingUsed],
             uniforms: [
                 {
                     name: 'mapUniform',
@@ -162,15 +162,22 @@ export class LocalTerrain {
                 { buffer: this.nodeBoxBuffer },
             ],
         })
+        window.addEventListener('keydown', e => {
+            if (e.key === '1') {
+                this.asLine = 1
+            } else if (e.key == '2') {
+                this.asLine = 0
+            }
+        })
         this.meshBinding = binding({
             name: `Binding (Terrain Node)`,
-            range: () => [ this.indexNum / 3 * (this.asLine ? 6 : 3), this.bindingUsed ],
+            range: () => [this.indexNum * (this.asLine ? 2 : 1), this.bindingUsed],
             sharedUniforms: [
                 { buffer: this.tileBuffer },
                 { buffer: this.gStaticBuffer },
                 { buffer: gDynamicBuffer }
             ],
-            samplers: [ {sampler: this.lSampler} ],
+            samplers: [{ sampler: this.lSampler }],
             textures: [
                 { texture: this.demTexture },
                 { texture: this.lodMapTexture },
@@ -193,7 +200,7 @@ export class LocalTerrain {
         this.meshRenderPipeline = renderPipeline({
             name: 'Render Pipeline (Terrain Mesh)',
             shader: { module: shaderLoader.load('Shader (Terrain Mesh)', '/shaders/examples/terrain/terrainMesh.wgsl') },
-            colorTargetStates: [ { blend: NoBlending } ],
+            colorTargetStates: [{ blend: NoBlending }],
             // depthTest: true,
         })
         this.meshLineRenderPipeline = renderPipeline({
@@ -206,30 +213,30 @@ export class LocalTerrain {
         // Pass
         this.lodMapPass = renderPass({
             name: 'Render Pass (LOD Map)',
-            colorAttachments: [ { colorResource: this.lodMapTexture } ]
+            colorAttachments: [{ colorResource: this.lodMapTexture }]
         }).add(this.lodMapPipeline, this.lodMapBinding)
 
         return this
     }
 
-    set minVisibleNodeLevel (min) {
+    set minVisibleNodeLevel(min) {
         this.visibleNodeLevel.x = min
     }
 
-    get minVisibleNodeLevel () {
+    get minVisibleNodeLevel() {
         return this.visibleNodeLevel.x
     }
 
-    set maxVisibleNodeLevel (max) {
+    set maxVisibleNodeLevel(max) {
         this.visibleNodeLevel.y = max
     }
 
-    get maxVisibleNodeLevel () {
+    get maxVisibleNodeLevel() {
         return this.visibleNodeLevel.y
     }
 
     get prePass() {
-        
+
         return this.lodMapPass
     }
 
@@ -247,7 +254,7 @@ export class LocalTerrain {
      * @param {MapOptions} options 
      */
     registerRenderableNode(options) {
-        
+
         // Reset uiform-related member per frame
         this.tileBox.reset()
         this.sectorRange.reset()
@@ -256,19 +263,19 @@ export class LocalTerrain {
         this.minVisibleNodeLevel = this.maxLevel
 
         // Find visible terrain nodes
-        /** @type { Node2D[] } */ const stack = [] 
+        /** @type { Node2D[] } */ const stack = []
         /** @type { Node2D[] } */ const visibleNode = []
         stack.push(new Node2D(0, 0))
         stack.push(new Node2D(0, 1))
-        while(stack.length > 0) {
-            
+        while (stack.length > 0) {
+
             let node = stack.pop()
 
-            // Termination condition #1
+            // Termination condition #1 , Node out of bounds
             if (!node.bBox.overlap(this.boundaryCondition)) continue
-            // Termination condition #2
+            // Termination condition #2 , Max Subdivide Level
             if (!node.isSubdividable(options) || node.level >= Math.min(this.maxLevel, options.zoomLevel)) {
-                
+
                 visibleNode.push(node)
                 // Update the sector size used for rendering
                 if (node.level > this.maxVisibleNodeLevel) {
@@ -288,22 +295,22 @@ export class LocalTerrain {
                 stack.push(node.children[i])
             }
         }
-
         // Further determinate the real visible nodes
         // Give priority to high-level ones ?
         visibleNode./*sort((a, b) => a.level - b.level).*/forEach(node => {
 
-            if (this.bindingUsed < this.maxBindingUsedNum && node.level + 5 >= this.maxVisibleNodeLevel) {
+            if (this.bindingUsed < this.maxBindingUsedNum) {
+                // if (this.bindingUsed < this.maxBindingUsedNum && node.level >= this.maxVisibleNodeLevel - 5) {
 
                 this.minVisibleNodeLevel = node.level < this.minVisibleNodeLevel ? node.level : this.minVisibleNodeLevel
                 this.tileBox.updateByBox(node.bBox)
-    
+
                 this.nodeLevelArray.element(this.bindingUsed, node.level)
                 this.nodeBoxArray.element(this.bindingUsed * 4 + 0, node.bBox.boundary.x)
                 this.nodeBoxArray.element(this.bindingUsed * 4 + 1, node.bBox.boundary.y)
                 this.nodeBoxArray.element(this.bindingUsed * 4 + 2, node.bBox.boundary.z)
                 this.nodeBoxArray.element(this.bindingUsed * 4 + 3, node.bBox.boundary.w)
-    
+
                 this.bindingUsed++
             }
 

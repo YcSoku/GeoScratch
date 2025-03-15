@@ -1,8 +1,8 @@
-import { UUID } from "../../core/utils/uuid.js"
-import { Binding } from "../binding/binding.js"
-import getDevice from "../context/device.js"
-import { ComputePass } from "../pass/computePass.js"
-import { Shader } from "../shader/shader.js"
+import { UUID } from "../../core/util/util"
+import { Binding } from "../binding/binding"
+import { device } from "../context/singletonDevice"
+import { ComputePass } from "../pass/computePass"
+import { Shader } from "../shader/shader"
 
 /**
  * @typedef {Object} ComputePipelineDescription
@@ -25,7 +25,7 @@ class ComputePipeline {
         this.csEntryPoint = description.shader.csEntryPoint || 'cMain'
 
         this.constants = description.constants
-        
+
         /**
          * @type {GPUPipelineLayout}
          */
@@ -53,7 +53,6 @@ class ComputePipeline {
      */
     createPipelineLayout(binding) {
 
-        const device = getDevice()
         this.pipelineLayout = device.createPipelineLayout({
             label: `compute pipline layout (${this.name})`,
             bindGroupLayouts: binding.getBindGroupLayouts(),
@@ -65,8 +64,6 @@ class ComputePipeline {
      * @param {Binding} binding 
      */
     createPipeline(binding) {
-        
-        const device = getDevice()
 
         this.pipelineCreating = true
 
@@ -81,13 +78,13 @@ class ComputePipeline {
                 constants: this.constants
             }
         })
-        .then(pipeline => {
-            this.pipeline = pipeline
-            this.pipelineCreating = false
-        })
-        .catch(error => {
-            console.error(`Error::Compute Pipeline (${this.name}) Creation FAILED!`, error);
-        });
+            .then(pipeline => {
+                this.pipeline = pipeline
+                this.pipelineCreating = false
+            })
+            .catch(error => {
+                console.error(`Error::Compute Pipeline (${this.name}) Creation FAILED!`, error);
+            });
     }
 
     /**

@@ -60,8 +60,7 @@ class ImageLoader {
 
 const imageLoader = new ImageLoader()
 
-export default imageLoader
-
 export {
     ImageLoader,
+    imageLoader
 }

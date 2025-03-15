@@ -1,4 +1,4 @@
-import { Shader } from "../../scratch.js";
+import { Shader } from '../../platform/shader/shader'
 
 /**
  * Description for the ImageLoader class.
@@ -8,5 +8,4 @@ declare class ShaderLoader {
 }
 
 declare const shaderLoader: ShaderLoader;
-export default shaderLoader;
-export { ShaderLoader };
+export { ShaderLoader, shaderLoader };

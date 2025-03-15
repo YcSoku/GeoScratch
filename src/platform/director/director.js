@@ -1,5 +1,5 @@
-import getDevice from "../context/device.js"
-import { EventDispatcher } from "../../core/event/dispatcher.js"
+import { device } from "../context/singletonDevice"
+import { EventDispatcher } from "../../core/event/dispatcher"
 
 const numMipLevels = (...sizes) => {
     const maxSize = Math.max(...sizes)
@@ -19,8 +19,8 @@ export class Director extends EventDispatcher {
         this.stageNum = 0
         this.bindings = []
         this.updateList = {
-            currentSet: {}, 
-            nextSet: {}, 
+            currentSet: {},
+            nextSet: {},
             swap: () => {
                 this.updateList.currentSet = this.updateList.nextSet
                 this.updateList.nextSet = {}
@@ -44,7 +44,7 @@ export class Director extends EventDispatcher {
     }
 
     get limits() {
-    
+
         if (this._limits === undefined) this.tryGetDevice()
         return this._limits
     }
@@ -53,7 +53,7 @@ export class Director extends EventDispatcher {
 
         if (this.device === undefined) {
 
-            this.device = getDevice()
+            this.device = device
             this._limits = this.device.limits
         }
 
@@ -136,7 +136,7 @@ export class Director extends EventDispatcher {
         for (const name in this.stages) {
             if (!this.stages[name].visibility) continue
 
-            const encoder = this.device.createCommandEncoder({label: `${name}`})
+            const encoder = this.device.createCommandEncoder({ label: `${name}` })
             this.stages[name].items.forEach(stage => {
                 stage.execute(encoder)
             })
@@ -161,13 +161,13 @@ export class Director extends EventDispatcher {
     }
 }
 
-const director = new Director()
-export default director
+export const director = new Director()
+
 
 // Event listeners
 
 // Create context
-director.addEventListeners('createContext', ({_, emitter}) => {
+director.addEventListeners('createContext', ({ _, emitter }) => {
 
     const device = director.tryGetDevice()
 
@@ -181,35 +181,35 @@ director.addEventListeners('createContext', ({_, emitter}) => {
 })
 
 // Create shader
-director.addEventListeners('createShader', ({_, emitter}) => {
+director.addEventListeners('createShader', ({ _, emitter }) => {
 
     const device = director.tryGetDevice()
     emitter.shaderModule = device.createShaderModule(emitter.exportDescriptor())
 })
 
 // Create buffer
-director.addEventListeners('createBuffer', ({_, emitter}) => {
+director.addEventListeners('createBuffer', ({ _, emitter }) => {
 
     const device = director.tryGetDevice()
     emitter.buffer = device.createBuffer(emitter.exportDescriptor())
 })
 
 // Create sampler
-director.addEventListeners('createSampler', ({_, emitter}) => {
+director.addEventListeners('createSampler', ({ _, emitter }) => {
 
     const device = director.tryGetDevice()
     emitter.sampler = device.createSampler(emitter.exportDescriptor())
 })
 
 // Create binding group layout
-director.addEventListeners('createBindGroupLayout', ({_, emitter, bindGroupType, order}) => {
+director.addEventListeners('createBindGroupLayout', ({ _, emitter, bindGroupType, order }) => {
 
     const device = director.tryGetDevice()
     emitter.layouts[order] = device.createBindGroupLayout(emitter.exportLayoutDescriptor(bindGroupType))
 })
 
 // Create binding group
-director.addEventListeners('createBindGroup', ({_, emitter, bindGroupType, order}) => {
+director.addEventListeners('createBindGroup', ({ _, emitter, bindGroupType, order }) => {
 
     const device = director.tryGetDevice()
     emitter.groups[order] = device.createBindGroup(emitter.exportDescriptor(bindGroupType))
@@ -224,13 +224,13 @@ director.addEventListeners('generateMips', (() => {
         pipelineByFormat: {},
     }
 
-    return function generateMips({_, texture}) {
+    return function generateMips({ _, texture }) {
 
         const device = director.tryGetDevice()
         if (!generator.module) {
             generator.module = device.createShaderModule({
-            label: 'textured quad shaders for mip level generation',
-            code: `
+                label: 'textured quad shaders for mip level generation',
+                code: `
                 struct VSOutput {
                     @builtin(position) position: vec4f,
                     @location(0) texcoord: vec2f,
@@ -266,14 +266,14 @@ director.addEventListeners('generateMips', (() => {
                 }
                 `,
             });
-    
+
             generator.sampler = device.createSampler({
                 minFilter: 'linear',
                 addressModeU: 'clamp-to-edge',
                 addressModeV: 'clamp-to-edge',
             });
         }
-    
+
         if (!generator.pipelineByFormat[texture.format]) {
             generator.pipelineByFormat[texture.format] = device.createRenderPipeline({
                 label: 'mip level generator pipeline',
@@ -290,51 +290,51 @@ director.addEventListeners('generateMips', (() => {
             });
         }
         const pipeline = generator.pipelineByFormat[texture.format]
-    
+
         const encoder = device.createCommandEncoder({ label: 'mip gen encoder' })
-    
+
         let width = texture.width
         let height = texture.height
         let baseMipLevel = 0
         while (width > 1 || height > 1) {
             width = Math.max(1, Math.ceil(width / 2) | 0);
             height = Math.max(1, Math.ceil(height / 2) | 0);
-    
+
             const bindGroup = device.createBindGroup({
                 layout: pipeline.getBindGroupLayout(0),
                 entries: [
                     { binding: 0, resource: generator.sampler },
-                    { binding: 1, resource: texture.createView({baseMipLevel, mipLevelCount: 1}) },
+                    { binding: 1, resource: texture.createView({ baseMipLevel, mipLevelCount: 1 }) },
                 ],
             })
-    
+
             ++baseMipLevel
-    
+
             const renderPassDescriptor = {
                 label: 'our basic canvas renderPass',
                 colorAttachments: [
-                {
-                    view: texture.createView({baseMipLevel, mipLevelCount: 1}),
-                    loadOp: 'clear',
-                    storeOp: 'store',
-                },
+                    {
+                        view: texture.createView({ baseMipLevel, mipLevelCount: 1 }),
+                        loadOp: 'clear',
+                        storeOp: 'store',
+                    },
                 ],
             }
-    
+
             const pass = encoder.beginRenderPass(renderPassDescriptor)
             pass.setPipeline(pipeline)
             pass.setBindGroup(0, bindGroup)
             pass.draw(6)
             pass.end()
         }
-    
+
         device.queue.submit([encoder.finish()])
     }
 })())
 
 // Create texture by imageBitmap
-director.addEventListeners('createTextureByImageBitmap', ({_, emitter, imageBitmap}) => {
-    
+director.addEventListeners('createTextureByImageBitmap', ({ _, emitter, imageBitmap }) => {
+
     const device = director.tryGetDevice()
 
     let rgba8Texture = device.createTexture({
@@ -348,9 +348,9 @@ director.addEventListeners('createTextureByImageBitmap', ({_, emitter, imageBitm
     })
 
     device.queue.copyExternalImageToTexture(
-        {source: imageBitmap, flipY: emitter.flipY},
-        {texture: rgba8Texture},
-        {width: imageBitmap.width, height: imageBitmap.height}
+        { source: imageBitmap, flipY: emitter.flipY },
+        { texture: rgba8Texture },
+        { width: imageBitmap.width, height: imageBitmap.height }
     )
 
     if (emitter.format === 'rgba8unorm') emitter.texture = rgba8Texture
@@ -359,7 +359,7 @@ director.addEventListeners('createTextureByImageBitmap', ({_, emitter, imageBitm
         const componentNum = {
             'rg32float': 2,
         }
-    
+
         if (!(emitter.format in componentNum)) {
             throw new Error(`Unsupported reparsed format: ${emitter.format}`)
         }
@@ -368,43 +368,43 @@ director.addEventListeners('createTextureByImageBitmap', ({_, emitter, imageBitm
         // Reparsing
         const tempEncoder = device.createCommandEncoder()
         const tempBuffer = device.createBuffer({
-          label: 'tempBuffer',
-          size: rgba8Texture.width * rgba8Texture.height * 4,
-          usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC
+            label: 'tempBuffer',
+            size: rgba8Texture.width * rgba8Texture.height * 4,
+            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC
         })
         tempEncoder.copyTextureToBuffer(
-          { texture: rgba8Texture, mipLevel: 0, origin: [0, 0, 0], aspect: 'all' },
-          { buffer: tempBuffer, offset: 0, bytesPerRow: rgba8Texture.width * 4, rowsPerImage: rgba8Texture.height },
-          [rgba8Texture.width, rgba8Texture.height]
+            { texture: rgba8Texture, mipLevel: 0, origin: [0, 0, 0], aspect: 'all' },
+            { buffer: tempBuffer, offset: 0, bytesPerRow: rgba8Texture.width * 4, rowsPerImage: rgba8Texture.height },
+            [rgba8Texture.width, rgba8Texture.height]
         )
-    
+
         const parsedTexture = device.createTexture({
-          label: emitter.name,
-          format: emitter.format,
-          size: [rgba8Texture.width / targetComponents, imageBitmap.height],
-          usage: emitter.usage,
-          ...(emitter.mipMapped && {
-              mipLevelCount: numMipLevels(rgba8Texture.width / targetComponents, imageBitmap.height)
-          })
+            label: emitter.name,
+            format: emitter.format,
+            size: [rgba8Texture.width / targetComponents, imageBitmap.height],
+            usage: emitter.usage,
+            ...(emitter.mipMapped && {
+                mipLevelCount: numMipLevels(rgba8Texture.width / targetComponents, imageBitmap.height)
+            })
         })
         tempEncoder.copyBufferToTexture(
-          { buffer: tempBuffer, offset: 0, bytesPerRow: rgba8Texture.width * 4, rowsPerImage: parsedTexture.height },
-          { texture: parsedTexture, mipLevel: 0, origin: [0, 0, 0], aspect: 'all' },
-          [parsedTexture.width, parsedTexture.height]
+            { buffer: tempBuffer, offset: 0, bytesPerRow: rgba8Texture.width * 4, rowsPerImage: parsedTexture.height },
+            { texture: parsedTexture, mipLevel: 0, origin: [0, 0, 0], aspect: 'all' },
+            [parsedTexture.width, parsedTexture.height]
         )
         device.queue.submit([tempEncoder.finish()])
-        
+
         rgba8Texture.destroy()
         tempBuffer.destroy()
         emitter.texture = parsedTexture
     }
 
     if (emitter.texture.mipLevelCount > 1)
-        director.dispatchEvent({type: 'generateMips', texture: emitter.texture})
+        director.dispatchEvent({ type: 'generateMips', texture: emitter.texture })
 })
 
 // Create texture by size
-director.addEventListeners('createTextureBySize', ({_, emitter}) => {
+director.addEventListeners('createTextureBySize', ({ _, emitter }) => {
 
     const device = director.tryGetDevice()
 
@@ -419,12 +419,12 @@ director.addEventListeners('createTextureBySize', ({_, emitter}) => {
     })
 
     if (emitter.texture.mipLevelCount > 1) {
-        director.dispatchEvent({type: 'generateMips', texture: emitter.texture})
+        director.dispatchEvent({ type: 'generateMips', texture: emitter.texture })
     }
 })
 
 // Create pipeline layout
-director.addEventListeners('createPipelineLayout', ({_, emitter, binding}) => {
+director.addEventListeners('createPipelineLayout', ({ _, emitter, binding }) => {
 
     const device = director.tryGetDevice()
 
@@ -432,22 +432,22 @@ director.addEventListeners('createPipelineLayout', ({_, emitter, binding}) => {
 })
 
 // Create render pipeline async
-director.addEventListeners('createRenderPipelineAsync', ({_, emitter, binding}) => {
+director.addEventListeners('createRenderPipelineAsync', ({ _, emitter, binding }) => {
 
     const device = director.tryGetDevice()
-    
+
     device.createRenderPipelineAsync(emitter.exportDescriptor(binding))
-    .then(pipeline => {
-        emitter.pipeline = pipeline
-        emitter.pipelineCreating = false
-    })
-    .catch(error => {
-        console.error(`Error::Rendering Pipeline (${emitter.name}) Creation FAILED!`, error);
-    })
+        .then(pipeline => {
+            emitter.pipeline = pipeline
+            emitter.pipelineCreating = false
+        })
+        .catch(error => {
+            console.error(`Error::Rendering Pipeline (${emitter.name}) Creation FAILED!`, error);
+        })
 })
 
 // Create render bundle
-director.addEventListeners('createRenderBundle', ({_, emitter, renderPass, binding}) => {
+director.addEventListeners('createRenderBundle', ({ _, emitter, renderPass, binding }) => {
 
     const device = director.tryGetDevice()
 
@@ -460,7 +460,7 @@ director.addEventListeners('createRenderBundle', ({_, emitter, renderPass, bindi
 })
 
 // Update buffer
-director.addEventListeners('writeBuffer', ({_, emitter, subArea}) => {
+director.addEventListeners('writeBuffer', ({ _, emitter, subArea }) => {
 
     const device = director.tryGetDevice()
     device.queue.writeBuffer(emitter.buffer, subArea.start, subArea.ref.value, subArea.dataOffset, subArea.size)

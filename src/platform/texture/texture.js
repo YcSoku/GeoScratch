@@ -1,6 +1,6 @@
-import { ScratchObject } from '../../core/object/object.js'
-import director from '../director/director.js'
-import monitor from '../monitor/monitor.js'
+import ScratchObject from '../../core/object/object'
+import { director } from '../director/director'
+import { monitor } from "../monitor/monitor"
 
 /**
  * @typedef {Object} TextureResourceDescription
@@ -31,7 +31,7 @@ class Texture extends ScratchObject {
     constructor(description) {
 
         super()
-        
+
         this.name = description.name ? description.name : 'Texture'
 
         this.resource = description.resource
@@ -61,7 +61,7 @@ class Texture extends ScratchObject {
          * @type {{[dirtyType: string]: Function}}
          */
         this.executeUpdate = {
-            'clean': () => {},
+            'clean': () => { },
             'size': () => this.updateBySize(),
             'imageBitmap': () => this.updateByImageBitmap(),
             'canvasTexture': () => this.updateByCanvasTexture(),
@@ -95,7 +95,7 @@ class Texture extends ScratchObject {
     view() {
         return this.texture.createView({
             ...(this.mipMapped && {
-                baseMipLevel: 0, 
+                baseMipLevel: 0,
                 mipLevelCount: Math.max(this.texture.mipLevelCount, 1)
             })
         })
@@ -108,10 +108,10 @@ class Texture extends ScratchObject {
             this.texture.destroy()
         }
 
-        const {imageBitmap, id} = this.resource.imageBitmap()
+        const { imageBitmap, id } = this.resource.imageBitmap()
         if (!imageBitmap) return
 
-        director.dispatchEvent({type: 'createTextureByImageBitmap', emitter: this, imageBitmap})
+        director.dispatchEvent({ type: 'createTextureByImageBitmap', emitter: this, imageBitmap })
 
         this.dirtyType = 'clean'
         this.getByteLength()
@@ -128,7 +128,7 @@ class Texture extends ScratchObject {
 
         this.texture = gpuTexture
         this.dirtyType = 'canvasTexture'
-        
+
         this.getByteLength()
         monitor.memorySizeInBytes += this.byteLength
 
@@ -142,7 +142,7 @@ class Texture extends ScratchObject {
             this.texture.destroy()
         }
 
-        director.dispatchEvent({type: 'createTextureBySize', emitter: this})
+        director.dispatchEvent({ type: 'createTextureBySize', emitter: this })
 
 
         this.getByteLength()
@@ -150,7 +150,7 @@ class Texture extends ScratchObject {
         monitor.memorySizeInBytes += this.byteLength
     }
 
-    getByteLength()  {
+    getByteLength() {
 
         const formatSize = {
             'r8unorm': 1,
@@ -166,13 +166,13 @@ class Texture extends ScratchObject {
             'depth24plus': 3,
             'depth32float': 4,
         }
-    
+
         if (!(this.format in formatSize)) {
             throw new Error(`Unsupported format: ${this.format}`)
         }
-    
+
         let singleLayerSize = this.texture.width * this.texture.height * formatSize[this.format]
-    
+
         this.byteLength = 0
         let currentWidth = this.texture.width
         let currentHeight = this.texture.height
@@ -184,7 +184,7 @@ class Texture extends ScratchObject {
                 singleLayerSize = currentWidth * currentHeight * formatSize[this.format]
             }
         }
-    
+
         this.byteLength += singleLayerSize;
     }
 
@@ -222,7 +222,7 @@ class Texture extends ScratchObject {
      * @param {TextureDescription} [description] 
      */
     reset(description) {
-        
+
         if (description) {
 
             this.name = description.name ? description.name : this.name
@@ -230,7 +230,7 @@ class Texture extends ScratchObject {
             this.usage = description.usage ? description.usage : this.usage
             this.format = description.format ? description.format : this.format
             this.mipMapped = description.mipMapped ? description.mipMapped : this.mipMapped
-            this.resource = description.resource 
+            this.resource = description.resource
             this.dirtyType = description.resource.dataType ? description.resource.dataType : 'size'
         } else {
 

@@ -113,10 +113,12 @@ fn overlap(box: vec4f) -> bool {
 @vertex
 fn vMain(vsInput: VertexInput) -> VertexOutput {
 
+    // 为啥除以sectorRange, 是为了在填LodMapTexture时，找到正确的索引
+    // sectorRange是当前最精细网格的size
     let nodeStartX = floor((box[vsInput.instanceIndex * 4 + 0] - tileUniform.tileBox[0]) / tileUniform.sectorRange.x);
     let nodeStartY = floor((box[vsInput.instanceIndex * 4 + 1] - tileUniform.tileBox[1]) / tileUniform.sectorRange.y);
-    let nodeEndX = floor((box[vsInput.instanceIndex * 4 + 2] - tileUniform.tileBox[0]) / tileUniform.sectorRange.x);
-    let nodeEndY = floor((box[vsInput.instanceIndex * 4 + 3] - tileUniform.tileBox[1]) / tileUniform.sectorRange.y);
+    let nodeEndX   = floor((box[vsInput.instanceIndex * 4 + 2] - tileUniform.tileBox[0]) / tileUniform.sectorRange.x);
+    let nodeEndY   = floor((box[vsInput.instanceIndex * 4 + 3] - tileUniform.tileBox[1]) / tileUniform.sectorRange.y);
     
     let vertices = array<vec2f, 4>(
         vec2f(nodeStartX, nodeStartY),

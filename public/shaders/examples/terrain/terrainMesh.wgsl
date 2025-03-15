@@ -176,11 +176,14 @@ fn positionCS(coord: vec2f, z: f32) -> vec4f {
 @vertex
 fn vMain(vsInput: VertexInput) -> VertexOutput {
 
+    // 没有drawIndexed，而是直接实例化draw
     let triangleID = vsInput.vertexIndex / 3;
     let index = indices[vsInput.vertexIndex];
     let x = positions[index * 2 + 0];
     let y = positions[index * 2 + 1];
     let center = centroid(triangleID);
+
+
     let nodeBox = vec4f(
         box[vsInput.instanceIndex * 4 + 0],
         box[vsInput.instanceIndex * 4 + 1],
@@ -219,16 +222,19 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
         let tLevel = textureLoad(lodMap, vec2i(tLodUV.xy), 0).r;
         let bLevel = textureLoad(lodMap, vec2i(bLodUV.xy), 0).r;
 
-        let deltaX = (nodeBox[2] - nodeBox[0]) / tileUniform.sectorSize;
-        let deltaY = (nodeBox[3] - nodeBox[1]) / tileUniform.sectorSize;
+        let deltaX = (nodeBox[2] - nodeBox[0]) / tileUniform.sectorSize; //当前瓦片网格水平方向一格的经度
+        let deltaY = (nodeBox[3] - nodeBox[1]) / tileUniform.sectorSize; //当前瓦片网格垂直方向一格的纬度
 
         var offset = vec2f(0.0);
+        // 解决瓦片间漏缝的核心：找邻居level
+        // 如果是 **瓦片左边缘的网格顶点，且左侧网格比当前网格等级低** 或 **瓦片右边缘的网格顶点，且右侧等级比当前更低**
         if ((coord.x == nodeBox[0] && lLevel < mLevel) || (coord.x == nodeBox[2] && rLevel < mLevel)) {
-
+            // 如果从下往上按纹理单元数是奇数，则把该点的 y 加上 deltaY , 向上挪一格子
             offset.y = select(0.0, deltaY, floor((coord.y - nodeBox[1]) / deltaY) % 2.0 == 1.0);
         }
+        // 如果是 **瓦片下边缘的网格顶点，且下侧网格比当前网格等级低** 或 **瓦片上边缘的网格顶点，且上侧等级比当前更低**
         if ((coord.y == nodeBox[1] && bLevel < mLevel) || (coord.y == nodeBox[3] && tLevel < mLevel)) {
-
+            // 如果从左往右按纹理单元数是奇数，则把该点的 x 加上 deltaX ， 向右挪一格子
             offset.x = select(0.0, deltaX, floor((coord.x - nodeBox[0]) / deltaX) % 2.0 == 1.0);
         }
         coord += offset;
@@ -269,6 +275,7 @@ fn fMain(fsInput: VertexOutput) -> @location(0) vec4f {
     // let elevationLevel = fract(paletteLength * fsInput.depth) / paletteLength;
     // let paletteColor = textureSample(palette, lSampler, vec2f(elevationLevel + 0.2, 0.5));
     
-    return vec4f(1.0 - fsInput.depth) * 0.5;
+    // return vec4f(1.0 - fsInput.depth) * 0.5;
+    return vec4f(1.0 - fsInput.depth) * 1.0;
     // return vec4f(vec3f(0.0, 0.5, 0.5) * fsInput.depth, 1.0);
 }

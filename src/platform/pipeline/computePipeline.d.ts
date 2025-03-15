@@ -12,7 +12,7 @@ export interface ComputePipelineDescription {
         csEntryPoint?: string,
     },
     constants: { [constantName: string]: number },
-};
+}
 
 /**
  * Represents a ComputableBuilder.
@@ -49,11 +49,8 @@ export class ComputePipeline {
 
     tryMakeComplete(computePass: ComputePass, binding: Binding): boolean;
 
-    /**
-     * Dispatches a compute pass using the ComputableBuilder.
-     * @param {GPUComputePassEncoder} computePass - The compute pass encoder.
-     */
-    dispatch(computePass: GPUComputePassEncoder, binding: Binding): void;
+
+    dispatch(computePass: ComputePass, binding: Binding): void;
 
     triggerFiniteTimes(times: number): ComputePipeline;
 }

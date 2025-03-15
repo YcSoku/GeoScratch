@@ -219,11 +219,9 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
 
     var offset = vec2f(0.0);
     if ((coord.x == nodeBox[0] && lLevel < mLevel) || (coord.x == nodeBox[2] && rLevel < mLevel)) {
-
         offset.y = select(0.0, deltaY, floor((coord.y - nodeBox[1]) / deltaY) % 2.0 == 1.0);
     }
     if ((coord.y == nodeBox[1] && bLevel < mLevel) || (coord.y == nodeBox[3] && tLevel < mLevel)) {
-
         offset.x = select(0.0, deltaX, floor((coord.x - nodeBox[0]) / deltaX) % 2.0 == 1.0);
     }
     coord += offset;
@@ -253,7 +251,8 @@ fn vMain(vsInput: VertexInput) -> VertexOutput {
 
     var output: VertexOutput;
     // output.position = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(calcWebMercatorCoord(coord), z), vec3f(0.0)), 1.0);
-    output.position = positionCS(coord, z);
+    // output.position = positionCS(coord, z);
+    output.position = positionCS(coord, 0.0);
     output.depth = (elevation - staticUniform.e.x) / (staticUniform.e.y - staticUniform.e.x);
     output.index = f32(vsInput.instanceIndex);
     return output;
