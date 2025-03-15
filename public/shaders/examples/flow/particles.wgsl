@@ -115,9 +115,11 @@ fn vMain(input: VertexInput) -> VertexOutput {
     let position = select(currentPosition, lastPosition, input.vertexIndex % 2 == 0);
 
     let cExtent = currentExtent();
-    let x = mix(cExtent.x, cExtent.z, position.x);
-    let y = mix(cExtent.y, cExtent.w, position.y);
-    let mercatorPos = calcWebMercatorCoord(vec2f(x, y));
+    // let x = mix(cExtent.x, cExtent.z, position.x);
+    // let y = mix(cExtent.y, cExtent.w, position.y);
+    // let mercatorPos = calcWebMercatorCoord(vec2f(x, y));
+    let mercatorPos = calcWebMercatorCoord(position.xy);
+
     let position_CS = dynamicUniform.uMatrix * vec4f(translateRelativeToEye(vec3f(mercatorPos, 0.0), vec3f(0.0, 0.0, 0.0)), 1.0);
     let position_SS = position_CS.xy / position_CS.w;
     let uv = (position_SS + 1.0) / 2.0;
